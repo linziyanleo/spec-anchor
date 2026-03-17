@@ -34,11 +34,12 @@ description: >-
 | 层级 | 触发条件 | 加载内容 |
 |------|---------|---------|
 | **Always Load** | Skill 激活时 | `config.yaml` + 全部 Global Spec |
-| **On-Demand** | 涉及具体模块时 | 对应 `MODULE.spec.md` |
+| **On-Demand** | 涉及具体模块时 | 从 `.specanchor/modules/` 加载对应 Module Spec |
 | **On-Demand** | 需要全局视角时 | `.specanchor/project-codemap.md` |
 
 On-Demand 触发场景：
-- 用户提及的文件路径落在某模块目录下
+
+- 用户提及的文件路径落在某模块目录下（通过 `module-index.md` 匹配）
 - `SA TASK` / `SA MODULE` 命令指定了模块
 - RIPER Research 阶段定位到相关模块
 
@@ -54,8 +55,17 @@ On-Demand 触发场景：
 | `specanchor_load` | 手动加载指定 Spec 到上下文 | `SA LOAD <path>` / `加载规范 <路径>` |
 | `specanchor_status` | 显示 Spec 加载状态和覆盖率 | `SA STATUS` / `规范状态` |
 | `specanchor_check` | 运行 Spec-Commit 对齐检测 | `SA CHECK [task\|module\|global]` |
+| `specanchor_index` | 更新 Module Spec 索引 | `SA INDEX` / `更新索引` |
 
 命令详细定义、参数、执行步骤：见 `references/specanchor-protocol.md`
+
+## Module Spec 集中管理
+
+Module Spec 集中存放在 `.specanchor/modules/` 目录下，通过 `module-index.md` 索引到真实模块路径。
+
+- **文件命名**：模块路径中的 `/` 替换为 `-`，如 `src/modules/auth` → `src-modules-auth.spec.md`
+- **索引文件**：`.specanchor/module-index.md` 记录所有 Module Spec 到模块路径的映射
+- **索引更新**：`SA MODULE` / `SA INFER` / `SA STATUS` / `SA INDEX` 命令自动更新索引
 
 ## 推荐流程
 
@@ -72,8 +82,8 @@ SA GLOBAL architecture               → 从代码推断架构约定
 
 ```text
 SA TASK 登录页增加验证码                → 自动加载 Global + 相关 Module Spec
-                                       → 如果加载了 SDD-RIPER-ONE → 进入 RIPER 流程
-                                       → 如果未加载 → 使用简化 Task Spec 模板
+                                       → 默认使用 SDD-RIPER-ONE 模板进入 RIPER 流程
+                                       → 如需简化模式，指定 --simple
 ```
 
 ### 检测
@@ -82,21 +92,24 @@ SA TASK 登录页增加验证码                → 自动加载 Global + 相关
 SA CHECK task .specanchor/tasks/auth/2026-03-13_sms-login.spec.md --base=main
 SA CHECK module --all
 SA CHECK global
+SA INDEX                             → 更新 Module Spec 索引
 ```
 
 ## 与 SDD-RIPER-ONE 的集成
 
-SpecAnchor 在 RIPER 各阶段注入的行为：
+SpecAnchor 默认内置 SDD-RIPER-ONE 作为 Task Spec 的写作协议。在 RIPER 各阶段注入的行为：
 
 | RIPER 阶段 | SpecAnchor 注入行为 |
 |-----------|-------------------|
-| Pre-Research | 自动加载 Global Spec + 定位并读取相关 Module Spec |
+| Pre-Research | 自动加载 Global Spec + 通过 module-index.md 定位并读取相关 Module Spec |
 | Research | Module Spec 作为现状分析输入 |
 | Plan | File Changes 与 Module Spec 的关键文件交叉校验 |
 | Execute | 代码生成受 Global + Module Spec 约束 |
 | Review | 检查 Module Spec 是否需要更新（接口变更/新增依赖） |
 
 路径替换：RIPER 默认 `mydocs/specs/` → SpecAnchor 的 `.specanchor/tasks/<module>/`
+
+写作协议可替换：如需使用其他协议，替换 `references/task-spec-template.md` 的 SDD 变体即可。
 
 ## `.specanchor/` 不存在时
 
@@ -115,9 +128,11 @@ SpecAnchor 在 RIPER 各阶段注入的行为：
 
 ## Module Spec 更新策略
 
-**全量重生成**：运行 `SA MODULE <path>` 时，即使 `MODULE.spec.md` 已存在，也全量重写。
+**全量重生成**：运行 `SA MODULE <path>` 时，即使 Module Spec 已存在，也全量重写。
+
 - 保留 frontmatter 中的 `owner` / `reviewers` 字段
 - `version` minor +1，`updated` 设为当前日期
+- `last_change` 简述本次变更
 - 建议用户通过 `git diff` 确认变更后提交
 
 ## 参考文件
@@ -125,5 +140,5 @@ SpecAnchor 在 RIPER 各阶段注入的行为：
 - `references/specanchor-protocol.md`：核心协议（命令定义、加载规则、集成协议）
 - `references/global-spec-template.md`：Global Spec 模板
 - `references/module-spec-template.md`：Module Spec 模板
-- `references/task-spec-template.md`：Task Spec 模板
+- `references/task-spec-template.md`：Task Spec 模板（SDD-RIPER-ONE 默认 + 简化两种）
 - `references/commands-quickref.md`：命令速查表

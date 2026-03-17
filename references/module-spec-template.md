@@ -1,6 +1,7 @@
 # Module Spec 模板
 
-> 文件名固定为 `MODULE.spec.md`，就近放置在模块目录下。
+> 文件名格式为 `<module-id>.spec.md`，集中存放在 `.specanchor/modules/` 目录下。
+> `module-id` 由模块路径生成，规则：路径分隔符替换为 `-`，例如 `src/modules/auth` → `src-modules-auth.spec.md`。
 
 ```markdown
 ---
@@ -15,6 +16,7 @@ specanchor:
   created: "<YYYY-MM-DD>"
   updated: "<YYYY-MM-DD>"
   last_synced: "<YYYY-MM-DD>"
+  last_change: "<最近一次变更的简要说明>"
   status: "draft"                    # draft | review | active | deprecated | archived
   depends_on:                        # 依赖的其他模块路径
     - "<path/to/dep1>"
@@ -73,11 +75,6 @@ specanchor:
   | `file1.ts` | 职责 |
   | `file2.ts` | 职责 |
 - **外部依赖**: `dep1`、`dep2`
-
-## 变更日志
-| 日期 | 变更 | 作者 |
-|------|------|------|
-| <YYYY-MM-DD> | 初始版本 | @author |
 ```
 
 ## Frontmatter 字段说明
@@ -94,8 +91,21 @@ specanchor:
 | `created` | 是 | 创建日期 |
 | `updated` | 是 | 最后更新日期 |
 | `last_synced` | 是 | 最后一次 Spec-代码同步日期 |
+| `last_change` | 否 | 最近一次变更的简要说明（单行） |
 | `status` | 是 | 生命周期状态 |
 | `depends_on` | 否 | 依赖的其他模块路径列表 |
+
+## Module ID 生成规则
+
+模块路径 → Module ID → 文件名：
+
+```
+src/modules/auth       → src-modules-auth       → src-modules-auth.spec.md
+src/components/LoginForm → src-components-LoginForm → src-components-LoginForm.spec.md
+packages/shared/utils  → packages-shared-utils  → packages-shared-utils.spec.md
+```
+
+规则：将路径中的 `/` 替换为 `-`，保持大小写。
 
 ## Status 生命周期
 

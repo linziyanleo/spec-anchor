@@ -13,6 +13,7 @@ specanchor:
   author: "<git_user>"
   reviewers: []
   last_synced: "<today>"
+  last_change: "<最近一次变更的简要说明>"
   applies_to: "**/*.{ts,tsx,js,jsx}"
 ---
 
@@ -37,10 +38,6 @@ specanchor:
 ## Git 提交约定
 - 格式：`<type>(<scope>): <subject>`
 - type 枚举：...
-
-## 变更日志
-| 日期 | 变更 | 作者 |
-|------|------|------|
 ```
 
 ## architecture.spec.md
@@ -54,6 +51,7 @@ specanchor:
   author: "<git_user>"
   reviewers: []
   last_synced: "<today>"
+  last_change: "<最近一次变更的简要说明>"
   applies_to: "**/*"
 ---
 
@@ -70,10 +68,6 @@ specanchor:
 ## 数据流约定
 - 请求链路：...
 - 状态管理边界：...
-
-## 变更日志
-| 日期 | 变更 | 作者 |
-|------|------|------|
 ```
 
 ## design-system.spec.md
@@ -87,6 +81,7 @@ specanchor:
   author: "<git_user>"
   reviewers: []
   last_synced: "<today>"
+  last_change: "<最近一次变更的简要说明>"
   applies_to: "**/*.{tsx,jsx,css,scss}"
 ---
 
@@ -101,10 +96,6 @@ specanchor:
 
 ## 组件样式
 - 圆角/阴影/边框规则：...
-
-## 变更日志
-| 日期 | 变更 | 作者 |
-|------|------|------|
 ```
 
 ## api-conventions.spec.md
@@ -118,6 +109,7 @@ specanchor:
   author: "<git_user>"
   reviewers: []
   last_synced: "<today>"
+  last_change: "<最近一次变更的简要说明>"
   applies_to: "**/*.{ts,js}"
 ---
 
@@ -134,8 +126,4 @@ specanchor:
 ## 接口命名
 - RESTful 规则：...
 - 版本策略：...
-
-## 变更日志
-| 日期 | 变更 | 作者 |
-|------|------|------|
 ```

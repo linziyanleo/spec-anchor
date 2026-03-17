@@ -43,14 +43,16 @@ SpecAnchor 已加载
    .specanchor/
    ├── config.yaml
    ├── global/
+   ├── modules/                ← Module Spec 集中存放
    ├── tasks/
    │   └── _cross-module/
    ├── archive/
-   └── project-codemap.md (空文件占位)
+   ├── module-index.md         ← Module Spec 索引（自动生成）
+   └── project-codemap.md      (空文件占位)
    ```
 3. 生成 `config.yaml` 默认配置（参考附录 A）
 4. 如果 `scan=true`：扫描项目生成 Global Spec 草稿
-5. 提示用户：`建议创建 .cursor/rules/specanchor.mdc 以启用自动加载约束`
+5. 输出完成信息
 
 **输出**: 目录结构 + `config.yaml`
 
@@ -86,18 +88,22 @@ SpecAnchor 已加载
 
 **执行步骤**:
 1. 检查 `<path>` 目录是否存在 → 不存在则报错
-2. 扫描模块目录下所有代码文件
-3. 如果 `MODULE.spec.md` 已存在（更新模式）：
+2. 生成 Module ID：将路径中的 `/` 替换为 `-`（如 `src/modules/auth` → `src-modules-auth`）
+3. 扫描模块目录下所有代码文件
+4. 确定 Spec 文件路径：`.specanchor/modules/<module-id>.spec.md`
+5. 如果 Spec 文件已存在（更新模式）：
    - 读取 frontmatter，保留 `owner` / `reviewers`
    - 全量重生成正文（§1-§7 全部章节）
    - `version` minor +1，`updated` = 当前日期，`last_synced` = 当前日期
-4. 如果 `MODULE.spec.md` 不存在（创建模式）：
+6. 如果 Spec 文件不存在（创建模式）：
    - 从代码推断所有章节内容
    - `version` = 1.0.0，`status` = draft
-5. 写入 `<path>/MODULE.spec.md`
-6. 建议用户 `git diff` 确认变更
+   - `module_path` = 用户指定的路径
+7. 写入 `.specanchor/modules/<module-id>.spec.md`
+8. 更新 `.specanchor/module-index.md`
+9. 建议用户 `git diff` 确认变更
 
-**输出**: `<path>/MODULE.spec.md`
+**输出**: `.specanchor/modules/<module-id>.spec.md`
 
 ### 2.4 specanchor_infer
 
@@ -113,12 +119,14 @@ SpecAnchor 已加载
 
 **执行步骤**:
 1. 扫描 `<path>` 下所有代码文件
-2. 分析导出接口、内部状态、依赖关系、代码模式
-3. 推断业务规则（基于代码逻辑和命名）
-4. 生成 `MODULE.spec.md`（status = draft）
-5. 明确标记"由代码推断，待人工确认"的章节
+2. 生成 Module ID
+3. 分析导出接口、内部状态、依赖关系、代码模式
+4. 推断业务规则（基于代码逻辑和命名）
+5. 生成 `.specanchor/modules/<module-id>.spec.md`（status = draft）
+6. 明确标记"由代码推断，待人工确认"的章节
+7. 更新 `.specanchor/module-index.md`
 
-**输出**: `<path>/MODULE.spec.md` (status: draft)
+**输出**: `.specanchor/modules/<module-id>.spec.md` (status: draft)
 
 ### 2.5 specanchor_task
 
@@ -130,14 +138,14 @@ SpecAnchor 已加载
 
 **执行步骤**:
 1. 确定关联模块（用户指定或自动推断）
-2. 读取关联模块的 `MODULE.spec.md`（On-Demand 加载）
+2. 读取关联模块的 Module Spec（On-Demand 加载，从 `.specanchor/modules/` 中查找）
 3. 确定存储路径：
    - 单模块 → `.specanchor/tasks/<module_name>/YYYY-MM-DD_<task>.spec.md`
    - 多模块 → `.specanchor/tasks/_cross-module/YYYY-MM-DD_<task>.spec.md`
    - 目录不存在 → 自动创建子目录
 4. 生成 Task Spec：
-   - 如果 SDD-RIPER-ONE 已加载 → 使用 RIPER Task Spec 模板（含完整 RIPER 段）
-   - 如果未加载 → 使用简化 Task Spec 模板
+   - 默认使用 SDD-RIPER-ONE Task Spec 模板（含完整 RIPER 段）
+   - 如果用户明确要求简化模式 → 使用简化 Task Spec 模板
 5. 填充 SpecAnchor frontmatter（level, task_name, related_modules, related_global, sdd_phase）
 6. 写入文件
 
@@ -163,9 +171,10 @@ SpecAnchor 已加载
 
 **执行步骤**:
 1. 列出当前已加载的 Spec（Global + Module）
-2. 扫描 `config.yaml` 中 `scan_paths` 下的模块，统计 Module Spec 覆盖率
+2. 扫描 `.specanchor/modules/` 目录，统计 Module Spec 覆盖率
 3. 统计活跃/归档 Task Spec 数量
-4. 输出简洁摘要
+4. 自动更新 `.specanchor/module-index.md`
+5. 输出简洁摘要
 
 **输出格式**:
 ```
@@ -191,6 +200,39 @@ SpecAnchor Status
 
 **详细逻辑见脚本文档**: `scripts/specanchor-check.sh`
 
+### 2.9 specanchor_index
+
+**触发词**: `SA INDEX` / `更新索引`
+
+**参数**: 无
+
+**执行步骤**:
+1. 扫描 `.specanchor/modules/` 下所有 `.spec.md` 文件
+2. 读取每个文件的 frontmatter 信息
+3. 扫描 `config.yaml` 中 `scan_paths` 下的模块目录
+4. 生成/更新 `.specanchor/module-index.md`
+
+**输出**: `.specanchor/module-index.md`
+
+**module-index.md 格式**:
+```markdown
+# Module Spec Index
+<!-- 由 SA INDEX / SA STATUS 自动生成，请勿手动编辑 -->
+<!-- 生成时间: YYYY-MM-DD HH:MM -->
+
+| 模块名 | 模块路径 | Spec 文件 | 状态 | 版本 | 最后同步 | Owner |
+|--------|---------|----------|------|------|---------|-------|
+| 用户认证 | src/modules/auth | src-modules-auth.spec.md | active | 2.1.0 | 2026-03-10 | @zhangsan |
+| 订单管理 | src/modules/order | src-modules-order.spec.md | active | 1.5.0 | 2026-03-08 | @lisi |
+
+## 无 Spec 覆盖的模块
+
+| 模块路径 | 近 30 天提交数 | 建议 |
+|---------|-------------|------|
+| src/modules/payment | 12 | 建议运行 SA INFER src/modules/payment |
+| src/modules/search | 8 | 建议运行 SA INFER src/modules/search |
+```
+
 ## §3 自动加载规则
 
 ### 3.1 Always Load（每次对话）
@@ -203,27 +245,25 @@ Skill 被引用时立即执行：
 
 触发条件（满足任一即触发）：
 - `SA TASK` / `SA MODULE` / `SA INFER` 命令指定了模块路径
-- 用户提及的文件路径位于某模块目录下（通过 `config.yaml` 的 `scan_paths` 匹配）
+- 用户提及的文件路径位于某模块目录下（通过 `module-index.md` 或 `config.yaml` 的 `scan_paths` 匹配）
 - RIPER Research 阶段发现相关模块
 
 加载动作：
-1. 检查模块目录下是否有 `MODULE.spec.md`
-2. 有 → 读取并注入上下文
-3. 无 → 提醒用户：`⚠️ 模块 <path> 无 MODULE.spec.md，建议先运行 SA MODULE <path> 或 SA INFER <path>`
+1. 通过 `module-index.md` 查找模块路径对应的 Module Spec 文件
+2. 有 → 从 `.specanchor/modules/` 中读取并注入上下文
+3. 无 → 提醒用户：`⚠️ 模块 <path> 无 Module Spec，建议先运行 SA MODULE <path> 或 SA INFER <path>`
 
 ### 3.3 加载顺序
 
 ```
-config.yaml → Global Specs → Module Spec(s) → Project Codemap（如需要）
+config.yaml → Global Specs → Module Spec(s)（via module-index.md） → Project Codemap（如需要）
 ```
 
 ## §4 与 SDD-RIPER-ONE 集成协议
 
-### 4.1 检测是否加载
+### 4.1 默认写作协议
 
-SpecAnchor 不硬依赖 SDD-RIPER-ONE。通过以下方式检测：
-- 如果当前对话中 SDD-RIPER-ONE 协议已激活（用户手动加载或同时引用两个 Skill）→ 集成模式
-- 否则 → 独立模式
+SpecAnchor 内置 SDD-RIPER-ONE 作为默认写作协议。`SA TASK` 命令默认使用 SDD-RIPER-ONE 格式的 Task Spec 模板。
 
 ### 4.2 集成模式下的行为注入
 
@@ -243,18 +283,45 @@ SpecAnchor 不硬依赖 SDD-RIPER-ONE。通过以下方式检测：
 
 ### 4.4 写作协议可替换性
 
-SKILL.md 和本协议中不硬编码 SDD-RIPER-ONE 的具体指令。所有 RIPER 相关的引用统一使用"当前写作协议"措辞。未来可替换为其他协议（如 SPECLAN、IntentSpec）而无需修改 SpecAnchor Skill 本身。
+SpecAnchor 不硬编码 SDD-RIPER-ONE 的具体指令。默认内置 SDD-RIPER-ONE 模板是为了开箱即用，但可替换为其他协议（如 SPECLAN、IntentSpec）：
+1. 替换 `references/task-spec-template.md` 的 SDD 变体部分
+2. 保留 SpecAnchor 的 YAML frontmatter 格式不变
+3. 在 SKILL.md 中更新写作协议引用
 
 ### 4.5 独立模式
 
-未加载 SDD-RIPER-ONE 时：
+用户明确要求简化模式时：
 - `SA TASK` 使用简化 Task Spec 模板（见 `references/task-spec-template.md` 的简化版）
 - 无 RIPER 状态机约束
 - 仅管理 Global / Module Spec 的 CRUD 和加载
 
-## §5 Module Spec 全量更新协议
+## §5 Module Spec 管理协议
 
-当运行 `SA MODULE <path>` 且 `MODULE.spec.md` 已存在时：
+### 5.1 集中存放
+
+所有 Module Spec 文件集中存放在 `.specanchor/modules/` 目录下，不在模块目录中就近放置。
+
+**文件命名规则**：模块路径中的 `/` 替换为 `-`，生成 `<module-id>.spec.md`。
+
+```
+模块路径                    → Module ID                → Spec 文件名
+src/modules/auth           → src-modules-auth          → src-modules-auth.spec.md
+src/components/LoginForm   → src-components-LoginForm  → src-components-LoginForm.spec.md
+packages/shared/utils      → packages-shared-utils     → packages-shared-utils.spec.md
+```
+
+### 5.2 module-index.md 索引
+
+`.specanchor/module-index.md` 是 Module Spec 的集中索引文件，记录每个 Module Spec 到真实模块路径的映射。
+
+**更新时机**：
+- `SA MODULE` / `SA INFER` 创建或更新 Module Spec 时自动更新
+- `SA STATUS` / `SA INDEX` 命令触发时自动更新
+- `specanchor-check.sh` 执行时自动更新
+
+### 5.3 全量更新协议
+
+当运行 `SA MODULE <path>` 且 Module Spec 已存在时：
 
 1. **读取 frontmatter**：提取 `version`、`owner`、`reviewers`、`created`
 2. **扫描代码**：全量扫描模块目录，分析导出接口、状态管理、依赖、代码模式
@@ -263,23 +330,26 @@ SKILL.md 和本协议中不硬编码 SDD-RIPER-ONE 的具体指令。所有 RIPE
    - `version`: minor +1（如 2.1.0 → 2.2.0）
    - `updated`: 当前日期
    - `last_synced`: 当前日期
+   - `last_change`: 简述本次变更
    - `owner` / `reviewers` / `created`: 保持不变
 5. **写入文件**：覆盖旧内容
-6. **输出建议**：`Module Spec 已全量更新。建议运行 git diff <path>/MODULE.spec.md 确认变更后提交。`
+6. **更新索引**：更新 `.specanchor/module-index.md`
+7. **输出建议**：`Module Spec 已全量更新。建议运行 git diff .specanchor/modules/<module-id>.spec.md 确认变更后提交。`
 
 ## 附录 A: config.yaml 默认模板
 
 ```yaml
 specanchor:
-  version: "0.1.0"
+  version: "0.2.0"
   project_name: "<project_name>"
 
   paths:
     global_specs: ".specanchor/global/"
+    module_specs: ".specanchor/modules/"
     task_specs: ".specanchor/tasks/"
     archive: ".specanchor/archive/"
+    module_index: ".specanchor/module-index.md"
     project_codemap: ".specanchor/project-codemap.md"
-    module_spec_filename: "MODULE.spec.md"
 
   coverage:
     scan_paths:

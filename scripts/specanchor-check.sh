@@ -50,6 +50,11 @@ parse_key_files() {
   sed -n '/## 7\. /,/## [0-9]/p' "$file" | grep -oE '`[^`]+\.[a-zA-Z]+`' | tr -d '`' | sort -u
 }
 
+path_to_module_id() {
+  local path="$1"
+  echo "$path" | tr '/' '-'
+}
+
 # ─── Task 级检测 ───
 
 check_task() {
@@ -123,9 +128,7 @@ check_task() {
     done
     if [[ $is_planned -eq 0 ]]; then
       local label="file"
-      if [[ "$cf" == *MODULE.spec.md ]]; then
-        label="module spec"
-      elif [[ "$cf" == *.spec.md ]]; then
+      if [[ "$cf" == *.spec.md ]]; then
         label="spec"
       elif [[ "$cf" == *package.json ]] || [[ "$cf" == *config* ]] || [[ "$cf" == *.lock ]]; then
         label="config"
@@ -169,16 +172,17 @@ check_single_module() {
 
   local module_path
   module_path=$(parse_frontmatter_field "$spec_file" "module_path")
-  [[ -z "$module_path" ]] && module_path=$(dirname "$spec_file")
+  [[ -z "$module_path" ]] && return
 
   local last_synced
   last_synced=$(parse_frontmatter_field "$spec_file" "last_synced")
 
   local module_name
-  module_name=$(basename "$module_path")
+  module_name=$(parse_frontmatter_field "$spec_file" "module_name")
+  [[ -z "$module_name" ]] && module_name=$(basename "$module_path")
 
   local commits_since=0
-  if [[ -n "$last_synced" ]]; then
+  if [[ -n "$last_synced" ]] && [[ -d "$module_path" ]]; then
     commits_since=$(git log --oneline --since="$last_synced" -- "$module_path" 2>/dev/null | wc -l | tr -d ' ')
   fi
 
@@ -204,8 +208,8 @@ check_single_module() {
     status_label="STALE"
   fi
 
-  printf "  %b %-18s synced %-12s %3d commits since   %s\n" \
-    "$status_icon" "${module_name}/" "${last_synced:-unknown}" "$commits_since" "$status_label"
+  printf "  %b %-18s %-25s synced %-12s %3d commits since   %s\n" \
+    "$status_icon" "${module_name}" "${module_path}" "${last_synced:-unknown}" "$commits_since" "$status_label"
 }
 
 check_module() {
@@ -217,15 +221,19 @@ check_module() {
   echo -e "${BOLD}SpecAnchor Module Freshness${RESET}"
 
   if [[ "$target" == "--all" ]]; then
+    local modules_dir=".specanchor/modules"
+    [[ -d "$modules_dir" ]] || die "Module Spec 目录不存在: $modules_dir"
+
     local config=".specanchor/config.yaml"
-    [[ -f "$config" ]] || die "配置文件不存在: $config"
 
     local -a scan_paths=()
-    while IFS= read -r p; do
-      [[ -n "$p" ]] && scan_paths+=("$p")
-    done < <(sed -n '/scan_paths:/,/^  [a-z]/p' "$config" | grep '^ *- ' | sed 's/^ *- *"\{0,1\}//;s/"\{0,1\} *$//')
+    if [[ -f "$config" ]]; then
+      while IFS= read -r p; do
+        [[ -n "$p" ]] && scan_paths+=("$p")
+      done < <(sed -n '/scan_paths:/,/^  [a-z]/p' "$config" | grep '^ *- ' | sed 's/^ *- *"\{0,1\}//;s/"\{0,1\} *$//')
+    fi
 
-    echo -e "  scope: ${scan_paths[*]:-src/**}"
+    echo -e "  modules dir: ${CYAN}${modules_dir}/${RESET}"
     echo ""
 
     local total=0 covered=0 fresh=0
@@ -236,7 +244,12 @@ check_module() {
       for dir in "$base_dir"/*/; do
         [[ -d "$dir" ]] || continue
         ((total++))
-        local spec_file="${dir}MODULE.spec.md"
+
+        local dir_clean="${dir%/}"
+        local module_id
+        module_id=$(path_to_module_id "$dir_clean")
+        local spec_file="${modules_dir}/${module_id}.spec.md"
+
         if [[ -f "$spec_file" ]]; then
           ((covered++))
           check_single_module "$spec_file" "$stale_days"
@@ -250,8 +263,8 @@ check_module() {
         else
           local recent
           recent=$(git log --oneline -n 20 --since="30 days ago" -- "$dir" 2>/dev/null | wc -l | tr -d ' ')
-          printf "  ${RED}✗${RESET} %-18s no MODULE.spec.md   %3d recent commits  NO SPEC\n" \
-            "$(basename "$dir")/" "$recent"
+          printf "  ${RED}✗${RESET} %-18s %-25s no Module Spec          %3d recent commits  NO SPEC\n" \
+            "$(basename "$dir_clean")/" "$dir_clean" "$recent"
         fi
       done
     done
@@ -261,8 +274,8 @@ check_module() {
   else
     [[ -f "$target" ]] || die "Spec 文件不存在: $target"
     local module_path
-    module_path=$(dirname "$target")
-    echo -e "  scope: ${CYAN}${module_path}${RESET}"
+    module_path=$(parse_frontmatter_field "$target" "module_path")
+    echo -e "  scope: ${CYAN}${module_path:-unknown}${RESET}"
     echo ""
     check_single_module "$target" "$stale_days"
   fi
@@ -295,6 +308,8 @@ check_global() {
     archived_tasks=$(find "$archive_dir" -name "*.spec.md" 2>/dev/null | wc -l | tr -d ' ')
   fi
 
+  local modules_dir=".specanchor/modules"
+
   local -a scan_paths=()
   while IFS= read -r p; do
     [[ -n "$p" ]] && scan_paths+=("$p")
@@ -307,7 +322,11 @@ check_global() {
     for dir in "$base_dir"/*/; do
       [[ -d "$dir" ]] || continue
       ((total++))
-      [[ -f "${dir}MODULE.spec.md" ]] && ((covered++))
+
+      local dir_clean="${dir%/}"
+      local module_id
+      module_id=$(path_to_module_id "$dir_clean")
+      [[ -f "${modules_dir}/${module_id}.spec.md" ]] && ((covered++))
     done
   done
 
@@ -323,9 +342,12 @@ check_global() {
     [[ -d "$base_dir" ]] || continue
     for dir in "$base_dir"/*/; do
       [[ -d "$dir" ]] || continue
+      local dir_clean="${dir%/}"
       local mod_name
-      mod_name=$(basename "$dir")
-      local spec_file="${dir}MODULE.spec.md"
+      mod_name=$(basename "$dir_clean")
+      local module_id
+      module_id=$(path_to_module_id "$dir_clean")
+      local spec_file="${modules_dir}/${module_id}.spec.md"
 
       if [[ ! -f "$spec_file" ]]; then
         local recent
@@ -365,9 +387,13 @@ usage() {
   echo "  specanchor-check.sh module <spec-file|--all> [--stale-days=30]"
   echo "  specanchor-check.sh global [--config=.specanchor/config.yaml]"
   echo ""
+  echo "Module Spec 存放位置: .specanchor/modules/<module-id>.spec.md"
+  echo "Module ID 生成规则: 路径中的 / 替换为 - (如 src/modules/auth → src-modules-auth)"
+  echo ""
   echo "Examples:"
   echo "  specanchor-check.sh task .specanchor/tasks/auth/2026-03-13_sms-login.spec.md"
   echo "  specanchor-check.sh module --all"
+  echo "  specanchor-check.sh module .specanchor/modules/src-modules-auth.spec.md"
   echo "  specanchor-check.sh global"
   exit 1
 }
