@@ -76,9 +76,9 @@ parse_yaml_field() {
 
 load_check_config() {
   local config="${1:-.specanchor/config.yaml}"
-  CFG_STALE_DAYS=$(parse_yaml_field "$config" "stale_days" "30")
-  CFG_OUTDATED_DAYS=$(parse_yaml_field "$config" "outdated_days" "90")
-  CFG_WARN_RECENT_DAYS=$(parse_yaml_field "$config" "warn_recent_commits_days" "30")
+  CFG_STALE_DAYS=$(parse_yaml_field "$config" "stale_days" "14")
+  CFG_OUTDATED_DAYS=$(parse_yaml_field "$config" "outdated_days" "30")
+  CFG_WARN_RECENT_DAYS=$(parse_yaml_field "$config" "warn_recent_commits_days" "14")
   CFG_TASK_BASE_BRANCH=$(parse_yaml_field "$config" "task_base_branch" "main")
 }
 

@@ -391,7 +391,7 @@ specanchor:
   check:
     stale_days: 14                    # Module Spec 同步后超过 N 天，且模块代码有新提交 → STALE
     outdated_days: 30                 # Module Spec 同步后超过 N 天，且模块代码有新提交 → OUTDATED
-    warn_recent_commits_days: 30      # 无 Spec 的模块在最近 N 天内有代码提交 → 发出警告
+    warn_recent_commits_days: 14      # 无 Spec 的模块在最近 N 天内有代码提交 → 发出警告
     task_base_branch: "main"          # SA CHECK task 的默认 git 基准分支
 
   sync:
