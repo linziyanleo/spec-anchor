@@ -1,65 +1,60 @@
-# SpecAnchor 命令速查表
+# SpecAnchor 意图映射
 
-## 初始化
+用户用自然语言描述意图时，根据下表匹配到对应命令，然后读取该命令的详细定义文件执行。
 
-```text
-SA INIT                                  初始化 .specanchor/ 目录和 config.yaml
-SA INIT scan=true                        初始化并扫描项目生成 Global Spec 草稿
-```
+SpecAnchor 不使用 CLI 风格的命令前缀，所有交互通过自然语言完成。
 
-## Global Spec
+## 意图映射表
 
-```text
-SA GLOBAL coding-standards               从代码推断编码规范
-SA GLOBAL architecture                   从代码推断架构约定
-SA GLOBAL design-system                  从代码推断设计系统规则
-SA GLOBAL api-conventions                从代码推断 API 约定
-SA GLOBAL <custom-type>                  自定义类型
-SA GLOBAL coding-standards scan=src/     指定扫描路径
-```
+| 用户意图 | 执行动作 | 详细定义 |
+|---------|---------|---------|
+| 初始化规范 / 开始用 SpecAnchor / 创建 .specanchor | `specanchor_init` | `commands/init.md` |
+| 生成编码规范 / 推断架构约定 / 全局规范 | `specanchor_global` | `commands/global.md` |
+| 创建模块规范 / 更新模块 Spec / 同步模块规范 | `specanchor_module` | `commands/module.md` |
+| 从代码推断模块规范 / 自动生成 Spec 草稿 | `specanchor_infer` | `commands/infer.md` |
+| 创建任务 / 新建任务 Spec / 开始新任务 | `specanchor_task` | `commands/task.md` |
+| 加载规范 / 读取 Spec 到上下文 | `specanchor_load` | `commands/load.md` |
+| 查看规范状态 / 覆盖率 / 哪些 Spec 加载了 | `specanchor_status` | `commands/status.md` |
+| 检测 Spec-代码对齐 / 检查过期 / 覆盖率报告 | `specanchor_check` | `commands/check.md` |
+| 更新模块索引 / 刷新 module-index | `specanchor_index` | `commands/index.md` |
 
-## Module Spec
+## 按场景分组
 
-```text
-SA MODULE src/modules/auth               创建/更新 auth 模块规范
-SA MODULE src/components/LoginForm       创建/更新组件规范
-SA INFER src/modules/auth                从代码逆向推断模块规范草稿
-```
+### 项目初始化
 
-## Task Spec
+"帮我初始化规范管理" / "初始化 SpecAnchor" → `specanchor_init`
 
-```text
-SA TASK 登录页增加验证码                   创建任务（自动推断关联模块）
-SA TASK 登录页增加验证码 modules=auth      显式指定关联模块
-```
+### 全局规范
 
-## 加载 & 状态
+"帮我生成编码规范" / "从代码推断架构约定" → `specanchor_global`
 
-```text
-SA LOAD src/modules/auth/MODULE.spec.md  手动加载指定 Spec
-SA STATUS                                查看加载状态和覆盖率
-```
+### 模块规范
 
-## 检测
+"帮我创建 auth 模块的规范" / "更新用户认证模块的 Spec" → `specanchor_module`
+"帮我从代码推断模块规范" / "先自动生成草稿" → `specanchor_infer`
 
-```text
-SA CHECK task <spec-file>                Task 级：PR 改动 vs Spec 计划
-SA CHECK task <spec-file> --base=develop 指定基准分支
-SA CHECK module <spec-file>              Module 级：模块文件是否有新 commit
-SA CHECK module --all                    全部 Module Spec 新鲜度
-SA CHECK module --all --stale-days=60    自定义过期天数
-SA CHECK global                          Global 级：覆盖率报告
-```
+### 任务管理
 
-## 触发词汇总
+"创建任务：登录页增加验证码" / "开始新任务" → `specanchor_task`
+"加载 auth 模块的规范" → `specanchor_load`
 
-| 触发词 | 命令 |
-|--------|------|
-| `SA INIT` / `初始化 SpecAnchor` | `specanchor_init` |
-| `SA GLOBAL <type>` / `全局规范 <类型>` | `specanchor_global` |
-| `SA MODULE <path>` / `模块规范 <路径>` | `specanchor_module` |
-| `SA INFER <path>` / `推断规范 <路径>` | `specanchor_infer` |
-| `SA TASK <name>` / `创建任务 <名称>` | `specanchor_task` |
-| `SA LOAD <path>` / `加载规范 <路径>` | `specanchor_load` |
-| `SA STATUS` / `规范状态` | `specanchor_status` |
-| `SA CHECK [level]` | `specanchor_check` |
+### 状态与检测
+
+"看看规范状态" / "覆盖率怎么样" → `specanchor_status`
+"检查 Spec 和代码是否对齐" / "模块规范是否过期" → `specanchor_check`
+"更新模块索引" → `specanchor_index`
+
+## 推荐流程
+
+### 首次使用
+
+1. "帮我初始化 SpecAnchor"
+2. "帮我生成编码规范"
+3. "帮我生成架构约定"
+4. 触碰模块时："帮我创建 auth 模块的规范"
+
+### 日常开发
+
+1. "创建任务：XX功能"
+2. 按 Task Spec 开发
+3. "检查 Spec 和代码对齐"
