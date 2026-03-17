@@ -209,7 +209,7 @@ check_single_module() {
 
   local commits_since=0
   if [[ -n "$last_synced" ]] && [[ -d "$module_path" ]]; then
-    commits_since=$(git log --oneline --since="$last_synced" -- "$module_path" 2>/dev/null | wc -l | tr -d ' ')
+    commits_since=$(git log --oneline --since="${last_synced} 00:00:00" -- "$module_path" 2>/dev/null | wc -l | tr -d ' ')
   fi
 
   local status_icon status_label
@@ -270,7 +270,7 @@ check_module() {
       mp=$(parse_frontmatter_field "$spec_file" "module_path")
       if [[ -n "$ls" ]] && [[ -n "$mp" ]] && [[ -d "$mp" ]]; then
         local c
-        c=$(git log --oneline --since="$ls" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
+        c=$(git log --oneline --since="${ls} 00:00:00" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
         [[ $c -eq 0 ]] && ((fresh++))
       fi
     done
@@ -351,7 +351,7 @@ check_global() {
         synced_epoch=$(date -j -f "%Y-%m-%d" "$ls" "+%s" 2>/dev/null || date -d "$ls" "+%s" 2>/dev/null || echo 0)
         now_epoch=$(date "+%s")
         days_since=$(( (now_epoch - synced_epoch) / 86400 ))
-        commits_since=$(git log --oneline --since="$ls" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
+        commits_since=$(git log --oneline --since="${ls} 00:00:00" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
         if [[ $days_since -gt $CFG_OUTDATED_DAYS ]] && [[ $commits_since -gt 0 ]]; then
           echo -e "  ${RED}!${RESET} ${mod_name} (${mp}) OUTDATED (${days_since} days, ${commits_since} commits)"
           has_warnings=1
