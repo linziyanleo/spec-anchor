@@ -2,26 +2,58 @@
 
 > Spec 是锚，代码是船。锚定住了，船才不会漂。
 
-SpecAnchor 是一个 **Skill**，为 AI 辅助开发提供三级 Spec（规范）管理体系。它不生成代码，而是在 AI 生成代码之前，确保 AI 已经读取并遵循团队的编码规范、模块契约和任务计划。
+SpecAnchor 是一个 **Skill**，为 AI 辅助开发提供三级 Spec（规范）管理体系和完整的开发工作流支持。它不仅管理规范，还集成了需求复杂度评估、代码管理、开发服务器管理等功能，确保 AI 在生成代码前已经读取并遵循团队的编码规范、模块契约和任务计划。
 
 ---
 
 ## 它解决什么问题
 
-| 问题              | SpecAnchor 的回答                |
-| --------------- | ----------------------------- |
-| AI 生成的代码不符合团队规范 | Global Spec 提供"宪法级"约束，AI 必须遵守 |
-| 不同开发者改同一模块风格不统一 | Module Spec 定义模块的接口契约和设计约定    |
-| 代码改了但"为什么改"丢失了  | Task Spec 记录每次变更的意图和决策        |
-| Spec 和代码不一致（腐化） | 对齐检测功能检测 Spec-代码对齐度      |
+| 问题                           | SpecAnchor 的回答                            |
+| ------------------------------ | -------------------------------------------- |
+| AI 生成的代码不符合团队规范    | Global Spec 提供"宪法级"约束，AI 必须遵守    |
+| 不同开发者改同一模块风格不统一 | Module Spec 定义模块的接口契约和设计约定     |
+| 代码改了但"为什么改"丢失了     | Task Spec 记录每次变更的意图和决策           |
+| Spec 和代码不一致（腐化）      | 对齐检测功能检测 Spec-代码对齐度             |
+| 需求复杂度难以评估             | 内置需求复杂度评估，自动选择合适的处理流程   |
+| 开发工作流繁琐                 | 集成完整的工作流命令，从代码提交到评审一站式 |
 
-## 三级 Spec 体系
+## 核心功能
+
+### 1. 三级 Spec 体系
 
 ```
-L1  Global Spec    全局规范    编码标准、架构约定、设计系统    季度级变更    .specanchor/global/
-L2  Module Spec    模块契约    接口、业务规则、代码结构       迭代级变更    .specanchor/modules/
-L3  Task Spec      任务计划    单次变更的目标、计划、执行日志   每任务        .specanchor/tasks/
+L1  Global Spec    全局规范    编码标准、架构约定、设计系统、项目配置    季度级变更    .specanchor/global/
+L2  Module Spec    模块契约    接口、业务规则、代码结构               迭代级变更    .specanchor/modules/
+L3  Task Spec      任务计划    单次变更的目标、计划、执行日志           每任务        .specanchor/tasks/
 ```
+
+### 2. 需求复杂度评估
+
+自动评估用户需求的复杂度，智能选择处理流程：
+
+**简单需求特征**（快速流程）：
+
+- 单文件修改、样式调整、单个 bug 修复
+- 简单配置修改、不涉及架构变更
+- 预计工作量 < 2 小时
+
+**复杂需求特征**（标准流程）：
+
+- 新增功能模块、多文件修改、架构设计
+- 数据流变更、API 接口设计、多模块协作
+- 预计工作量 >= 2 小时
+
+### 3. 完整的开发工作流
+
+集成了从开发到部署的完整工作流命令：
+
+| 功能类别   | 命令                                       | 用途              |
+| ---------- | ------------------------------------------ | ----------------- |
+| 项目配置   | `specanchor_global` (project-setup)        | 项目元数据管理    |
+| 代码管理   | `workflow_commit_push`                     | 智能提交和推送    |
+| 代码评审   | `workflow_submit_cr`                       | 自动创建代码评审  |
+| 开发服务器 | `workflow_start_dev` / `workflow_stop_dev` | 服务器管理        |
+| 质量检查   | `specanchor_check`                         | Spec-代码对齐检测 |
 
 ---
 
@@ -31,21 +63,25 @@ L3  Task Spec      任务计划    单次变更的目标、计划、执行日志
 
 ```
 SpecAnchor/
-├── SKILL.md                           ← Skill 入口
+├── SKILL.md                           ← Skill 入口（包含需求复杂度评估）
 ├── references/
 │   ├── specanchor-protocol.md         ← 核心协议：启动检查、加载规则、集成协议、管理协议
 │   ├── commands-quickref.md           ← 自然语言使用指南 + 意图映射表
 │   ├── commands/                      ← 各命令详细定义（按需读取）
 │   │   ├── init.md                    ← specanchor_init
-│   │   ├── global.md                  ← specanchor_global
+│   │   ├── global.md                  ← specanchor_global（包含项目配置管理）
 │   │   ├── module.md                  ← specanchor_module
 │   │   ├── infer.md                   ← specanchor_infer
 │   │   ├── task.md                    ← specanchor_task
 │   │   ├── load.md                    ← specanchor_load
 │   │   ├── status.md                  ← specanchor_status
 │   │   ├── check.md                   ← specanchor_check
-│   │   └── index.md                   ← specanchor_index
-│   ├── global-spec-template.md        ← Global Spec 模板（4 种类型）
+│   │   ├── index.md                   ← specanchor_index
+│   │   ├── workflow_commit_push.md    ← 代码提交和推送
+│   │   ├── workflow_submit_cr.md      ← 代码评审
+│   │   ├── workflow_start_dev.md      ← 启动开发服务器
+│   │   └── workflow_stop_dev.md       ← 停止开发服务器
+│   ├── global-spec-template.md        ← Global Spec 模板（5 种类型，包含 project-setup）
 │   ├── module-spec-template.md        ← Module Spec 模板
 │   └── task-spec-template.md          ← Task Spec 模板（SDD-RIPER-ONE 默认 + 简化两种）
 ├── scripts/
@@ -62,7 +98,8 @@ your-project/
 │   ├── config.yaml                    ← 配置（扫描路径、覆盖率阈值等）
 │   ├── global/                        ← L1: Global Spec（合计 ≤ 200 行）
 │   │   ├── coding-standards.spec.md
-│   │   └── architecture.spec.md
+│   │   ├── architecture.spec.md
+│   │   └── project-setup.spec.md     ← 项目配置规范（替代 metadata.md）
 │   ├── modules/                       ← L2: Module Spec（集中存放）
 │   │   ├── src-modules-auth.spec.md        ← src/modules/auth 的 Spec
 │   │   ├── src-modules-order.spec.md       ← src/modules/order 的 Spec
@@ -114,6 +151,7 @@ cp -r /path/to/SpecAnchor/ ~/.agents/skills/specanchor/
 
 ```markdown
 ## Skills
+
 - 使用 SpecAnchor 管理 Spec：参考 `.agents/skills/specanchor/SKILL.md`
 ```
 
@@ -157,12 +195,17 @@ chmod +x your-project/scripts/specanchor-check.sh
 
 AI 会在项目根目录创建 `.specanchor/` 目录结构和默认 `config.yaml`。
 
-### 第二步：生成 Global Spec
+### 第二步：生成项目配置和 Global Spec
 
+> "初始化项目信息"
 > "帮我生成编码规范"
 > "帮我生成架构约定"
 
-AI 会扫描项目代码（`package.json`、`tsconfig.json`、目录结构、代码模式等），推断编码规范和架构约定，生成 Global Spec 草稿。
+AI 会：
+
+1. 扫描 `package.json` 自动识别项目信息（名称、启动命令、评审人等）
+2. 扫描项目代码推断编码规范和架构约定
+3. 生成 `project-setup.spec.md` 和其他 Global Spec 文件
 
 **重要约束**：所有 Global Spec 合计不超过 200 行。这是 AI 上下文的 token 预算硬约束。
 
@@ -178,27 +221,45 @@ AI 会扫描项目代码（`package.json`、`tsconfig.json`、目录结构、代
 
 Module Spec 会自动存放在 `.specanchor/modules/` 目录下，并更新 `module-index.md` 索引。
 
-### 第四步：创建任务并开发
+### 第四步：智能需求处理
 
-> "创建任务：登录页增加验证码"
+SpecAnchor 会自动评估需求复杂度：
 
-AI 会自动加载相关的 Global Spec 和 Module Spec，然后创建 Task Spec。默认使用 SDD-RIPER-ONE 模板，进入 RIPER 流程（Research → Plan → Execute → Review）。
+**简单需求**（直接处理）：
 
-### 第五步：检测 Spec-代码对齐
+> "修复登录按钮样式"
+> "更新 README 文档"
 
-在 AI 对话中直接说：
+**复杂需求**（创建 Task Spec）：
+
+> "新增用户权限管理模块"
+> "重构订单支付流程"
+
+AI 会根据需求特征自动选择合适的处理流程。
+
+### 第五步：完整的开发工作流
+
+**启动开发**：
+
+> "启动项目"
+
+**代码提交**：
+
+> "提交代码"
+
+**代码评审**：
+
+> "提交代码评审"
+
+**停止开发**：
+
+> "停止项目"
+
+### 第六步：检测 Spec-代码对齐
 
 > "检查一下这个任务的 Spec 和代码是否对齐"
 > "看看模块规范是否过期了"
 > "全局覆盖率报告"
-
-也可以直接使用检测脚本：
-
-```bash
-scripts/specanchor-check.sh task .specanchor/tasks/auth/2026-03-13_sms-login.spec.md --base=main
-scripts/specanchor-check.sh module --all
-scripts/specanchor-check.sh global
-```
 
 ---
 
@@ -213,17 +274,17 @@ scripts/specanchor-check.sh global
 ```
 1. 拿到需求
    ↓
-2. "创建任务：<任务名>"                     创建 Task Spec
+2. SpecAnchor 自动评估复杂度
    ↓
-3. （AI 自动加载 Global + Module Spec）
+3. 简单需求：直接处理 | 复杂需求："创建任务：<任务名>"
    ↓
-4. 按 Task Spec 开发（默认走 SDD-RIPER-ONE 的 RIPER 流程）
+4. （AI 自动加载 Global + Module Spec）
    ↓
-5. 开发完成，检查 Module Spec 是否需要更新
+5. 按规范开发（复杂需求走 RIPER 流程）
    ↓
-6. "检查 Spec 和代码对齐"                   确认 Spec-代码对齐
+6. "提交代码" → "提交代码评审"
    ↓
-7. 提交 PR（Task Spec + Module Spec 变更 + 代码变更 一起提交）
+7. "检查 Spec 和代码对齐"
 ```
 
 **额外职责**：
@@ -232,15 +293,6 @@ scripts/specanchor-check.sh global
 - Review 外包提交的 Module Spec 变更
 - 定期"检查所有模块规范的新鲜度"
 - 重大重构前先更新相关 Module Spec
-
-**推荐频率**：
-
-| 操作                | 频率                   |
-| ----------------- | -------------------- |
-| 创建任务 Spec       | 每个任务                 |
-| 创建/更新模块规范    | 触碰新模块时 / Sprint 结束同步 |
-| 更新全局规范         | 季度级                  |
-| 全局覆盖率报告       | 每个 Sprint 结束         |
 
 ### 外部协作者
 
@@ -251,28 +303,27 @@ scripts/specanchor-check.sh global
 ```
 1. 工程师分配任务 + 指向相关 Module Spec
    ↓
-2. "创建任务：<任务名>"                     创建 Task Spec
+2. SpecAnchor 自动评估复杂度并选择流程
    ↓
 3. （AI 自动加载 Global + Module Spec → 代码生成受约束）
    ↓
-4. 按 Task Spec 开发
+4. 按规范开发
    ↓
-5. 如果发现 Module Spec 需要更新 → 在 PR 中一起提交变更
+5. 使用工作流命令提交和评审
    ↓
 6. 提交 PR（工程师 Review）
 ```
 
 **权限边界**：
 
-| 操作                | 允许？         |
-| ----------------- | ----------- |
-| 读取 Global Spec    | ✅           |
-| 修改 Global Spec    | ❌           |
+| 操作                  | 允许？          |
+| --------------------- | --------------- |
+| 读取 Global Spec      | ✅              |
+| 修改 Global Spec      | ❌              |
 | 创建/修改 Module Spec | 需工程师 Review |
-| 创建/执行 Task Spec   | ✅           |
-| 运行对齐检测          | ✅           |
-
-**关键提示**：外包拿到任务后，第一件事是确认相关模块是否有 Module Spec。如果没有，先请工程师创建，或自己说"帮我从代码推断模块规范"生成草稿后请工程师确认。
+| 创建/执行 Task Spec   | ✅              |
+| 使用工作流命令        | ✅              |
+| 运行对齐检测          | ✅              |
 
 ---
 
@@ -281,12 +332,13 @@ scripts/specanchor-check.sh global
 ### Phase 0：初始化 + Global Spec（Day 1-2）
 
 ```
-1. 安装 Skill（根据使用的 AI 工具选择安装方式，参考"安装"章节）
+1. 安装 Skill（根据使用的 AI 工具选择安装方式）
 
 2. 在 AI 对话中说：
    "帮我初始化 SpecAnchor，并扫描项目"
 
-3. 生成 Global Spec：
+3. 生成项目配置和 Global Spec：
+   "初始化项目信息"
    "帮我生成编码规范"
    "帮我生成架构约定"
 
@@ -295,7 +347,7 @@ scripts/specanchor-check.sh global
    git commit -m "spec: 初始化 SpecAnchor，生成 Global Spec"
 ```
 
-**产出**：`.specanchor/` 目录结构 + 2-4 个 Global Spec 文件。
+**产出**：`.specanchor/` 目录结构 + 3-5 个 Global Spec 文件（包含项目配置）。
 
 **耗时**：AI 生成 10 分钟，人工 Review 1-2 小时。
 
@@ -303,40 +355,42 @@ scripts/specanchor-check.sh global
 
 **"触碰即文档化"原则**——不主动为所有模块生成 Spec，在以下时机自然触发：
 
-| 触发条件     | 动作                            |
-| -------- | ----------------------------- |
-| 新建模块     | 创建 Module Spec 作为模块的第一个文件     |
+| 触发条件         | 动作                                     |
+| ---------------- | ---------------------------------------- |
+| 新建模块         | 创建 Module Spec 作为模块的第一个文件    |
 | 首次修改现有模块 | "从代码推断模块规范" 生成草稿 → 人工确认 |
-| 重大重构     | 强制先更新/创建 Module Spec          |
-| 新人接手模块   | 创建 Module Spec 作为知识传递         |
+| 重大重构         | 强制先更新/创建 Module Spec              |
+| 新人接手模块     | 创建 Module Spec 作为知识传递            |
 
-### Phase 2：Task Spec 融入日常（立即）
+### Phase 2：工作流集成（立即）
 
-从 Phase 0 完成的那一刻起，所有新任务都可以直接说"创建任务：修复订单列表分页 bug"。
+从 Phase 0 完成的那一刻起，就可以使用完整的工作流：
 
-即使相关模块还没有 Module Spec，Task Spec 仍然有效——它至少会加载 Global Spec 来约束代码生成。
+- "启动项目" - 自动启动开发服务器并打开浏览器
+- "提交代码" - 智能分析变更并生成 commit message
+- "提交代码评审" - 自动创建 CR 并执行质量检查
+- "停止项目" - 停止开发服务器
 
 ### 冷启动里程碑
 
-| 时间     | 预期覆盖率                            | 重点          |
-| ------ | -------------------------------- | ----------- |
-| 第 1 周  | Global Spec 100%, Module Spec 0% | 建立基线        |
+| 时间      | 预期覆盖率                       | 重点                   |
+| --------- | -------------------------------- | ---------------------- |
+| 第 1 周   | Global Spec 100%, Module Spec 0% | 建立基线和工作流       |
 | 第 1 个月 | Module Spec 10-20%               | 覆盖高频修改的核心模块 |
-| 第 3 个月 | Module Spec 40-60%               | 高频改动模块自然覆盖  |
-| 第 6 个月 | Module Spec 70%+                 | 接近"健康水位"    |
-
-可以随时说"全局覆盖率报告"查看当前覆盖率。
+| 第 3 个月 | Module Spec 40-60%               | 高频改动模块自然覆盖   |
+| 第 6 个月 | Module Spec 70%+                 | 接近"健康水位"         |
 
 ---
 
 ## 命令速查
 
-你可以用自然语言描述想做的事，Agent 会自动匹配对应操作。完整的意图映射和使用指南见 `references/commands-quickref.md`。
+你可以用自然语言描述想做的事，SpecAnchor 会自动评估复杂度并选择合适的处理流程。完整的意图映射和使用指南见 `references/commands-quickref.md`。
 
 ### 初始化
 
 - "帮我初始化规范管理"
 - "初始化 SpecAnchor 并扫描项目"
+- "初始化项目信息"
 
 ### Spec 管理
 
@@ -345,6 +399,13 @@ scripts/specanchor-check.sh global
 - "帮我创建 auth 模块的规范"
 - "从代码推断 auth 模块规范"
 - "创建任务：登录页增加验证码"
+
+### 工作流命令
+
+- "启动项目" / "运行项目" / "start" / "dev"
+- "停止项目" / "停止开发服务器" / "stop"
+- "提交代码" / "提交" / "push" / "commit"
+- "提交代码评审" / "评审代码" / "CR"
 
 ### 查看 & 检测
 
@@ -360,7 +421,7 @@ scripts/specanchor-check.sh global
 ## 与 SDD-RIPER-ONE 的关系
 
 ```
-SpecAnchor  = 图书馆（管理 Spec 的存放、索引、状态）
+SpecAnchor  = 图书馆（管理 Spec 的存放、索引、状态）+ 工作流引擎
 SDD-RIPER-ONE = 作家（按 RIPER 流程创作 Task Spec）
 ```
 
@@ -370,6 +431,27 @@ SDD-RIPER-ONE = 作家（按 RIPER 流程创作 Task Spec）
 - **默认内置**：SpecAnchor 内置 SDD-RIPER-ONE 模板作为默认写作协议，开箱即用
 
 同时使用时，SpecAnchor 会在 RIPER 各阶段自动注入行为（加载 Spec、校验一致性、检查是否需要更新 Module Spec）。
+
+---
+
+## 项目配置管理
+
+SpecAnchor 将项目配置作为 Global Spec 的一部分进行管理，不再使用独立的 metadata.md 文件：
+
+### 自动识别的项目信息
+
+- **项目名称**：从 `package.json` 的 `name` 字段获取
+- **项目启动命令**：从 `package.json` 的 `scripts` 中获取（优先级：start > dev > serve）
+- **项目本地运行地址**：根据项目类型推断（如 Vite 项目默认 http://localhost:5173）
+- **默认代码评审人**：从 `package.json` 的 `scripts.cr` 命令提取，或提示用户补充
+
+### 配置文件位置
+
+项目配置信息存储在 `.specanchor/global/project-setup.spec.md` 中，作为 Global Spec 的一部分：
+
+- 支持版本管理和规范对齐检测
+- 与其他 Global Spec 统一管理
+- 避免了配置文件分散的问题
 
 ---
 
@@ -403,64 +485,60 @@ SDD-RIPER-ONE = 作家（按 RIPER 流程创作 Task Spec）
 
 ```yaml
 specanchor:
-  version: "0.2.0"
-  project_name: "your-project"
+  version: '0.3.0'
+  project_name: 'your-project'
 
   paths:
-    global_specs: ".specanchor/global/"
-    module_specs: ".specanchor/modules/"
-    task_specs: ".specanchor/tasks/"
-    archive: ".specanchor/archive/"
-    module_index: ".specanchor/module-index.md"
-    project_codemap: ".specanchor/project-codemap.md"
+    global_specs: '.specanchor/global/'
+    module_specs: '.specanchor/modules/'
+    task_specs: '.specanchor/tasks/'
+    archive: '.specanchor/archive/'
+    module_index: '.specanchor/module-index.md'
+    project_codemap: '.specanchor/project-codemap.md'
 
   coverage:
-    scan_paths:                        # Module Spec 覆盖率扫描范围
-      - "src/modules/**"
-      - "src/components/**"
-    ignore_paths:                      # 排除路径
-      - "src/components/ui/**"
-      - "src/**/*.test.*"
+    scan_paths: # Module Spec 覆盖率扫描范围
+      - 'src/modules/**'
+      - 'src/components/**'
+    ignore_paths: # 排除路径
+      - 'src/components/ui/**'
+      - 'src/**/*.test.*'
 
-  check:                               # 对齐检测阈值
-    stale_days: 14                     # Spec 同步后超过 N 天且有新提交 → STALE
-    outdated_days: 30                  # Spec 同步后超过 N 天且有新提交 → OUTDATED
-    warn_recent_commits_days: 14       # 无 Spec 的模块在最近 N 天有提交 → 警告
-    task_base_branch: "main"           # 检测 task 对齐时的默认基准分支
+  check: # 对齐检测阈值
+    stale_days: 14 # Spec 同步后超过 N 天且有新提交 → STALE
+    outdated_days: 30 # Spec 同步后超过 N 天且有新提交 → OUTDATED
+    warn_recent_commits_days: 14 # 无 Spec 的模块在最近 N 天有提交 → 警告
+    task_base_branch: 'main' # 检测 task 对齐时的默认基准分支
+
+  complexity: # 需求复杂度评估
+    simple_threshold_hours: 2 # 简单需求工作量阈值（小时）
+    auto_task_spec: true # 复杂需求自动创建 Task Spec
 
   sync:
     auto_check_on_mr: true
     sprint_sync_reminder: true
 ```
 
-### check 配置说明
-
-| 字段 | 默认值 | 说明 |
-|------|--------|------|
-| `stale_days` | 14 | Module Spec 上次同步后超过此天数，且模块代码有新提交 → STALE |
-| `outdated_days` | 30 | Module Spec 上次同步后超过此天数，且模块代码有新提交 → OUTDATED（比 STALE 更严重） |
-| `warn_recent_commits_days` | 14 | 无 Spec 覆盖的模块在最近此天数内有代码提交 → 发出警告 |
-| `task_base_branch` | main | 检测 task 对齐时的默认 git 基准分支，命令行 `--base=` 可覆盖 |
-
-所有阈值均可在 `config.yaml` 中修改，脚本和 Agent 会自动读取。命令行参数（如 `--base=develop`）优先于配置文件。
-
 ---
 
 ## 设计原则
 
 1. **Spec 是因，代码是果**——先写 Spec 再写代码（正向流）；代码变了检查 Spec 是否过期（逆向流）
-2. **不追求 100% 覆盖**——让最重要的模块先有 Spec，渐进式覆盖
-3. **不绑定写作工具**——SpecAnchor 只管"组织"（放哪、格式、状态），不管"写作"（默认 SDD-RIPER-ONE，可替换）
-4. **Global Spec ≤ 200 行**——这是 AI 上下文的物理约束，强制精简
-5. **Module Spec 集中管理**——存放在 `.specanchor/modules/`，通过 `module-index.md` 索引到真实模块路径
-6. **全量更新 + git 管理版本**——Module Spec 更新时全文重写，通过 `git diff` 和 Code Review 管理变更
-7. **平台无关**——纯文本 Skill，支持 Cursor、Claude Code、Cline 及任何可读取文件的 AI 工具
+2. **智能复杂度评估**——自动评估需求复杂度，选择合适的处理流程
+3. **不追求 100% 覆盖**——让最重要的模块先有 Spec，渐进式覆盖
+4. **不绑定写作工具**——SpecAnchor 只管"组织"（放哪、格式、状态），不管"写作"（默认 SDD-RIPER-ONE，可替换）
+5. **Global Spec ≤ 200 行**——这是 AI 上下文的物理约束，强制精简
+6. **Module Spec 集中管理**——存放在 `.specanchor/modules/`，通过 `module-index.md` 索引到真实模块路径
+7. **全量更新 + git 管理版本**——Module Spec 更新时全文重写，通过 `git diff` 和 Code Review 管理变更
+8. **平台无关**——纯文本 Skill，支持 Cursor、Claude Code、Cline 及任何可读取文件的 AI 工具
+9. **工作流集成**——从需求评估到代码评审的完整开发流程支持
 
 ---
 
 ## 流程图
 
 Skill 调用全链路流程图见 [FLOWCHART.md](FLOWCHART.md)，包含 6 张 Mermaid 图：
+
 1. Skill 启动与加载链路
 2. 用户意图识别与命令分发
 3. 首次使用场景链路
