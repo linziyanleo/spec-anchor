@@ -2,9 +2,14 @@
 # SpecAnchor Check - Spec-Commit 对齐检测
 #
 # Usage:
-#   specanchor-check.sh task <spec-file> [--base=main] # 指定基准分支
-#   specanchor-check.sh module <spec-file|--all> [--stale-days=30] # 指定过期天数
-#   specanchor-check.sh global [--config=.specanchor/config.yaml] # 指定配置文件
+#   specanchor-check.sh task <spec-file> [--base=<branch>]   # 基准分支（默认从 config.yaml 读取）
+#   specanchor-check.sh module <spec-file|--all>             # 阈值从 config.yaml 读取
+#   specanchor-check.sh global [--config=.specanchor/config.yaml]
+#
+# 阈值配置在 .specanchor/config.yaml 的 check 节点下：
+#   stale_days (同步后超过N天且有新提交→STALE)
+#   outdated_days (同步后超过N天且有新提交→OUTDATED)
+#   warn_recent_commits_days, task_base_branch
 
 set -euo pipefail
 
@@ -53,6 +58,28 @@ parse_key_files() {
 path_to_module_id() {
   local path="$1"
   echo "$path" | tr '/' '-'
+}
+
+parse_yaml_field() {
+  local file="$1" field="$2" default="$3"
+  if [[ -f "$file" ]]; then
+    local val
+    val=$(grep "^    ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^    ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+    if [[ -z "$val" ]]; then
+      val=$(grep "^  ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+    fi
+    [[ -n "$val" ]] && echo "$val" || echo "$default"
+  else
+    echo "$default"
+  fi
+}
+
+load_check_config() {
+  local config="${1:-.specanchor/config.yaml}"
+  CFG_STALE_DAYS=$(parse_yaml_field "$config" "stale_days" "30")
+  CFG_OUTDATED_DAYS=$(parse_yaml_field "$config" "outdated_days" "90")
+  CFG_WARN_RECENT_DAYS=$(parse_yaml_field "$config" "warn_recent_commits_days" "30")
+  CFG_TASK_BASE_BRANCH=$(parse_yaml_field "$config" "task_base_branch" "main")
 }
 
 # ─── Task 级检测 ───
@@ -166,7 +193,6 @@ check_task() {
 
 check_single_module() {
   local spec_file="$1"
-  local stale_days="$2"
 
   [[ -f "$spec_file" ]] || return
 
@@ -196,12 +222,15 @@ check_single_module() {
     local now_epoch
     now_epoch=$(date "+%s")
     local days_since=$(( (now_epoch - synced_epoch) / 86400 ))
-    if [[ $days_since -gt $stale_days ]]; then
+    if [[ $days_since -gt $CFG_OUTDATED_DAYS ]]; then
       status_icon="${RED}!${RESET}"
-      status_label="OUTDATED"
+      status_label="OUTDATED (${days_since}d)"
+    elif [[ $days_since -gt $CFG_STALE_DAYS ]]; then
+      status_icon="${YELLOW}~${RESET}"
+      status_label="STALE (${days_since}d)"
     else
       status_icon="${YELLOW}~${RESET}"
-      status_label="STALE"
+      status_label="DRIFTED"
     fi
   else
     status_icon="${YELLOW}~${RESET}"
@@ -210,74 +239,55 @@ check_single_module() {
 
   printf "  %b %-18s %-25s synced %-12s %3d commits since   %s\n" \
     "$status_icon" "${module_name}" "${module_path}" "${last_synced:-unknown}" "$commits_since" "$status_label"
+  echo -e "    ${DIM}spec: ${spec_file}${RESET}"
 }
 
 check_module() {
   local target="$1"
-  local stale_days="${2:-30}"
 
   check_git
+  load_check_config
 
   echo -e "${BOLD}SpecAnchor Module Freshness${RESET}"
+  echo -e "  ${DIM}config: stale_days=${CFG_STALE_DAYS}, outdated_days=${CFG_OUTDATED_DAYS}${RESET}"
 
   if [[ "$target" == "--all" ]]; then
     local modules_dir=".specanchor/modules"
     [[ -d "$modules_dir" ]] || die "Module Spec 目录不存在: $modules_dir"
 
-    local config=".specanchor/config.yaml"
-
-    local -a scan_paths=()
-    if [[ -f "$config" ]]; then
-      while IFS= read -r p; do
-        [[ -n "$p" ]] && scan_paths+=("$p")
-      done < <(sed -n '/scan_paths:/,/^  [a-z]/p' "$config" | grep '^ *- ' | sed 's/^ *- *"\{0,1\}//;s/"\{0,1\} *$//')
-    fi
-
     echo -e "  modules dir: ${CYAN}${modules_dir}/${RESET}"
     echo ""
 
-    local total=0 covered=0 fresh=0
+    local covered=0 fresh=0
 
-    for sp in "${scan_paths[@]}"; do
-      local base_dir="${sp%%/\*\*}"
-      [[ -d "$base_dir" ]] || continue
-      for dir in "$base_dir"/*/; do
-        [[ -d "$dir" ]] || continue
-        ((total++))
-
-        local dir_clean="${dir%/}"
-        local module_id
-        module_id=$(path_to_module_id "$dir_clean")
-        local spec_file="${modules_dir}/${module_id}.spec.md"
-
-        if [[ -f "$spec_file" ]]; then
-          ((covered++))
-          check_single_module "$spec_file" "$stale_days"
-          local ls
-          ls=$(parse_frontmatter_field "$spec_file" "last_synced")
-          if [[ -n "$ls" ]]; then
-            local c
-            c=$(git log --oneline --since="$ls" -- "$dir" 2>/dev/null | wc -l | tr -d ' ')
-            [[ $c -eq 0 ]] && ((fresh++))
-          fi
-        else
-          local recent
-          recent=$(git log --oneline -n 20 --since="30 days ago" -- "$dir" 2>/dev/null | wc -l | tr -d ' ')
-          printf "  ${RED}✗${RESET} %-18s %-25s no Module Spec          %3d recent commits  NO SPEC\n" \
-            "$(basename "$dir_clean")/" "$dir_clean" "$recent"
-        fi
-      done
+    for spec_file in "$modules_dir"/*.spec.md; do
+      [[ -f "$spec_file" ]] || continue
+      ((covered++))
+      check_single_module "$spec_file"
+      local ls
+      ls=$(parse_frontmatter_field "$spec_file" "last_synced")
+      local mp
+      mp=$(parse_frontmatter_field "$spec_file" "module_path")
+      if [[ -n "$ls" ]] && [[ -n "$mp" ]] && [[ -d "$mp" ]]; then
+        local c
+        c=$(git log --oneline --since="$ls" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
+        [[ $c -eq 0 ]] && ((fresh++))
+      fi
     done
 
+    [[ $covered -eq 0 ]] && echo -e "  ${DIM}(no Module Spec files found)${RESET}"
+
     echo ""
-    echo -e "Coverage: ${covered}/${total} ($(( total > 0 ? covered * 100 / total : 0 ))%)   Fresh: ${fresh}/${covered} ($(( covered > 0 ? fresh * 100 / covered : 0 ))%)"
+    local fresh_pct=0
+    [[ $covered -gt 0 ]] && fresh_pct=$((fresh * 100 / covered))
+    echo -e "Covered: ${covered} module(s)   Fresh: ${fresh}/${covered} (${fresh_pct}%)"
   else
     [[ -f "$target" ]] || die "Spec 文件不存在: $target"
     local module_path
     module_path=$(parse_frontmatter_field "$target" "module_path")
     echo -e "  scope: ${CYAN}${module_path:-unknown}${RESET}"
     echo ""
-    check_single_module "$target" "$stale_days"
+    check_single_module "$target"
   fi
 }
 
@@ -287,8 +297,10 @@ check_global() {
   local config="${1:-.specanchor/config.yaml}"
 
   [[ -f "$config" ]] || die "配置文件不存在: $config"
+  load_check_config "$config"
 
   echo -e "${BOLD}SpecAnchor Coverage Report${RESET}"
+  echo -e "  ${DIM}config: stale_days=${CFG_STALE_DAYS}, outdated_days=${CFG_OUTDATED_DAYS}, warn_recent_days=${CFG_WARN_RECENT_DAYS}${RESET}"
   echo ""
 
   local global_dir=".specanchor/global"
@@ -310,69 +322,46 @@ check_global() {
 
   local modules_dir=".specanchor/modules"
 
-  local -a scan_paths=()
-  while IFS= read -r p; do
-    [[ -n "$p" ]] && scan_paths+=("$p")
-  done < <(sed -n '/scan_paths:/,/^  [a-z]/p' "$config" | grep '^ *- ' | sed 's/^ *- *"\{0,1\}//;s/"\{0,1\} *$//')
+  local covered=0
+  if [[ -d "$modules_dir" ]]; then
+    covered=$(find "$modules_dir" -name "*.spec.md" -maxdepth 1 2>/dev/null | wc -l | tr -d ' ')
+  fi
 
-  local total=0 covered=0
-  for sp in "${scan_paths[@]}"; do
-    local base_dir="${sp%%/\*\*}"
-    [[ -d "$base_dir" ]] || continue
-    for dir in "$base_dir"/*/; do
-      [[ -d "$dir" ]] || continue
-      ((total++))
-
-      local dir_clean="${dir%/}"
-      local module_id
-      module_id=$(path_to_module_id "$dir_clean")
-      [[ -f "${modules_dir}/${module_id}.spec.md" ]] && ((covered++))
-    done
-  done
-
-  echo -e "Module Specs:  ${covered}/${total} modules covered ($(( total > 0 ? covered * 100 / total : 0 ))%)"
+  echo -e "Module Specs:  ${covered} module(s) covered"
   echo -e "Task Specs:    ${active_tasks} active, ${archived_tasks} archived"
 
   echo ""
   echo -e "Warnings:"
   local has_warnings=0
 
-  for sp in "${scan_paths[@]}"; do
-    local base_dir="${sp%%/\*\*}"
-    [[ -d "$base_dir" ]] || continue
-    for dir in "$base_dir"/*/; do
-      [[ -d "$dir" ]] || continue
-      local dir_clean="${dir%/}"
+  if [[ -d "$modules_dir" ]]; then
+    for spec_file in "$modules_dir"/*.spec.md; do
+      [[ -f "$spec_file" ]] || continue
+      local mp
+      mp=$(parse_frontmatter_field "$spec_file" "module_path")
+      [[ -z "$mp" ]] && continue
       local mod_name
-      mod_name=$(basename "$dir_clean")
-      local module_id
-      module_id=$(path_to_module_id "$dir_clean")
-      local spec_file="${modules_dir}/${module_id}.spec.md"
+      mod_name=$(parse_frontmatter_field "$spec_file" "module_name")
+      [[ -z "$mod_name" ]] && mod_name=$(basename "$mp")
 
-      if [[ ! -f "$spec_file" ]]; then
-        local recent
-        recent=$(git log --oneline --since="30 days ago" -- "$dir" 2>/dev/null | wc -l | tr -d ' ')
-        if [[ $recent -gt 0 ]]; then
-          echo -e "  ${RED}✗${RESET} ${mod_name}/  no spec (${recent} commits in last 30 days)"
+      local ls
+      ls=$(parse_frontmatter_field "$spec_file" "last_synced")
+      if [[ -n "$ls" ]] && [[ -d "$mp" ]]; then
+        local synced_epoch now_epoch days_since commits_since
+        synced_epoch=$(date -j -f "%Y-%m-%d" "$ls" "+%s" 2>/dev/null || date -d "$ls" "+%s" 2>/dev/null || echo 0)
+        now_epoch=$(date "+%s")
+        days_since=$(( (now_epoch - synced_epoch) / 86400 ))
+        commits_since=$(git log --oneline --since="$ls" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
+        if [[ $days_since -gt $CFG_OUTDATED_DAYS ]] && [[ $commits_since -gt 0 ]]; then
+          echo -e "  ${RED}!${RESET} ${mod_name} (${mp}) OUTDATED (${days_since} days, ${commits_since} commits)"
           has_warnings=1
-        fi
-      else
-        local ls
-        ls=$(parse_frontmatter_field "$spec_file" "last_synced")
-        if [[ -n "$ls" ]]; then
-          local synced_epoch now_epoch days_since commits_since
-          synced_epoch=$(date -j -f "%Y-%m-%d" "$ls" "+%s" 2>/dev/null || date -d "$ls" "+%s" 2>/dev/null || echo 0)
-          now_epoch=$(date "+%s")
-          days_since=$(( (now_epoch - synced_epoch) / 86400 ))
-          commits_since=$(git log --oneline --since="$ls" -- "$dir" 2>/dev/null | wc -l | tr -d ' ')
-          if [[ $days_since -gt 30 ]] && [[ $commits_since -gt 0 ]]; then
-            echo -e "  ${YELLOW}!${RESET} ${mod_name}/ spec outdated (${days_since} days, ${commits_since} commits)"
-            has_warnings=1
-          fi
+        elif [[ $days_since -gt $CFG_STALE_DAYS ]] && [[ $commits_since -gt 0 ]]; then
+          echo -e "  ${YELLOW}~${RESET} ${mod_name} (${mp}) STALE (${days_since} days, ${commits_since} commits)"
+          has_warnings=1
         fi
       fi
     done
-  done
+  fi
 
   [[ $has_warnings -eq 0 ]] && echo -e "  ${GREEN}(none)${RESET}"
 }
@@ -383,15 +372,20 @@ usage() {
   echo "SpecAnchor Check - Spec-Commit 对齐检测"
   echo ""
   echo "Usage:"
-  echo "  specanchor-check.sh task <spec-file> [--base=main]"
-  echo "  specanchor-check.sh module <spec-file|--all> [--stale-days=30]"
+  echo "  specanchor-check.sh task <spec-file> [--base=<branch>]"
+  echo "  specanchor-check.sh module <spec-file|--all>"
   echo "  specanchor-check.sh global [--config=.specanchor/config.yaml]"
   echo ""
   echo "Module Spec 存放位置: .specanchor/modules/<module-id>.spec.md"
   echo "Module ID 生成规则: 路径中的 / 替换为 - (如 src/modules/auth → src-modules-auth)"
   echo ""
+  echo "阈值配置: .specanchor/config.yaml → check 节点"
+  echo "  stale_days (默认 30), outdated_days (默认 90),"
+  echo "  warn_recent_commits_days (默认 30), task_base_branch (默认 main)"
+  echo ""
   echo "Examples:"
   echo "  specanchor-check.sh task .specanchor/tasks/auth/2026-03-13_sms-login.spec.md"
+  echo "  specanchor-check.sh task .specanchor/tasks/auth/spec.md --base=develop"
   echo "  specanchor-check.sh module --all"
   echo "  specanchor-check.sh module .specanchor/modules/src-modules-auth.spec.md"
   echo "  specanchor-check.sh global"
@@ -409,7 +403,8 @@ main() {
       [[ $# -lt 1 ]] && die "task 级需要指定 spec 文件路径"
       local spec_file="$1"
       shift
-      local base="main"
+      load_check_config
+      local base="$CFG_TASK_BASE_BRANCH"
       for arg in "$@"; do
         case "$arg" in
           --base=*) base="${arg#--base=}" ;;
@@ -421,13 +416,7 @@ main() {
       [[ $# -lt 1 ]] && die "module 级需要指定 spec 文件路径或 --all"
       local target="$1"
       shift
-      local stale_days=30
-      for arg in "$@"; do
-        case "$arg" in
-          --stale-days=*) stale_days="${arg#--stale-days=}" ;;
-        esac
-      done
-      check_module "$target" "$stale_days"
+      check_module "$target"
       ;;
     global)
       local config=".specanchor/config.yaml"

@@ -444,10 +444,28 @@ specanchor:
     ignore_paths:                      # 排除路径
       - "src/components/ui/**"
       - "src/**/*.test.*"
-    thresholds:
-      module_spec_coverage: 60         # 目标覆盖率 %
-      stale_days: 30                   # 超过 N 天未同步标记过期
+
+  check:                               # SA CHECK 检测阈值
+    stale_days: 30                     # Spec 同步后超过 N 天且有新提交 → STALE
+    outdated_days: 90                  # Spec 同步后超过 N 天且有新提交 → OUTDATED
+    warn_recent_commits_days: 30       # 无 Spec 的模块在最近 N 天有提交 → 警告
+    task_base_branch: "main"           # SA CHECK task 的默认基准分支
+
+  sync:
+    auto_check_on_mr: true
+    sprint_sync_reminder: true
 ```
+
+### check 配置说明
+
+| 字段 | 默认值 | 说明 |
+|------|--------|------|
+| `stale_days` | 30 | Module Spec 上次同步后超过此天数，且模块代码有新提交 → STALE |
+| `outdated_days` | 90 | Module Spec 上次同步后超过此天数，且模块代码有新提交 → OUTDATED（比 STALE 更严重） |
+| `warn_recent_commits_days` | 30 | 无 Spec 覆盖的模块在最近此天数内有代码提交 → 发出警告 |
+| `task_base_branch` | main | `SA CHECK task` 的默认 git 基准分支，命令行 `--base=` 可覆盖 |
+
+所有阈值均可在 `config.yaml` 中修改，脚本和 Agent 会自动读取。命令行参数（如 `--base=develop`）优先于配置文件。
 
 ---
 
