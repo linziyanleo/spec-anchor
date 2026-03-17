@@ -6,7 +6,7 @@
 
 ## 参数
 
-- `type`（必须，从用户意图推断）: `coding-standards` / `architecture` / `design-system` / `api-conventions` / 自定义名称
+- `type`（必须，从用户意图推断）: `coding-standards` / `architecture` / `design-system` / `project-setup` / `api-conventions` / 自定义名称
 - `scan`（可选）: 指定扫描路径，不指定则自动推断
 
 ## 执行
@@ -15,6 +15,7 @@
    - `coding-standards`: `package.json` / `tsconfig.json` / `.eslintrc` / `.prettierrc`，采样 5-10 个代码文件
    - `architecture`: 顶层目录结构、路由配置、中间件层
    - `design-system`: CSS/Tailwind 配置、组件库、主题文件
+   - `project-setup`: `package.json`（scripts 字段）、README、`.env.example`、构建配置
    - `api-conventions`: API 路由定义、请求/响应类型、中间件
 2. 从扫描结果推断规范内容。使用 `references/global-spec-template.md` 中对应类型的模板
 3. 已有文件 → 全量重生成，version minor +1，updated = 今天

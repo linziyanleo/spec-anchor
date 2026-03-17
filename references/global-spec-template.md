@@ -98,6 +98,43 @@ specanchor:
 - 圆角/阴影/边框规则：...
 ```
 
+## project-setup.spec.md
+
+```markdown
+---
+specanchor:
+  level: global
+  type: project-setup
+  version: "1.0.0"
+  author: "<git_user>"
+  reviewers: []
+  last_synced: "<today>"
+  last_change: "<最近一次变更的简要说明>"
+  applies_to: "**/*"
+---
+
+# 项目启动指南
+
+## 基本信息
+- 项目名称：...
+- 本地运行地址：...
+- 默认代码评审人：...
+
+## 环境要求
+- Node.js 版本：...
+- 包管理器：npm / pnpm / yarn
+- 其他依赖：...
+
+## 启动命令
+- 开发模式：`npm run dev`
+- 构建：`npm run build`
+- 测试：`npm run test`
+
+## 开发约定
+- 分支策略：...
+- PR 流程：...
+```
+
 ## api-conventions.spec.md
 
 ```markdown
