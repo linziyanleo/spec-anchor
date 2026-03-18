@@ -25,6 +25,7 @@ specanchor:
     - ".specanchor/modules/<module-id>.spec.md"
   related_global:
     - ".specanchor/global/coding-standards.spec.md"
+  flow_type: "standard"               # standard (📋 标准流程) | light (⚡ 轻量流程)
   sdd_phase: "RESEARCH"              # RESEARCH | INNOVATE | PLAN | EXECUTE | REVIEW | DONE
   branch: "<branch_name>"
 ---
