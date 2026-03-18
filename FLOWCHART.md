@@ -75,16 +75,14 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["'创建任务：登录页增加验证码'"] -->|specanchor_task| B{关联模块有 Module Spec?}
-    B -->|有| C[On-Demand 加载 Module Spec]
-    B -->|无| D["⚠️ 提醒: 建议先创建模块规范"]
-    D --> D2[用户决定是否先创建 Module Spec]
-    D2 -->|创建| M["specanchor_module<br/>创建 Module Spec"]
-    M --> C
-    D2 -->|跳过| C2[仅加载 Global Spec]
+    A["'创建任务：登录页增加验证码'"] -->|specanchor_task| B[扫描 modules/ 的 module_path<br/>判断覆盖度]
+    B --> B2{任务路径被 Module Spec 覆盖?}
+    B2 -->|已覆盖| C[On-Demand 加载 Module Spec]
+    B2 -->|未覆盖| D["自动执行 specanchor_infer<br/>生成 Module Spec 草稿"]
+    D --> D2["告知用户: 草稿已生成（status=draft）"]
+    D2 --> C
 
     C --> E[创建 Task Spec]
-    C2 --> E
     E --> F{使用 SDD-RIPER-ONE?}
     F -->|是 默认| G[进入 RIPER 流程]
     F -->|否 简化| H[使用简化模板]
