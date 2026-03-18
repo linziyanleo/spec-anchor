@@ -6,10 +6,11 @@
 
 ## 参数
 
-- `level`（从用户意图推断）: `task` / `module` / `global`
+- `level`（从用户意图推断）: `task` / `module` / `global` / `coverage`
 - `spec`（task/module 级）: Spec 文件路径，或全部检查
 - `base`（task 级可选）: git 基准分支，默认从 config.yaml 读取
 - `stale-days`（module 级可选）: 过期天数阈值，默认从 config.yaml 读取（通常 14）
+- `files`（coverage 级）: 要检查覆盖度的文件路径列表
 
 ## 执行
 
@@ -32,3 +33,8 @@
 **Global 级** — 查看整体覆盖率：
 - "全局覆盖率报告"
 - "看看哪些模块还没有规范"
+
+**Coverage 级** — 检查文件是否被 Module Spec 覆盖（`specanchor_task` 创建时自动调用）：
+- `scripts/specanchor-check.sh coverage <file1> [file2] ...`
+- 输出每个文件的覆盖状态和覆盖它的 Module Spec
+- 列出未覆盖的模块目录，建议执行 `specanchor_infer`

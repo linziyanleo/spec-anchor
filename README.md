@@ -442,19 +442,30 @@ SDD-RIPER-ONE = 作家（按 RIPER 流程创作 Task Spec）
 `scripts/specanchor-check.sh` 提供三个级别的 Spec-代码对齐检测，输出类似 `git status` 的终端样式：
 
 ```bash
-# Task 级
+# Task 级 — 检查 PR 改动和 Spec 计划是否一致
 ./scripts/specanchor-check.sh task .specanchor/tasks/auth/2026-03-13_sms-login.spec.md
 
-# 输出示例：
-# SpecAnchor Task Check
-#   spec: .specanchor/tasks/auth/2026-03-13_sms-login.spec.md
-#   branch: feat/sms-login → main
+# Module 级 — 检查所有模块规范新鲜度
+./scripts/specanchor-check.sh module --all
+
+# Global 级 — 整体覆盖率报告
+./scripts/specanchor-check.sh global
+
+# Coverage 级 — 检查文件是否被 Module Spec 覆盖（创建任务时自动调用）
+./scripts/specanchor-check.sh coverage src/app/bloom/index.tsx src/utils/helper.ts
+
+# Coverage 输出示例：
+# SpecAnchor Coverage Check
+#   module specs loaded: 3
 #
-# Planned files:
-#   ✓ src/modules/auth/auth.service.ts
-#   ✗ src/components/LoginForm/LoginForm.tsx       (not in commit)
+#   ✓ src/app/bloom/index.tsx
+#     covered by: Bloom 模块 (.specanchor/modules/src-app-bloom.spec.md)
+#   ✗ src/utils/helper.ts  (no module spec)
 #
-# Plan coverage: 1/2 (50%)
+# Coverage: 1/2 files (50%)
+#
+# Uncovered modules (need specanchor_infer):
+#   → src/utils
 ```
 
 依赖：bash 4.0+、git。无需 Python/Node.js。

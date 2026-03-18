@@ -366,6 +366,84 @@ check_global() {
   [[ $has_warnings -eq 0 ]] && echo -e "  ${GREEN}(none)${RESET}"
 }
 
+# ─── Coverage 检测 ───
+
+check_coverage() {
+  local modules_dir=".specanchor/modules"
+  [[ -d "$modules_dir" ]] || die "Module Spec 目录不存在: $modules_dir"
+
+  local -a module_paths=()
+  local -a module_specs=()
+  local -a module_names=()
+
+  for spec_file in "$modules_dir"/*.spec.md; do
+    [[ -f "$spec_file" ]] || continue
+    local mp
+    mp=$(parse_frontmatter_field "$spec_file" "module_path")
+    [[ -z "$mp" ]] && continue
+    local mn
+    mn=$(parse_frontmatter_field "$spec_file" "module_name")
+    [[ -z "$mn" ]] && mn=$(basename "$mp")
+    module_paths+=("$mp")
+    module_specs+=("$spec_file")
+    module_names+=("$mn")
+  done
+
+  echo -e "${BOLD}SpecAnchor Coverage Check${RESET}"
+  echo -e "  ${DIM}module specs loaded: ${#module_paths[@]}${RESET}"
+  echo ""
+
+  local covered=0 uncovered=0
+  local -a uncovered_modules=()
+
+  for filepath in "$@"; do
+    local best_match="" best_spec="" best_name="" best_len=0
+
+    for i in "${!module_paths[@]}"; do
+      local mp="${module_paths[$i]}"
+      if [[ "$filepath" == "$mp"* ]] || [[ "$filepath" == "$mp/"* ]]; then
+        local mp_len=${#mp}
+        if [[ $mp_len -gt $best_len ]]; then
+          best_match="$mp"
+          best_spec="${module_specs[$i]}"
+          best_name="${module_names[$i]}"
+          best_len=$mp_len
+        fi
+      fi
+    done
+
+    if [[ -n "$best_match" ]]; then
+      echo -e "  ${GREEN}✓${RESET} ${filepath}"
+      echo -e "    ${DIM}covered by: ${best_name} (${best_spec})${RESET}"
+      ((covered++))
+    else
+      echo -e "  ${RED}✗${RESET} ${filepath}  ${DIM}(no module spec)${RESET}"
+      ((uncovered++))
+      local dir_path
+      dir_path=$(dirname "$filepath")
+      local already_listed=0
+      for um in "${uncovered_modules[@]+"${uncovered_modules[@]}"}"; do
+        [[ "$um" == "$dir_path" ]] && already_listed=1 && break
+      done
+      [[ $already_listed -eq 0 ]] && uncovered_modules+=("$dir_path")
+    fi
+  done
+
+  echo ""
+  local total=$((covered + uncovered))
+  local pct=0
+  [[ $total -gt 0 ]] && pct=$((covered * 100 / total))
+  echo -e "Coverage: ${covered}/${total} files (${pct}%)"
+
+  if [[ ${#uncovered_modules[@]} -gt 0 ]]; then
+    echo ""
+    echo -e "Uncovered modules (need specanchor_infer):"
+    for um in "${uncovered_modules[@]}"; do
+      echo -e "  ${YELLOW}→${RESET} ${um}"
+    done
+  fi
+}
+
 # ─── CLI 入口 ───
 
 usage() {
@@ -375,6 +453,7 @@ usage() {
   echo "  specanchor-check.sh task <spec-file> [--base=<branch>]"
   echo "  specanchor-check.sh module <spec-file|--all>"
   echo "  specanchor-check.sh global [--config=.specanchor/config.yaml]"
+  echo "  specanchor-check.sh coverage <file1> [file2] ...         # 检查文件是否被 Module Spec 覆盖"
   echo ""
   echo "Module Spec 存放位置: .specanchor/modules/<module-id>.spec.md"
   echo "Module ID 生成规则: 路径中的 / 替换为 - (如 src/modules/auth → src-modules-auth)"
@@ -389,6 +468,7 @@ usage() {
   echo "  specanchor-check.sh module --all"
   echo "  specanchor-check.sh module .specanchor/modules/src-modules-auth.spec.md"
   echo "  specanchor-check.sh global"
+  echo "  specanchor-check.sh coverage src/app/bloom/index.tsx src/utils/helper.ts"
   exit 1
 }
 
@@ -427,8 +507,12 @@ main() {
       done
       check_global "$config"
       ;;
+    coverage)
+      [[ $# -lt 1 ]] && die "coverage 级需要指定至少一个文件路径"
+      check_coverage "$@"
+      ;;
     *)
-      die "未知检测级别: $level (可选: task | module | global)"
+      die "未知检测级别: $level (可选: task | module | global | coverage)"
       ;;
   esac
 }
