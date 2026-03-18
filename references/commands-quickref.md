@@ -2,22 +2,24 @@
 
 用户用自然语言描述意图时，根据下表匹配到对应命令，然后读取该命令的详细定义文件执行。
 
+所有详细定义路径相对于 Skill 根目录（即主 SKILL.md 所在目录）。
+
 SpecAnchor 不使用 CLI 风格的命令前缀，所有交互通过自然语言完成。
 
 ## 意图映射表
 
-| 用户意图                                          | 执行动作            | 详细定义             |
-| ------------------------------------------------- | ------------------- | -------------------- |
-| 初始化规范 / 开始用 SpecAnchor / 创建 .specanchor | `specanchor_init`   | `commands/init.md`   |
-| 生成编码规范 / 推断架构约定 / 全局规范            | `specanchor_global` | `commands/global.md` |
-| 初始化项目信息 / 设置项目信息                     | `specanchor_global` | `commands/global.md`（project-setup 类型） |
-| 创建模块规范 / 更新模块 Spec / 同步模块规范       | `specanchor_module` | `commands/module.md` |
-| 从代码推断模块规范 / 自动生成 Spec 草稿           | `specanchor_infer`  | `commands/infer.md`  |
-| 创建任务 / 新建任务 Spec / 开始新任务             | `specanchor_task`   | `commands/task.md`   |
-| 加载规范 / 读取 Spec 到上下文                     | `specanchor_load`   | `commands/load.md`   |
-| 查看规范状态 / 覆盖率 / 哪些 Spec 加载了          | `specanchor_status` | `commands/status.md` |
-| 检测 Spec-代码对齐 / 检查过期 / 覆盖率报告        | `specanchor_check`  | `commands/check.md`  |
-| 更新模块索引 / 刷新 module-index                  | `specanchor_index`  | `commands/index.md`  |
+| 用户意图                                          | 执行动作            | 详细定义                          |
+| ------------------------------------------------- | ------------------- | --------------------------------- |
+| 初始化规范 / 开始用 SpecAnchor / 创建 .specanchor | `specanchor_init`   | `references/commands/init.md`     |
+| 生成编码规范 / 推断架构约定 / 全局规范            | `specanchor_global` | `references/commands/global.md`   |
+| 初始化项目信息 / 设置项目信息                     | `specanchor_global` | `references/commands/global.md`（project-setup 类型） |
+| 创建模块规范 / 更新模块 Spec / 同步模块规范       | `specanchor_module` | `references/commands/module.md`   |
+| 从代码推断模块规范 / 自动生成 Spec 草稿           | `specanchor_infer`  | `references/commands/infer.md`    |
+| 创建任务 / 新建任务 Spec / 开始新任务             | `specanchor_task`   | `references/commands/task.md`     |
+| 加载规范 / 读取 Spec 到上下文                     | `specanchor_load`   | `references/commands/load.md`     |
+| 查看规范状态 / 覆盖率 / 哪些 Spec 加载了          | `specanchor_status` | `references/commands/status.md`   |
+| 检测 Spec-代码对齐 / 检查过期 / 覆盖率报告        | `specanchor_check`  | `references/commands/check.md`    |
+| 更新模块索引 / 刷新 module-index                  | `specanchor_index`  | `references/commands/index.md`    |
 
 ### 工作流命令
 
