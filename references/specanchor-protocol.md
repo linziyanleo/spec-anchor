@@ -40,7 +40,8 @@ references/commands/
 ├── load.md       ← specanchor_load: 手动加载 Spec
 ├── status.md     ← specanchor_status: 查看状态和覆盖率
 ├── check.md      ← specanchor_check: Spec-Commit 对齐检测
-└── index.md      ← specanchor_index: 更新 Module Spec 索引
+├── index.md      ← specanchor_index: 更新 Module Spec 索引
+└── import.md     ← specanchor_import: 从外部 SDD 框架导入配置
 ```
 
 自然语言意图映射：见 `references/commands-quickref.md`。
@@ -76,9 +77,37 @@ config.yaml → Global Specs → Module Spec(s)（via module-index.md） → Pro
 
 ## §4 与 SDD-RIPER-ONE 集成协议
 
-### 4.1 默认写作协议
+### 4.1 写作协议选择（Schema 系统）
 
-SpecAnchor 内置 SDD-RIPER-ONE 作为默认写作协议。创建任务时默认使用 SDD-RIPER-ONE 格式的 Task Spec 模板。
+SpecAnchor 通过声明式 Schema 系统管理写作协议。每个 Schema 定义了 Artifact DAG（依赖关系图）、模板和流程哲学。
+
+**Schema 查找顺序**（首个命中即使用）：
+
+1. `.specanchor/schemas/<name>/schema.yaml` — 项目自定义 Schema
+2. `references/schemas/<name>/schema.yaml` — Skill 内置 Schema
+3. `references/task-spec-template.md` — 无 Schema 配置时的 fallback
+
+**读取 config.yaml 中的 `writing_protocol.schema` 字段**：
+
+- 有值 → 按查找顺序定位 Schema，读取 `schema.yaml` + `template.md`
+- 无值或未配置 → 使用默认值 `sdd-riper-one`
+- 值为 `simple` → 使用 `references/task-spec-template.md` 的简化模板
+
+**内置 Schema**：
+
+| Schema 名称 | 哲学 | 说明 |
+|-------------|------|------|
+| `sdd-riper-one` | strict（有门禁） | 默认。Research → Plan（需 Plan Approved）→ Execute → Review |
+| `openspec-compat` | fluid（无门禁） | OpenSpec 兼容。Proposal → Delta Specs → Design → Tasks |
+
+**Schema 的 `philosophy` 字段决定 Agent 行为**：
+
+- `strict`：artifact 之间的 `requires` 和 `gate` 是硬性约束。未满足依赖或门禁时 Agent 必须阻止推进
+- `fluid`：artifact 之间的 `requires` 是建议性的。Agent 提示用户建议的顺序，但不阻止跳过
+
+**用户自定义 Schema**：用户可以在 `.specanchor/schemas/<name>/` 下创建自定义 Schema（包含 `schema.yaml` + `template.md`），然后在 `config.yaml` 中设置 `writing_protocol.schema: <name>` 启用。
+
+**Schema 只在创建 Task Spec 时加载**——不影响启动检查流程，符合 Progressive Disclosure。
 
 ### 4.2 集成模式下的行为注入
 
@@ -99,11 +128,13 @@ SpecAnchor 内置 SDD-RIPER-ONE 作为默认写作协议。创建任务时默认
 
 ### 4.4 写作协议可替换性
 
-SpecAnchor 不硬编码 SDD-RIPER-ONE 的具体指令。默认内置 SDD-RIPER-ONE 模板是为了开箱即用，但可替换为其他协议（如 SPECLAN、IntentSpec）：
+SpecAnchor 通过 Schema 系统实现写作协议的声明式替换。三种方式（由简到繁）：
 
-1. 替换 `references/task-spec-template.md` 的 SDD 变体部分
-2. 保留 SpecAnchor 的 YAML frontmatter 格式不变
-3. 在 SKILL.md 中更新写作协议引用
+1. **切换内置 Schema**：修改 `config.yaml` 的 `writing_protocol.schema` 为 `sdd-riper-one` 或 `openspec-compat`
+2. **创建自定义 Schema**：在 `.specanchor/schemas/<name>/` 下创建 `schema.yaml` + `template.md`，然后在 config 中引用
+3. **直接替换模板**（向后兼容）：替换 `references/task-spec-template.md` 的内容，保留 SpecAnchor YAML frontmatter 格式不变
+
+所有方式都保留 SpecAnchor 的 YAML frontmatter（`specanchor:` 命名空间），这是 SpecAnchor 治理能力（覆盖率、腐化检测、状态追踪）的基础。
 
 ### 4.5 独立模式
 
@@ -155,11 +186,17 @@ packages/shared/utils      → packages-shared-utils     → packages-shared-uti
 6. **更新索引**：更新 `.specanchor/module-index.md`
 7. **输出建议**：`Module Spec 已全量更新。建议运行 git diff .specanchor/modules/<module-id>.spec.md 确认变更后提交。`
 
+## §6 External Sources Protocol
+
+当 `config.yaml` 中配置了 `external_sources` 时，SpecAnchor 将外部 SDD 框架（如 OpenSpec）的目录映射为 SpecAnchor 三级体系的一部分。
+
+详细规则见 `references/external-sources-protocol.md`。仅在 config.yaml 中存在 `external_sources` 字段时需要读取该协议文件。
+
 ## 附录 A: config.yaml 默认模板
 
 ```yaml
 specanchor:
-  version: "0.2.0"
+  version: "0.3.0"
   project_name: "<project_name>"
 
   paths:
@@ -169,6 +206,23 @@ specanchor:
     archive: ".specanchor/archive/"
     module_index: ".specanchor/module-index.md"
     project_codemap: ".specanchor/project-codemap.md"
+
+  # 写作协议配置（可选，默认 sdd-riper-one）
+  # writing_protocol:
+  #   schema: "sdd-riper-one"          # "sdd-riper-one" | "openspec-compat" | 自定义 schema 名
+
+  # 外部来源映射（可选，用于兼容 OpenSpec 等外部 SDD 框架）
+  # 详见 references/external-sources-protocol.md
+  # external_sources:
+  #   - source: "openspec/specs"
+  #     maps_to: module_specs
+  #     format: "openspec"
+  #     file_pattern: "**/spec.md"
+  #   - source: "openspec/changes"
+  #     maps_to: task_specs
+  #     format: "openspec"
+  #     file_pattern: "*"
+  #     exclude: ["archive"]
 
   coverage:
     scan_paths:
