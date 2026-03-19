@@ -1,17 +1,12 @@
 ---
 name: spec-anchor
-description: >-
-  Manages three-level Spec hierarchy (Global/Module/Task) for AI-assisted
-  development. Auto-loads coding standards and module contracts before code
-  generation to ensure consistent, team-aligned output. Trigger for any
-  spec-related activity: creating/updating/checking specifications, initializing
-  SpecAnchor, inferring module rules from code, or SA-prefixed commands. Also
-  trigger in projects with .specanchor/ when users discuss coding conventions,
-  module boundaries, task planning, code style, or use workflow commands like
-  "提交代码", "启动项目", "代码评审", "停止项目". Key Chinese triggers: "规范",
-  "约定", "对齐", "覆盖率". Even without explicit "spec" mention, trigger when
-  users start development tasks or ask how to structure code in a project that
-  has .specanchor/.
+description:
+  三级 Spec 体系（Global/Module/Task），在 AI 生成代码前自动加载编码规范与模块契约，
+  保障团队一致性。触发条件：Spec 相关操作（创建/更新/检查/推断规范、SA 前缀命令、
+  初始化 SpecAnchor）；含 .specanchor/ 的项目中讨论编码规范、模块边界、任务规划、
+  代码风格，或使用工作流命令（"提交代码"、"启动项目"、"代码评审"、"停止项目"）；
+  中文关键词："规范"、"约定"、"对齐"、"覆盖率"；在有 .specanchor/ 的项目中启动
+  开发任务或询问代码组织方式时也应触发。
 ---
 
 # SpecAnchor
