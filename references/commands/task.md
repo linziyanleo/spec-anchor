@@ -21,9 +21,15 @@
    - 单模块 → `.specanchor/tasks/<module_name>/YYYY-MM-DD_<task>.spec.md`
    - 多模块 → `.specanchor/tasks/_cross-module/YYYY-MM-DD_<task>.spec.md`
    - 目录不存在 → 自动创建
-4. 使用 `references/task-spec-template.md` 生成 Task Spec：
-   - 默认使用 SDD-RIPER-ONE 模板（含完整 RIPER 段）
-   - 用户明确要求简化模式 → 使用简化模板
+4. 确定写作协议并生成 Task Spec：
+   - 读取 `config.yaml` 的 `writing_protocol.schema` 字段
+     - 有值 → 按 Schema 查找顺序（`.specanchor/schemas/<name>/` → `references/schemas/<name>/`）定位 Schema，读取 `schema.yaml` 和 `template.md`
+     - 无值 → 默认使用 `sdd-riper-one` Schema
+     - 值为 `simple` → 使用 `references/task-spec-template.md` 的简化模板
+   - 如果 Schema 查找失败 → fallback 到 `references/task-spec-template.md`
+   - 根据 Schema 的 `philosophy` 字段设置后续 Agent 行为：
+     - `strict` → 启用门禁检查（如 Plan Approved）
+     - `fluid` → 无门禁，artifact 依赖关系仅作为建议
 5. 填充 SpecAnchor frontmatter
 6. 写入文件
 

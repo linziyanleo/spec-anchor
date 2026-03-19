@@ -75,6 +75,7 @@ On-Demand 触发场景：
 | `specanchor_status` | 显示 Spec 加载状态和覆盖率       | `references/commands/status.md` |
 | `specanchor_check`  | 运行 Spec-Commit 对齐检测        | `references/commands/check.md`  |
 | `specanchor_index`  | 更新 Module Spec 索引            | `references/commands/index.md`  |
+| `specanchor_import` | 从外部 SDD 框架导入配置          | `references/commands/import.md` |
 
 工作流命令（提交代码/代码评审/启停服务器）由扩展提供，见下方「扩展」段落。
 
@@ -156,6 +157,8 @@ SpecAnchor 支持通过扩展按需加载增强功能。
 | `references/commands-quickref.md`    | 需要匹配用户意图到具体命令时                     |
 | `references/commands/<cmd>.md`       | 确定了要执行的命令后，读取该命令的详细定义       |
 | `references/specanchor-protocol.md`  | 需要了解启动检查、加载规则、集成协议、管理协议时 |
+| `references/external-sources-protocol.md` | config.yaml 中存在 `external_sources` 时    |
 | `references/global-spec-template.md` | 执行 `specanchor_global` 时                      |
 | `references/module-spec-template.md` | 执行 `specanchor_module` / `specanchor_infer` 时 |
-| `references/task-spec-template.md`   | 执行 `specanchor_task` 时                        |
+| `references/task-spec-template.md`   | 执行 `specanchor_task` 时（无 Schema 配置时的 fallback） |
+| `references/schemas/<name>/`         | 执行 `specanchor_task` 时，根据 `writing_protocol.schema` 加载对应 Schema |

@@ -435,6 +435,28 @@ SDD-RIPER-ONE = 作家（按 RIPER 流程创作 Task Spec）
 
 同时使用时，SpecAnchor 会在 RIPER 各阶段自动注入行为（加载 Spec、校验一致性、检查是否需要更新 Module Spec）。
 
+### Schema 系统（写作协议可扩展）
+
+SpecAnchor 通过声明式 Schema 系统管理写作协议，支持在不同风格之间切换：
+
+| Schema | 哲学 | 说明 |
+|--------|------|------|
+| `sdd-riper-one`（默认） | strict（有门禁） | Research → Plan（需 Plan Approved）→ Execute → Review |
+| `openspec-compat` | fluid（无门禁） | Proposal → Delta Specs → Design → Tasks |
+| 自定义 | 用户定义 | 在 `.specanchor/schemas/<name>/` 下创建 |
+
+切换写作协议只需在 `.specanchor/config.yaml` 中设置：
+
+```yaml
+specanchor:
+  writing_protocol:
+    schema: "openspec-compat"    # 或 "sdd-riper-one"（默认）、自定义名
+```
+
+### 兼容 OpenSpec
+
+已有 OpenSpec 项目可以通过 `external_sources` 配置将 `openspec/` 目录映射到 SpecAnchor 体系，享受覆盖率检测和腐化监控能力，无需移动任何文件。使用"导入 OpenSpec 配置"命令可自动生成映射配置。
+
 ---
 
 ## 检测脚本
