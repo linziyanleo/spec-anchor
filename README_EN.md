@@ -62,7 +62,7 @@ SpecAnchor is a plain-text Skill that works with any AI tool that can read files
 
 ```
 "Initialize SpecAnchor"          → Creates .specanchor/ + auto-generates Global Specs
-                                   (auto-detects OpenSpec/SDD-RIPER-ONE and suggests migration)
+                                   (auto-detects OpenSpec/SDD-RIPER-ONE and writes external_sources config)
 "Create module spec for auth"    → Create Module Spec on demand when touching a module
 ```
 

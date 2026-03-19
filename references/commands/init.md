@@ -61,11 +61,34 @@
        sprint_sync_reminder: true
    ```
 
-4. **自动扫描外部 SDD 框架**：
+4. **自动扫描外部 SDD 框架并写入 external_sources**：
    - 检查 `openspec/` 目录是否存在
-     - 存在 → 提示：`ℹ️ 检测到 OpenSpec 目录 (openspec/)。建议运行"导入 OpenSpec 配置"（specanchor_import）生成 external_sources 映射，将 OpenSpec 的 Spec 纳入 SpecAnchor 管理。`
+     - 存在 → 自动将以下配置追加到 `config.yaml` 的 `external_sources` 中：
+       ```yaml
+       external_sources:
+         - source: "openspec/specs"
+           maps_to: module_specs
+           format: "openspec"
+           file_pattern: "**/spec.md"
+         - source: "openspec/changes"
+           maps_to: task_specs
+           format: "openspec"
+           file_pattern: "*"
+           exclude: ["archive"]
+       ```
+     - 输出：`✅ 检测到 OpenSpec 目录 (openspec/)，已自动配置 external_sources 映射。`
+     - 同时扫描 `openspec/config.yaml` 中的 `context` 字段，如有内容则提示：`ℹ️ 检测到 OpenSpec context 信息，可运行"导入 OpenSpec 配置"（specanchor_import）将其转译为 Global Spec。`
    - 检查 `mydocs/specs/` 目录是否存在（SDD-RIPER-ONE 独立使用时的产出）
-     - 存在 → 提示：`ℹ️ 检测到 SDD-RIPER-ONE 产出 (mydocs/specs/)。建议将活跃的 Task Spec 迁移到 .specanchor/tasks/ 目录下，归档的移到 .specanchor/archive/。`，并列出检测到的文件
+     - 存在 → 自动将以下配置追加到 `config.yaml` 的 `external_sources` 中：
+       ```yaml
+       external_sources:  # 追加到已有列表
+         - source: "mydocs/specs"
+           maps_to: task_specs
+           format: "specanchor"
+           file_pattern: "**/*.md"
+       ```
+     - 输出：`✅ 检测到 SDD-RIPER-ONE 产出 (mydocs/specs/)，已自动配置 external_sources 映射。`
+     - 列出检测到的文件数量
 
 5. **自动生成 Global Spec**：扫描项目代码，为检测到的所有适用规范类型自动生成 Global Spec 草稿
    - 扫描 `package.json` / `tsconfig.json` → 生成 `project-setup.spec.md`
