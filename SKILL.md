@@ -1,5 +1,5 @@
 ---
-name: specanchor
+name: spec-anchor
 description: >-
   Manages three-level Spec hierarchy (Global/Module/Task) for AI-assisted
   development. Auto-loads coding standards and module contracts before code
