@@ -6,7 +6,7 @@
 
 SpecAnchor 是一个 **AI Skill**，提供三级 Spec 管理体系（Global → Module → Task），在 AI 生成代码之前自动加载团队规范和模块契约。
 
-它是 Spec 的"图书馆"，不是"写作工具"——兼容 SDD-RIPER-ONE、OpenSpec 及任何 Markdown 格式的 Spec。
+它是 Spec 的"图书馆"，不是"写作工具"——兼容 SDD-RIPER-ONE、OpenSpec 及任何 Markdown 格式的 Spec。锚定的不只是 AI 上下文，更是人对代码的认知。
 
 ---
 

@@ -6,6 +6,22 @@
 
 ---
 
+## The Deeper Vision
+
+Spec norms themselves will gradually fade as model capabilities grow — context windows keep expanding, and models reading code logic directly becomes more precise than reading documents. But people don't change.
+
+People will always need something visual to understand what models produce — code is written by AI, but decisions are made by humans. As AI produces more code, faster, the human need to understand "why this code is written this way, what modules it relates to, and what breaks if I change it" only grows stronger.
+
+**SpecAnchor anchors not just context knowledge and coding standards, but more fundamentally, it anchors people's cognitive understanding of code internals.**
+
+So SpecAnchor will evolve alongside model capabilities:
+
+- Current phase: Anchoring AI context (Global + Module Spec constrain generation quality)
+- Next phase: Anchoring human cognition (Spec becomes the interface for people to understand AI output)
+- Long-term: Spec may evolve from "constraints written for AI to read" into "cognitive maps written for humans to read"
+
+---
+
 ## Problems It Solves
 
 | Problem | SpecAnchor's Answer |
@@ -111,6 +127,32 @@ Collaborators are the **biggest beneficiaries** of the SpecAnchor system — Glo
 | Month 1 | Module Spec 10-20% | Cover frequently modified core modules |
 | Month 3 | Module Spec 40-60% | High-change modules naturally covered |
 | Month 6 | Module Spec 70%+ | Approaching "healthy" level |
+
+## Evolution Roadmap
+
+SpecAnchor will evolve alongside changes in AI capabilities and development paradigms:
+
+### Current (v0.x) — Anchoring AI Context
+
+- Three-level Spec system (Global → Module → Task)
+- Coverage detection + staleness detection
+- Declarative Schema system (SDD-RIPER-ONE / OpenSpec / custom compatible)
+- External Sources directory alias mapping
+- Plain-text Skill, platform agnostic
+
+### Near-term — Anchoring Human Cognition
+
+- [ ] Spec visualization dashboard (coverage heatmap, module dependency graph, change timeline)
+- [ ] Spec Diff visualization (Module Spec before/after comparison, linked to code diff)
+- [ ] Interactive Module Map (click a module to view Spec, related code, change history)
+- [ ] CLI tool (`specanchor check` / `specanchor status` as command-line commands)
+
+### Long-term — Spec as Cognitive Map
+
+- [ ] Spec evolves from "constraint document" to "cognitive interface" — people understand the system through Spec, not by reading code
+- [ ] Real-time Spec sync (code changes automatically trigger Spec update suggestions)
+- [ ] Multi-user collaboration awareness (who's editing which module's Spec, conflict warnings)
+- [ ] Deep IDE integration (Spec coverage gutter annotations, inline Spec references)
 
 ## Flowchart
 

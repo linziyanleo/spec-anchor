@@ -6,7 +6,7 @@
 
 SpecAnchor is an **AI Skill** that provides a three-level Spec management system (Global → Module → Task), automatically loading team standards and module contracts before AI generates code.
 
-It's a "library" for Specs, not a "writing tool" — compatible with SDD-RIPER-ONE, OpenSpec, and any Markdown-based Spec format.
+It's a "library" for Specs, not a "writing tool" — compatible with SDD-RIPER-ONE, OpenSpec, and any Markdown-based Spec format. It anchors not just AI context, but human understanding of code.
 
 ---
 
