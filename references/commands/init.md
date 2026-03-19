@@ -64,9 +64,12 @@
 4. **自动扫描外部 SDD 框架并导入配置**：
    - 检查 `openspec/` 目录是否存在
      - 存在 → 执行以下导入流程：
-       a. 自动将 `external_sources` 配置追加到 `config.yaml`：
+       a. 自动将 `external_sources` 和 `writing_protocol` 配置写入 `config.yaml`：
 
           ```yaml
+          writing_protocol:
+            schema: "openspec-compat"
+
           external_sources:
             - source: "openspec/specs"
               maps_to: module_specs
@@ -83,7 +86,7 @@
           - 提取 `context` 字段 → 自动转译为 Global Spec 草稿（`project-setup.spec.md`），合并到步骤 5 的自动生成流程中
           - 提取 `rules` 字段 → 合并到 `coding-standards.spec.md` 的建议章节
        c. 更新 `module-index.md`：将 `openspec/specs/` 下的模块追加到索引（标注 `来源: external:openspec`）
-       d. 输出：`✅ 检测到 OpenSpec 目录 (openspec/)，已自动导入配置。`
+       d. 输出：`✅ 检测到 OpenSpec 目录 (openspec/)，已自动导入配置，写作协议已设为 openspec-compat。`
    - 检查 `mydocs/specs/` 目录是否存在（SDD-RIPER-ONE 独立使用时的产出）
      - 存在 → 自动将以下配置追加到 `config.yaml` 的 `external_sources` 中：
 
