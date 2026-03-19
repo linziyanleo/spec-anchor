@@ -1,0 +1,45 @@
+name: sdd-riper-one
+version: 1
+description: "SDD-RIPER-ONE 流程——带严格门禁的规范驱动开发。Research → (Innovate) → Plan → Execute → Review。"
+
+# strict = 有门禁（Plan Approved 才能进入 Execute）
+# fluid = 无门禁（依赖是使能器不是门禁，随时可做任何事）
+philosophy: strict
+
+artifacts:
+  - id: research
+    section: "## 2. Research Findings"
+    description: "事实与约束调研——分析代码现状、依赖、风险"
+    requires: []
+
+  - id: innovate
+    section: "## 3. Innovate"
+    description: "多方案比较与决策——复杂任务建议 2-3 方案"
+    requires: [research]
+    optional: true
+    skip_reason_required: true
+
+  - id: plan
+    section: "## 4. Plan (Contract)"
+    description: "实现契约——文件变更清单 + 函数签名 + 原子 Checklist"
+    requires: [research]
+    gate:
+      type: approval
+      phrase: "Plan Approved"
+      blocks: [execute]
+
+  - id: execute
+    section: "## 5. Execute Log"
+    description: "按 Checklist 逐步实现"
+    requires: [plan]
+
+  - id: review
+    section: "## 6. Review Verdict"
+    description: "回顾校验——Spec 覆盖、行为检查、回归风险、Module Spec 是否需更新"
+    requires: [execute]
+
+apply:
+  requires: [plan]
+  tracks: "## 4.3 Implementation Checklist"
+
+template: template.md

@@ -1,0 +1,34 @@
+name: openspec-compat
+version: 1
+description: "OpenSpec 兼容工作流——Fluid 风格，依赖是使能器不是门禁。支持 Delta Specs 增量变更表达。"
+
+# fluid = 无门禁，artifact 之间的 requires 关系作为提示而非硬性约束
+# 用户可以随时更新任何 section，不受前置依赖限制
+philosophy: fluid
+
+artifacts:
+  - id: proposal
+    section: "## Proposal"
+    description: "变更提案——WHY：为什么要做这个变更"
+    requires: []
+
+  - id: specs
+    section: "## Delta Specs"
+    description: "增量规范——WHAT：用 ADDED / MODIFIED / REMOVED 描述变更增量"
+    requires: [proposal]
+
+  - id: design
+    section: "## Design"
+    description: "技术方案——HOW：架构设计和文件变更计划"
+    requires: [proposal]
+
+  - id: tasks
+    section: "## Tasks"
+    description: "实现清单——STEPS：按依赖排序的 checklist"
+    requires: [specs, design]
+
+apply:
+  requires: [tasks]
+  tracks: "## Tasks"
+
+template: template.md
