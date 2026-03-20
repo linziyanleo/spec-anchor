@@ -6,6 +6,13 @@ description: "SDD-RIPER-ONE 流程——带严格门禁的规范驱动开发。R
 # fluid = 无门禁（依赖是使能器不是门禁，随时可做任何事）
 philosophy: strict
 
+match:
+  when:
+    - "开发新功能、增强现有功能、实现产品需求"
+    - "新增模块、组件、页面、API 端点"
+    - "实现需求文档中描述的功能或用户故事"
+    - "这是默认 Schema，当任务不明确属于哪个特定分类时使用"
+
 artifacts:
   - id: research
     section: "## 2. Research Findings"

@@ -6,6 +6,12 @@ description: "OpenSpec 兼容工作流——Fluid 风格，依赖是使能器不
 # 用户可以随时更新任何 section，不受前置依赖限制
 philosophy: fluid
 
+match:
+  when:
+    - "团队已使用 OpenSpec 工作流"
+    - "需要用 Delta Specs（ADDED/MODIFIED/REMOVED）表达增量变更"
+    - "仅当用户明确提及 OpenSpec 或 Delta Specs 时推荐"
+
 artifacts:
   - id: proposal
     section: "## Proposal"
