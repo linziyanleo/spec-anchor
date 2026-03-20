@@ -1,0 +1,39 @@
+name: simple
+version: 1
+description: "轻量级 Task Spec——快速记录任务目标和改动计划，无门禁、无 RIPER 流程。适合简单但仍希望有 Spec 记录的任务。"
+
+philosophy: fluid
+
+match:
+  when:
+    - "简单任务但仍希望有 Spec 记录（而非完全跳过）"
+    - "单文件修改、样式调整、小 bug 修复等不需要完整 RIPER 流程的任务"
+    - "用户明确要求简化流程或 simple 模式"
+    - "不适用于：需要架构设计、多模块协调、有门禁需求的任务"
+
+artifacts:
+  - id: goal
+    section: "## 目标"
+    description: "任务目标——做什么、为什么做"
+    requires: []
+
+  - id: changes
+    section: "## 改动计划"
+    description: "文件变更计划——改哪些文件、怎么改"
+    requires: [goal]
+
+  - id: checklist
+    section: "## Checklist"
+    description: "实现步骤清单"
+    requires: [changes]
+
+  - id: done
+    section: "## 完成确认"
+    description: "代码规范符合、Module Spec 已同步、测试覆盖"
+    requires: [checklist]
+
+apply:
+  requires: [checklist]
+  tracks: "## Checklist"
+
+template: template.md
