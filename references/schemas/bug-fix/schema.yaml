@@ -1,0 +1,63 @@
+name: bug-fix
+version: 1
+description: "Bug 修复流程——复现 → 诊断（添加日志，收集证据）→ 根因分析 → 修复 → 验证。"
+
+philosophy: strict
+
+match:
+  when:
+    - "修复一个已知的 bug 或缺陷"
+    - "排查线上或测试环境的异常行为（白屏、报错、crash、卡死等）"
+    - "修复回归问题——之前正常但现在异常"
+    - "解决用户报告的功能失效问题"
+    - "与 sdd-riper-one 的区别：bug-fix 强调先复现、再诊断、再定位根因，而非先调研需求"
+    - "不适用于：纯性能优化、新功能开发中顺带修复的小问题"
+
+artifacts:
+  - id: reproduce
+    section: "## 1. Reproduce"
+    description: "复现问题——记录复现步骤、环境、预期行为 vs 实际行为"
+    requires: []
+
+  - id: diagnose
+    section: "## 2. Diagnose"
+    description: "诊断——在代码中添加日志/print，请用户运行并反馈控制台输出，收集证据"
+    requires: [reproduce]
+    gate:
+      type: approval
+      phrase: "Evidence Collected"
+      blocks: [root_cause]
+
+  - id: root_cause
+    section: "## 3. Root Cause"
+    description: "根因分析——基于诊断证据（控制台输出、日志）定位问题根源"
+    requires: [diagnose]
+    gate:
+      type: approval
+      phrase: "Root Cause Confirmed"
+      blocks: [fix_plan]
+
+  - id: fix_plan
+    section: "## 4. Fix Plan"
+    description: "修复计划——改哪些文件、怎么改、风险评估"
+    requires: [root_cause]
+    gate:
+      type: approval
+      phrase: "Fix Plan Approved"
+      blocks: [fix]
+
+  - id: fix
+    section: "## 5. Fix Log"
+    description: "执行修复——按计划修改代码"
+    requires: [fix_plan]
+
+  - id: verify
+    section: "## 6. Verify"
+    description: "验证——确认 bug 已修复、无回归、诊断代码已清理"
+    requires: [fix]
+
+apply:
+  requires: [fix_plan]
+  tracks: "## 4.1 Fix Checklist"
+
+template: template.md
