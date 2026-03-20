@@ -1,0 +1,49 @@
+name: refactor
+version: 1
+description: "代码重构流程——度量 → 识别 → 计划 → 重构 → 验证行为不变。核心约束：外部行为必须保持不变。"
+
+philosophy: strict
+
+match:
+  when:
+    - "重构代码、优化代码结构、降低耦合度"
+    - "消除技术债——函数过长、类过大、重复代码、代码气味"
+    - "提升可测试性、拆解模块依赖"
+    - "与 sdd-riper-one 的区别：refactor 强调先度量后改进，且核心约束是行为不变"
+    - "不适用于：改变外部行为的功能变更"
+
+artifacts:
+  - id: measure
+    section: "## 1. Measure"
+    description: "度量现状——识别代码气味、复杂度指标、耦合度、重复代码"
+    requires: []
+
+  - id: identify
+    section: "## 2. Identify"
+    description: "识别目标——哪些代码需要重构、为什么、预期改善"
+    requires: [measure]
+
+  - id: plan
+    section: "## 3. Refactor Plan"
+    description: "重构计划——分步策略、文件变更、行为保持验证方案"
+    requires: [identify]
+    gate:
+      type: approval
+      phrase: "Refactor Plan Approved"
+      blocks: [execute]
+
+  - id: execute
+    section: "## 4. Execute Log"
+    description: "执行重构——按计划分步实施，每步验证行为不变"
+    requires: [plan]
+
+  - id: verify
+    section: "## 5. Verify"
+    description: "验证——行为不变确认、指标改善对比、回归检查"
+    requires: [execute]
+
+apply:
+  requires: [plan]
+  tracks: "## 3.1 Refactor Checklist"
+
+template: template.md
