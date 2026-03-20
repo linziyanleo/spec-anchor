@@ -1,0 +1,49 @@
+name: research
+version: 1
+description: "技术调研流程——提问 → 探索 → 发现 → 追问（激活用户思路）→ 结论。不产出代码，产出结论和建议。"
+
+philosophy: strict
+
+match:
+  when:
+    - "做技术调研、方案评估、可行性研究"
+    - "竞品分析、技术选型、架构决策前的深度分析"
+    - "新领域探索、对比多个方案的 trade-offs"
+    - "与 sdd-riper-one 的区别：research 没有代码实现环节，产出是结论和建议"
+    - "不适用于：已有明确需求要实现的任务"
+
+artifacts:
+  - id: question
+    section: "## 1. Research Question"
+    description: "研究问题——明确要调研什么、范围边界、成功标准"
+    requires: []
+
+  - id: explore
+    section: "## 2. Explore"
+    description: "探索——调研、实验、数据收集、文献/代码分析"
+    requires: [question]
+
+  - id: findings
+    section: "## 3. Findings"
+    description: "发现——关键事实、数据、对比分析"
+    requires: [explore]
+    gate:
+      type: approval
+      phrase: "Findings Reviewed"
+      blocks: [challenge]
+
+  - id: challenge
+    section: "## 4. Challenge & Follow-up"
+    description: "追问——向用户展示发现并追问，激活用户思路、发现盲区、修正方向"
+    requires: [findings]
+
+  - id: conclusion
+    section: "## 5. Conclusion"
+    description: "结论——最终建议、决策推荐、下一步行动"
+    requires: [challenge]
+
+apply:
+  requires: [conclusion]
+  tracks: "## 5.1 Action Items"
+
+template: template.md
