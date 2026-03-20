@@ -21,16 +21,32 @@
    - 单模块 → `.specanchor/tasks/<module_name>/YYYY-MM-DD_<task>.spec.md`
    - 多模块 → `.specanchor/tasks/_cross-module/YYYY-MM-DD_<task>.spec.md`
    - 目录不存在 → 自动创建
-4. 确定写作协议并生成 Task Spec：
-   - 读取 `config.yaml` 的 `writing_protocol.schema` 字段
-     - 有值 → 按 Schema 查找顺序（`.specanchor/schemas/<name>/` → `references/schemas/<name>/`）定位 Schema，读取 `schema.yaml` 和 `template.md`
-     - 无值 → 默认使用 `sdd-riper-one` Schema
-     - 值为 `simple` → 使用 `references/task-spec-template.md` 的简化模板
-   - 如果 Schema 查找失败 → fallback 到 `references/task-spec-template.md`
-   - 根据 Schema 的 `philosophy` 字段设置后续 Agent 行为：
-     - `strict` → 启用门禁检查（如 Plan Approved）
-     - `fluid` → 无门禁，artifact 依赖关系仅作为建议
+4. Schema 加载：
+   - **4a. Schema 已确认？**
+     - 用户在工作流选择时已确认 Schema → 直接使用，跳到 4c
+     - 用户显式指定了 Schema（如"用 refactor Schema 创建任务"）→ 直接使用，跳到 4c
+     - 否 → 继续 4b
+   - **4b. Schema 推荐（降级路径）**
+     - 当直接调用 specanchor_task 未经工作流选择时执行
+     - Agent 参考启动时发现的 Available Schemas（§1 步骤 4），结合任务描述判断：
+       - 有明确最佳匹配 → 展示推荐，等待用户确认
+       - 有多个接近匹配 → 展示推荐 + 备选
+       - 无明确匹配 → 使用 `config.yaml` 的 `writing_protocol.schema` 默认值（默认 `sdd-riper-one`）
+   - **4c. 加载选中 Schema**
+     - 按查找顺序（`.specanchor/schemas/<name>/` → `references/schemas/<name>/`）定位 Schema
+     - 读取 `schema.yaml` 和 `template.md`
+     - 查找失败 → fallback 到默认 Schema（`sdd-riper-one`）
+   - **4d. 设置后续 Agent 行为**
+     - 根据 Schema 的 `philosophy` 字段：
+       - `strict` → 启用门禁检查（Schema 中 `gate` 定义的所有门禁）
+       - `fluid` → 无门禁，artifact 依赖关系仅作为建议
 5. 填充 SpecAnchor frontmatter
+   - 如果步骤 4d 产生了推荐（非默认 Schema），在 Task Spec 的 §1 Context 中记录：
+
+     ```
+     - **Schema**: <schema_name>（推荐原因：<模型判断的理由>）
+     ```
+
 6. 写入文件
 
 ## 覆盖度检查细节
@@ -51,6 +67,7 @@
 ## 自动生成 Module Spec 的行为
 
 未覆盖时自动执行 `specanchor_infer`：
+
 - 告知用户：`模块 <path> 尚无 Module Spec，正在从代码推断草稿...`
 - 生成完成后告知用户：`Module Spec 草稿已生成（status=draft），建议后续人工确认`
 - 然后继续创建 Task Spec 流程
