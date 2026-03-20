@@ -1,8 +1,12 @@
 # Task Spec 模板
 
-> **Fallback 说明**：当 `config.yaml` 中配置了 `writing_protocol.schema` 时，`specanchor_task` 优先使用 `references/schemas/<schema-name>/template.md` 中的模板。本文件作为无 Schema 配置时的 fallback，以及简化模式的模板来源。
-
-默认使用 **SDD-RIPER-ONE 模式**作为写作模板。如需使用其他写作协议，替换本模板中的 SDD 变体即可。也可以通过 Schema 系统切换写作协议——见 `references/specanchor-protocol.md` §4.1。
+> **⚠️ DEPRECATED**：本文件已废弃。Task Spec 模板现由 Schema 系统管理：
+>
+> - SDD-RIPER-ONE 模板 → `references/schemas/sdd-riper-one/template.md`
+> - 简化模板 → `references/schemas/simple/template.md`
+> - Schema 系统说明 → `references/specanchor-protocol.md` §4.1
+>
+> 本文件保留仅供历史参考，不再被 `specanchor_task` 使用。
 
 提供两个变体：**SDD-RIPER-ONE 模式**（默认）和**简化模式**（独立运行时）。
 
