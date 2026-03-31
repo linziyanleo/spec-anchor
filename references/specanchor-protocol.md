@@ -5,35 +5,67 @@
 Skill 激活时，按以下顺序执行：
 
 ```
-1. 检查 .specanchor/ 是否存在
-   ├─ 不存在 → 报错阻塞，引导用户初始化
-   └─ 存在 → 继续
-2. 读取 .specanchor/config.yaml
-   ├─ 不存在 / 格式错误 → 报错，提供默认配置模板
-   └─ 合法 → 继续
-3. 读取 .specanchor/global/ 下的所有 .spec.md 文件
-   ├─ 目录为空 → 警告：无 Global Spec，建议用户生成全局规范
-   └─ 有文件 → 全量加载（合计 ≤ 200 行）
+1. 查找配置文件（双路径查找）
+   ├─ 检查项目根目录 anchor.yaml
+   │   └─ 存在 → 使用它，继续步骤 2
+   ├─ 检查 .specanchor/config.yaml（向后兼容）
+   │   └─ 存在 → 使用它，输出迁移提示：
+   │       ⚠️ 检测到旧版配置 .specanchor/config.yaml，建议迁移到根目录 anchor.yaml
+   │       继续步骤 2
+   └─ 都不存在 → 报错阻塞，引导用户初始化
+
+2. 读取配置文件
+   ├─ 格式错误 → 报错，提供默认配置模板
+   └─ 合法 → 读取 mode 字段，继续步骤 3
+
+3. 按 mode 分叉加载
+   ├─ mode: full（默认）
+   │   ├─ 检查 .specanchor/ 是否存在
+   │   │   └─ 不存在 → 报错：⛔ mode 为 full 但 .specanchor/ 目录不存在
+   │   ├─ 读取 .specanchor/global/ 下所有 .spec.md（合计 ≤ 200 行）
+   │   │   └─ 目录为空 → 警告：无 Global Spec，建议生成
+   │   └─ 继续步骤 4
+   └─ mode: parasitic
+       ├─ 跳过 .specanchor/ 检查和 Global/Module Spec 加载
+       ├─ 读取 sources 段，检查各来源目录存在性
+       └─ 继续步骤 4
+
 4. 发现可用 Schema（Schema Discovery）
-   ├─ 扫描 .specanchor/schemas/*/schema.yaml（项目自定义，标记为 [custom]，优先级更高）
-   ├─ 扫描 references/schemas/*/schema.yaml（Skill 内置）
-   ├─ 对每个 schema.yaml，读取 name、description、match.when（如有）
-   ├─ 合并列表：自定义 Schema 在前，内置 Schema 在后
-   └─ 无 Schema 目录或结果为空 → 使用 sdd-riper-one 作为唯一可用 Schema
+   ├─ mode: full
+   │   ├─ 扫描 .specanchor/schemas/*/schema.yaml（项目自定义，标记为 [custom]，优先级更高）
+   │   ├─ 扫描 references/schemas/*/schema.yaml（Skill 内置）
+   │   ├─ 对每个 schema.yaml，读取 name、description、match.when（如有）
+   │   ├─ 合并列表：自定义 Schema 在前，内置 Schema 在后
+   │   └─ 无 Schema 目录或结果为空 → 使用 sdd-riper-one 作为唯一可用 Schema
+   └─ mode: parasitic
+       └─ Schema Discovery 不执行（parasitic 模式不创建 Task Spec）
+
 5. 输出加载状态摘要
 ```
 
-加载状态摘要格式：
+加载状态摘要格式（full 模式）：
 
 ```
-SpecAnchor 已加载
+SpecAnchor 已加载 [full]
+  Config: anchor.yaml
   Global Specs: coding-standards (v1.2), architecture (v1.0)
   Module Specs: (按需加载)
-  Config: .specanchor/config.yaml
+  Sources: (无外部来源)
   Available Schemas:
     [custom] <name>: "<description 或 match.when 首条>"
     <name> (default): "<description 或 match.when 首条>"
     <name>: "<description 或 match.when 首条>"
+```
+
+加载状态摘要格式（parasitic 模式）：
+
+```
+SpecAnchor 已加载 [parasitic]
+  Config: anchor.yaml
+  Sources:
+    specs/ [spec-kit]: 12 files, stale_check: ✅, frontmatter_inject: ❌
+    .qoder/specs/ [qoder]: 5 files, stale_check: ✅, frontmatter_inject: ✅
+  Note: parasitic 模式仅提供治理能力（腐化检测 + 扫描），不支持创建 Spec
 ```
 
 ## §2 命令定义（按需读取）
@@ -62,12 +94,12 @@ references/commands/
 
 见 §1 启动检查流程（步骤 2-4 自动执行）。
 
-### 3.2 On-Demand Load（按需加载）
+### 3.2 On-Demand Load（按需加载，仅 mode: full）
 
 触发条件（满足任一即触发）：
 
 - 用户要求创建任务、模块规范或推断规范时指定了模块路径
-- 用户提及的文件路径位于某模块目录下（通过 `module-index.md` 或 `config.yaml` 的 `scan_paths` 匹配）
+- 用户提及的文件路径位于某模块目录下（通过 `module-index.md` 或 `anchor.yaml` 的 `scan_paths` 匹配）
 - RIPER Research 阶段发现相关模块
 
 加载动作：
@@ -79,7 +111,7 @@ references/commands/
 ### 3.3 加载顺序
 
 ```
-config.yaml → Global Specs → Module Spec(s)（via module-index.md） → Project Codemap（如需要）
+anchor.yaml → Global Specs → Module Spec(s)（via module-index.md） → Project Codemap（如需要）
 ```
 
 ## §4 与 SDD-RIPER-ONE 集成协议
@@ -160,7 +192,7 @@ RIPER 各阶段的 SpecAnchor 注入行为见 SKILL.md "与 SDD-RIPER-ONE 的集
 
 SpecAnchor 通过 Schema 系统实现写作协议的声明式替换：
 
-1. **切换内置 Schema**：修改 `config.yaml` 的 `writing_protocol.schema`（如 `sdd-riper-one`、`openspec-compat`、`simple`）
+1. **切换内置 Schema**：修改 `anchor.yaml` 的 `writing_protocol.schema`（如 `sdd-riper-one`、`openspec-compat`、`simple`）
 2. **创建自定义 Schema**：在 `.specanchor/schemas/<name>/` 下创建 `schema.yaml` + `template.md`，启动时自动发现
 
 所有 Schema 的模板必须保留 SpecAnchor 的 YAML frontmatter（`specanchor:` 命名空间），这是治理能力（覆盖率、腐化检测、状态追踪）的基础。
@@ -237,19 +269,25 @@ packages/shared/utils      → packages-shared-utils     → packages-shared-uti
 6. **更新索引**：更新 `.specanchor/module-index.md`
 7. **输出建议**：`Module Spec 已全量更新。建议运行 git diff .specanchor/modules/<module-id>.spec.md 确认变更后提交。`
 
-## §6 External Sources Protocol
+## §6 Sources 协议
 
-当 `config.yaml` 中配置了 `external_sources` 时，SpecAnchor 将外部 SDD 框架（如 OpenSpec）的目录映射为 SpecAnchor 三级体系的一部分。
+当 `anchor.yaml` 中配置了 `sources` 时，SpecAnchor 将外部 spec 体系的目录纳入治理范围。
 
-详细规则见 `references/external-sources-protocol.md`。仅在 config.yaml 中存在 `external_sources` 字段时需要读取该协议文件。
+详细规则见 `references/external-sources-protocol.md`。仅在 `anchor.yaml` 中存在 `sources` 字段时需要读取该协议文件。
 
-## 附录 A: config.yaml 默认模板
+## 附录 A: anchor.yaml 默认模板
 
 ```yaml
 specanchor:
-  version: "0.3.0"
+  version: "0.4.0"
   project_name: "<project_name>"
 
+  # === 运行模式 ===
+  # full: 有 .specanchor/ 自有体系 + 可选外部来源
+  # parasitic: 无 .specanchor/，纯治理已有 spec 体系（只读，不创建 spec）
+  mode: "full"                         # full | parasitic
+
+  # === 路径配置（mode=full 时生效）===
   paths:
     global_specs: ".specanchor/global/"
     module_specs: ".specanchor/modules/"
@@ -258,25 +296,23 @@ specanchor:
     module_index: ".specanchor/module-index.md"
     project_codemap: ".specanchor/project-codemap.md"
 
-  # 写作协议配置（可选，默认 sdd-riper-one）
-  # writing_protocol:
-  #   schema: "sdd-riper-one"          # "sdd-riper-one" | "openspec-compat" | 自定义 schema 名
-  #   schema_recommend: true           # 是否启用 Schema 智能推荐（默认 true）
-  #                                    # true: specanchor_task 时根据任务描述推荐最佳 Schema
-  #                                    # false: 始终使用 schema 字段指定的 Schema
-
-  # 外部来源映射（可选，用于兼容 OpenSpec 等外部 SDD 框架）
+  # === 外部来源（可选）===
   # 详见 references/external-sources-protocol.md
-  # external_sources:
-  #   - source: "openspec/specs"
-  #     maps_to: module_specs
-  #     format: "openspec"
-  #     file_pattern: "**/spec.md"
-  #   - source: "openspec/changes"
-  #     maps_to: task_specs
-  #     format: "openspec"
-  #     file_pattern: "*"
-  #     exclude: ["archive"]
+  # sources:
+  #   - path: "specs/"                    # 来源目录
+  #     type: "spec-kit"                  # 类型（参考附录 B type registry）
+  #     maps_to: module_specs             # 映射目标
+  #     file_pattern: "**/*.spec.md"      # 文件匹配（type 有默认值，可覆盖）
+  #     exclude: []                       # 排除路径
+  #     governance:                       # 治理策略
+  #       stale_check: true               # 纳入腐化检测
+  #       frontmatter_inject: false       # 是否注入 SpecAnchor frontmatter
+  #       scan_on_init: true              # init 时扫描并生成报告
+
+  # === 写作协议配置（可选，默认 sdd-riper-one，mode=full 时生效）===
+  # writing_protocol:
+  #   schema: "sdd-riper-one"            # "sdd-riper-one" | "openspec-compat" | 自定义 schema 名
+  #   schema_recommend: true             # 是否启用 Schema 智能推荐（默认 true）
 
   coverage:
     scan_paths:
@@ -298,3 +334,20 @@ specanchor:
     sprint_sync_reminder: true
 ```
 
+## 附录 B: Type Registry
+
+SpecAnchor 内置以下 spec 体系类型，用于 `specanchor_init` 自动检测和 `sources` 配置：
+
+| type | 自动检测路径 | 默认 file_pattern | 默认 maps_to |
+| ---- | ---- | ---- | ---- |
+| `openspec` | `openspec/` | `**/spec.md` | `module_specs` |
+| `spec-kit` | `specs/` | `**/*.spec.md` | `module_specs` |
+| `mydocs` | `mydocs/specs/` | `**/*.md` | `task_specs` |
+| `qoder` | `.qoder/specs/` | `**/*.md` | `module_specs` |
+| `generic` | `docs/specs/` | `**/*.md` | `module_specs` |
+| `custom` | （用户指定） | （用户指定） | （用户指定） |
+
+- `specanchor_init` 时按此表自动扫描项目根目录，发现的来源展示给用户确认
+- 用户可覆盖任何默认值（`file_pattern`、`maps_to`）
+- `custom` 类型用于 registry 未覆盖的 spec 框架，所有字段需用户手动指定
+- 新增 spec 框架支持：在此表中添加新行即可

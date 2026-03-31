@@ -8,7 +8,7 @@
 
 1. 扫描 `.specanchor/modules/` 下所有 `.spec.md` 文件
 2. 读取每个文件的 frontmatter
-3. 扫描 `config.yaml` 中 `scan_paths` 下的模块目录
+3. 扫描 `anchor.yaml` 中 `scan_paths` 下的模块目录
 4. 生成/更新 `.specanchor/module-index.md`，格式：
 
 ```markdown

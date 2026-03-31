@@ -1,6 +1,6 @@
 # specanchor_import
 
-从外部 SDD 框架（当前支持 OpenSpec）扫描配置和目录结构，自动生成 SpecAnchor 的 `external_sources` 映射配置。
+从外部 SDD 框架（当前支持 OpenSpec）扫描配置和目录结构，自动生成 SpecAnchor 的 `sources` 映射配置。
 
 **用户可能这样说**: "导入 OpenSpec 配置" / "兼容 OpenSpec" / "从 OpenSpec 迁移" / "把 openspec 的文件接入 SpecAnchor"
 
@@ -38,29 +38,37 @@
      Rules: 2 条
    ```
 
-4. **生成 external_sources 配置建议**
+4. **生成 sources 配置建议**
 
    ```
-   建议的 config.yaml 变更：
+   建议的 anchor.yaml 变更：
    ┌──────────────────────────────────────────────────────┐
-   │ external_sources:                                     │
-   │   - source: "openspec/specs"                          │
+   │ sources:                                              │
+   │   - path: "openspec/specs"                            │
+   │     type: "openspec"                                  │
    │     maps_to: module_specs                             │
-   │     format: "openspec"                                │
    │     file_pattern: "**/spec.md"                        │
+   │     governance:                                       │
+   │       stale_check: true                               │
+   │       frontmatter_inject: false                       │
+   │       scan_on_init: true                              │
    │                                                       │
-   │   - source: "openspec/changes"                        │
+   │   - path: "openspec/changes"                          │
+   │     type: "openspec"                                  │
    │     maps_to: task_specs                               │
-   │     format: "openspec"                                │
    │     file_pattern: "*"                                 │
    │     exclude: ["archive"]                              │
+   │     governance:                                       │
+   │       stale_check: true                               │
+   │       frontmatter_inject: false                       │
+   │       scan_on_init: true                              │
    └──────────────────────────────────────────────────────┘
    ```
 
 5. **确认写入**
-   - 询问用户：`是否将以上配置写入 .specanchor/config.yaml？`
-   - 用户确认 → 追加 `external_sources` 到 config.yaml
-   - 用户拒绝 → 提示可手动编辑 config.yaml
+   - 询问用户：`是否将以上配置写入 anchor.yaml？`
+   - 用户确认 → 追加 `sources` 到 anchor.yaml
+   - 用户拒绝 → 提示可手动编辑 anchor.yaml
 
 6. **可选：转译 context 为 Global Spec**
    - 询问用户：`是否将 OpenSpec 的 context 转译为 Global Spec？`
@@ -71,7 +79,7 @@
      - 输出草稿供用户 Review，不直接写入
 
 7. **更新 module-index.md**
-   - 将外部来源的模块信息追加到 `module-index.md`（标注 `来源: external:openspec`）
+   - 将外部来源的模块信息追加到 `module-index.md`（标注 `来源: source:openspec`）
 
 ## OpenSpec context 转译示例
 

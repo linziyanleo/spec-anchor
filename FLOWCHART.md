@@ -5,15 +5,21 @@
 ```mermaid
 flowchart TD
     A[用户在对话中引用 SpecAnchor Skill] --> B[Agent 读取 SKILL.md]
-    B --> C{.specanchor/ 目录存在?}
-    C -->|不存在| D["⛔ 报错阻塞<br/>引导用户初始化"]
-    C -->|存在| E[读取 config.yaml]
-    E --> F[读取 .specanchor/global/*.spec.md<br/>全量加载 ≤ 200 行]
-    F --> G[输出加载状态摘要]
+    B --> C{查找配置文件<br/>双路径查找}
+    C -->|anchor.yaml 存在| E[读取 anchor.yaml]
+    C -->|仅 .specanchor/config.yaml| E2["读取 config.yaml<br/>⚠️ 输出迁移提示"]
+    C -->|都不存在| D["⛔ 报错阻塞<br/>引导用户初始化"]
+    E --> F1{mode?}
+    E2 --> F1
+    F1 -->|full| F2[读取 .specanchor/global/*.spec.md<br/>全量加载 ≤ 200 行]
+    F1 -->|parasitic| F3[读取 sources 段<br/>检查各来源目录]
+    F2 --> G[输出加载状态摘要]
+    F3 --> G
     G --> H[等待用户指令]
 
     style D fill:#ff6b6b,color:#fff
     style G fill:#51cf66,color:#fff
+    style F3 fill:#ffd43b,color:#333
 ```
 
 ## 2. 用户意图识别与命令分发
@@ -59,7 +65,11 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    A["'初始化 SpecAnchor'"] -->|specanchor_init| B[创建 .specanchor/ 目录]
+    A["'初始化 SpecAnchor'"] -->|specanchor_init| A1{检测已有 spec 体系}
+    A1 -->|发现外部来源| A2[询问治理策略 + 运行模式]
+    A1 -->|未发现| A3[默认 full 模式]
+    A2 --> B[生成 anchor.yaml + 可选 .specanchor/]
+    A3 --> B
     B --> C["'初始化项目信息'"]
     C -->|specanchor_global<br/>project-setup 类型| D[扫描 package.json<br/>生成 project-setup.spec.md]
     D --> E["'帮我生成编码规范'"]
@@ -111,9 +121,9 @@ flowchart TD
 ```mermaid
 flowchart TD
     subgraph "Always Load (每次对话)"
-        A1[SKILL.md<br/>~130行]
-        A2[config.yaml<br/>~30行]
-        A3[Global Specs<br/>≤200行 合计]
+        A1[SKILL.md<br/>~150行]
+        A2[anchor.yaml<br/>~40行]
+        A3[Global Specs<br/>≤200行 合计<br/>仅 full 模式]
     end
 
     subgraph "On-Demand Load (按需加载)"
@@ -183,8 +193,8 @@ graph TB
         T3[task-spec-template.md]
     end
 
-    subgraph "产出层 (.specanchor/)"
-        O1[config.yaml]
+    subgraph "产出层 (anchor.yaml + .specanchor/)"
+        O1[anchor.yaml<br/>项目根目录]
         O2[global/*.spec.md<br/>包含 project-setup.spec.md]
         O3[modules/*.spec.md]
         O4[tasks/**/*.spec.md]

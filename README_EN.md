@@ -61,8 +61,8 @@ SpecAnchor is a plain-text Skill that works with any AI tool that can read files
 ### First Time Setup
 
 ```
-"Initialize SpecAnchor"          → Creates .specanchor/ + auto-generates Global Specs
-                                   (auto-detects OpenSpec/SDD-RIPER-ONE and writes external_sources config)
+"Initialize SpecAnchor"          → Creates anchor.yaml + optional .specanchor/ + auto-generates Global Specs
+                                   (auto-detects existing spec systems and writes sources config)
 "Create module spec for auth"    → Create Module Spec on demand when touching a module
 ```
 
@@ -119,22 +119,43 @@ SpecAnchor only handles "organization", not "writing" — through a declarative 
 
 ### OpenSpec Compatibility
 
-Existing OpenSpec projects can map the `openspec/` directory to SpecAnchor's system via `external_sources`, without moving any files:
+Existing OpenSpec projects can map the `openspec/` directory into SpecAnchor governance via `sources`, without moving any files:
 
 ```yaml
-# .specanchor/config.yaml
+# anchor.yaml (project root)
 specanchor:
-  external_sources:
-    - source: "openspec/specs"
+  sources:
+    - path: "openspec/specs"
+      type: "openspec"
       maps_to: module_specs
-      format: "openspec"
-    - source: "openspec/changes"
+      governance:
+        stale_check: true
+        frontmatter_inject: false
+    - path: "openspec/changes"
+      type: "openspec"
       maps_to: task_specs
-      format: "openspec"
       exclude: ["archive"]
+      governance:
+        stale_check: true
 ```
 
 Use the "Import OpenSpec config" command to auto-generate this configuration.
+
+### Compatible Spec Systems
+
+SpecAnchor supports governing multiple spec systems, auto-detected during initialization:
+
+| System | Detection Path | Description |
+| ------ | -------------- | ----------- |
+| OpenSpec | `openspec/` | Spec-Driven Development framework |
+| spec-kit | `specs/` | Generic spec directory |
+| mydocs | `mydocs/specs/` | SDD-RIPER-ONE standalone output |
+| qoder | `.qoder/specs/` | Qoder AI framework |
+| custom | user-specified | Any Markdown spec directory |
+
+**Two operating modes**:
+- **full** — Has `.specanchor/` with own Spec system + optional external source governance
+- **parasitic** — No `.specanchor/`, pure governance of existing spec systems (staleness detection + scanning)
 
 ### SpecAnchor's Unique Capabilities
 
@@ -164,18 +185,30 @@ SpecAnchor/
     └── specanchor-check.sh      ← Alignment detection script
 ```
 
-### After Installation in Your Project
+### After Installation (full mode)
 
 ```
 your-project/
-├── .specanchor/
-│   ├── config.yaml              ← Configuration
+├── anchor.yaml                  ← Configuration (project root, single entry point)
+├── .specanchor/                 ← Data directory only
 │   ├── global/                  ← L1: Global Spec (≤200 lines)
 │   ├── modules/                 ← L2: Module Spec (centralized)
 │   ├── module-index.md          ← Module index
 │   ├── tasks/                   ← L3: Task Spec (grouped by module)
 │   ├── archive/                 ← Completed task archive
-│   └── schemas/                 ← User custom Schemas (optional)
+│   ├── schemas/                 ← User custom Schemas (optional)
+│   └── scripts/                 ← Auto-generated scan scripts
+└── src/
+```
+
+### After Installation (parasitic mode)
+
+```
+your-project/
+├── anchor.yaml                  ← Configuration (only this file)
+├── .specanchor/
+│   └── scripts/                 ← Auto-generated scan scripts
+├── specs/                       ← Existing spec system (untouched)
 └── src/
 ```
 
@@ -183,15 +216,21 @@ your-project/
 
 ## Configuration
 
-`.specanchor/config.yaml` controls SpecAnchor's behavior. Full config reference in `references/specanchor-protocol.md` Appendix A.
+`anchor.yaml` in the project root controls SpecAnchor's behavior. Full config reference in `references/specanchor-protocol.md` Appendix A.
 
 Key settings:
 
 ```yaml
 specanchor:
-  version: "0.3.0"
+  version: "0.4.0"
+  mode: "full"                      # full | parasitic
+  sources:                          # External spec systems (optional)
+    - path: "specs/"
+      type: "spec-kit"
+      governance:
+        stale_check: true
   writing_protocol:
-    schema: "sdd-riper-one"        # Writing protocol: sdd-riper-one | openspec-compat | custom
+    schema: "sdd-riper-one"         # Writing protocol: sdd-riper-one | openspec-compat | custom
   coverage:
     scan_paths: ["src/modules/**"]  # Coverage scan scope
   check:

@@ -8,13 +8,13 @@
 
 - `level`（从用户意图推断）: `task` / `module` / `global` / `coverage`
 - `spec`（task/module 级）: Spec 文件路径，或全部检查
-- `base`（task 级可选）: git 基准分支，默认从 config.yaml 读取
-- `stale-days`（module 级可选）: 过期天数阈值，默认从 config.yaml 读取（通常 14）
+- `base`（task 级可选）: git 基准分支，默认从 `anchor.yaml` 读取
+- `stale-days`（module 级可选）: 过期天数阈值，默认从 `anchor.yaml` 读取（通常 14）
 - `files`（coverage 级）: 要检查覆盖度的文件路径列表
 
 ## 执行
 
-调用 `scripts/specanchor-check.sh` 并传递参数。无脚本时由 Agent 直接执行等效 git 命令。
+调用 `scripts/specanchor-check.sh` 并传递参数。无脚本时由 Agent 直接执行等效 git 命令。如存在 `.specanchor/scripts/scan.sh`，自动调用以扫描 sources 中的外部 spec 文件。
 
 **脚本详细逻辑**: `scripts/specanchor-check.sh`
 

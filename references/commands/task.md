@@ -31,7 +31,7 @@
      - Agent 参考启动时发现的 Available Schemas（§1 步骤 4），结合任务描述判断：
        - 有明确最佳匹配 → 展示推荐，等待用户确认
        - 有多个接近匹配 → 展示推荐 + 备选
-       - 无明确匹配 → 使用 `config.yaml` 的 `writing_protocol.schema` 默认值（默认 `sdd-riper-one`）
+       - 无明确匹配 → 使用 `anchor.yaml` 的 `writing_protocol.schema` 默认值（默认 `sdd-riper-one`）
    - **4c. 加载选中 Schema**
      - 按查找顺序（`.specanchor/schemas/<name>/` → `references/schemas/<name>/`）定位 Schema
      - 读取 `schema.yaml` 和 `template.md`

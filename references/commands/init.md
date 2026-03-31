@@ -1,8 +1,8 @@
 # specanchor_init
 
-初始化 `.specanchor/` 目录结构和 `config.yaml` 配置文件。
+初始化 SpecAnchor 配置。根据用户选择的模式，生成根目录 `anchor.yaml` 和可选的 `.specanchor/` 目录结构。
 
-**用户可能这样说**: "帮我初始化规范管理" / "初始化 SpecAnchor" / "创建 .specanchor 目录" / "我要开始用 SpecAnchor"
+**用户可能这样说**: "帮我初始化规范管理" / "初始化 SpecAnchor" / "创建 anchor.yaml" / "我要开始用 SpecAnchor"
 
 ## 参数
 
@@ -11,133 +11,138 @@
 
 ## 执行
 
-1. 检查 `.specanchor/` 是否已存在。已存在则报错：`目录已存在，如需重新初始化请先手动删除`
-2. 创建以下目录结构：
+1. **检查是否已初始化**。检查项目根目录 `anchor.yaml` 是否已存在。已存在则报错：`anchor.yaml 已存在，如需重新初始化请先手动删除`
+
+2. **扫描项目根目录，自动检测已有 spec 体系**（基于 Type Registry，见 `specanchor-protocol.md` 附录 B）：
+
+   ```
+   扫描路径:
+   ├─ openspec/          → type: "openspec"
+   ├─ specs/             → type: "spec-kit"
+   ├─ mydocs/specs/      → type: "mydocs"
+   ├─ .qoder/specs/      → type: "qoder"
+   ├─ docs/specs/        → type: "generic"
+   └─ 用户手动指定       → type: "custom"
+   ```
+
+   - 每发现一个目录，统计匹配文件数（使用 type registry 中的默认 `file_pattern`）
+   - 输出检测结果：
+
+     ```
+     🔍 检测到以下 spec 体系:
+       specs/          [spec-kit]    12 个 spec 文件
+       .qoder/specs/   [qoder]       5 个 spec 文件
+     ```
+
+   - 未发现任何外部 spec 体系 → 跳过 sources 配置，直接到步骤 4
+
+3. **确认治理策略**（仅当步骤 2 检测到外部来源时）：
+
+   逐个询问用户每个来源的治理策略：
+
+   ```
+   specs/ [spec-kit] — 是否纳入 SpecAnchor 治理？(Y/n)
+     ├─ 纳入腐化检测 (stale_check)？(Y/n)
+     ├─ 注入 SpecAnchor frontmatter？(y/N)
+     └─ init 时扫描并生成报告？(Y/n)
+   ```
+
+   用户选择拒绝纳入的来源不写入 `sources` 段。
+
+4. **选择运行模式**：
+
+   ```
+   请选择 SpecAnchor 运行模式:
+     [1] full — 创建 .specanchor/ 自有 Spec 体系 + 治理外部来源（推荐）
+     [2] parasitic — 仅治理已有 spec 体系，不创建 .specanchor/
+   ```
+
+   - 如果步骤 2 未检测到任何外部来源 → 自动选择 full 模式，跳过此询问
+   - parasitic 模式提示：`parasitic 模式只提供腐化检测和扫描能力，不支持创建 Spec。如需创建 Spec，后续可运行 "升级到 full 模式" 进行升级。`
+
+5. **生成根目录 `anchor.yaml`**：
+
+   根据步骤 2-4 的结果生成配置。模板见 `specanchor-protocol.md` 附录 A。
+
+   - `mode` 设为用户选择的模式
+   - `sources` 段根据步骤 3 的确认结果生成
+   - `scan_paths` 根据项目实际目录结构调整
+   - parasitic 模式下 `paths` 段注释掉
+
+6. **创建 `.specanchor/` 目录结构**（仅 mode: full）：
 
    ```
    .specanchor/
-   ├── config.yaml
    ├── global/
    ├── modules/
    ├── tasks/
    │   └── _cross-module/
    ├── archive/
+   ├── scripts/
    ├── module-index.md
    └── project-codemap.md
    ```
 
-3. 写入 `config.yaml`，根据项目实际情况调整 `scan_paths`：
+   parasitic 模式跳过此步，但仍创建 `.specanchor/scripts/` 用于存放扫描脚本。
 
-   ```yaml
-   specanchor:
-     version: "0.2.0"
-     project_name: "<project_name>"
+7. **生成扫描脚本** `.specanchor/scripts/scan.sh`：
 
-     paths:
-       global_specs: ".specanchor/global/"
-       module_specs: ".specanchor/modules/"
-       task_specs: ".specanchor/tasks/"
-       archive: ".specanchor/archive/"
-       module_index: ".specanchor/module-index.md"
-       project_codemap: ".specanchor/project-codemap.md"
+   根据 `anchor.yaml` 的 `sources` 和 `coverage` 配置自动生成。脚本功能：
+   - 扫描所有 sources 中的文件，检测腐化状态（基于 git 最后修改日期 vs `check.stale_days`）
+   - mode: full 时同时扫描 `.specanchor/modules/` 中的 native spec
+   - 输出腐化报告（FRESH / STALE / OUTDATED）
 
-     coverage:
-       scan_paths:
-         - "src/modules/**"
-         - "src/components/**"
-       ignore_paths:
-         - "src/components/ui/**"
-         - "src/**/*.test.*"
-         - "src/**/*.stories.*"
+   脚本可独立运行（`bash .specanchor/scripts/scan.sh`），也可被 `specanchor_check` 命令自动调用。
 
-     check:
-       stale_days: 14
-       outdated_days: 30
-       warn_recent_commits_days: 14
-       task_base_branch: "main"
+8. **可选：配置 git hook**：
 
-     sync:
-       auto_check_on_mr: true
-       sprint_sync_reminder: true
+   ```
+   是否配置 git pre-commit hook 自动运行腐化检测？(y/N)
    ```
 
-4. **自动扫描外部 SDD 框架并导入配置**：
-   - 检查 `openspec/` 目录是否存在
-     - 存在 → 执行以下导入流程：
-       a. 自动将 `external_sources` 和 `writing_protocol` 配置写入 `config.yaml`：
+   用户确认 → 在 `.git/hooks/pre-commit`（或 `.husky/pre-commit`，如检测到 husky）中追加 scan.sh 调用。
+   用户拒绝 → 跳过，输出：`⏭️ 可随时手动配置 git hook。`
 
-          ```yaml
-          writing_protocol:
-            schema: "openspec-compat"
+9. **自动生成 Global Spec**（仅 mode: full）：
 
-          external_sources:
-            - source: "openspec/specs"
-              maps_to: module_specs
-              format: "openspec"
-              file_pattern: "**/spec.md"
-            - source: "openspec/changes"
-              maps_to: task_specs
-              format: "openspec"
-              file_pattern: "*"
-              exclude: ["archive"]
-          ```
-
-       b. 扫描 `openspec/config.yaml`：
-          - 提取 `context` 字段 → 自动转译为 Global Spec 草稿（`project-setup.spec.md`），合并到步骤 5 的自动生成流程中
-          - 提取 `rules` 字段 → 合并到 `coding-standards.spec.md` 的建议章节
-       c. 更新 `module-index.md`：将 `openspec/specs/` 下的模块追加到索引（标注 `来源: external:openspec`）
-       d. 输出：`✅ 检测到 OpenSpec 目录 (openspec/)，已自动导入配置，写作协议已设为 openspec-compat。`
-   - 检查 `mydocs/specs/` 目录是否存在（SDD-RIPER-ONE 独立使用时的产出）
-     - 存在 → 自动将以下配置追加到 `config.yaml` 的 `external_sources` 中：
-
-       ```yaml
-       external_sources:  # 追加到已有列表
-         - source: "mydocs/specs"
-           maps_to: task_specs
-           format: "specanchor"
-           file_pattern: "**/*.md"
-       ```
-
-     - 输出：`✅ 检测到 SDD-RIPER-ONE 产出 (mydocs/specs/)，已自动配置 external_sources 映射。`
-     - 列出检测到的文件数量
-
-5. **自动生成 Global Spec**：扫描项目代码，为检测到的所有适用规范类型自动生成 Global Spec 草稿
+   扫描项目代码，为检测到的所有适用规范类型自动生成 Global Spec 草稿：
    - 扫描 `package.json` / `tsconfig.json` → 生成 `project-setup.spec.md`
    - 扫描代码文件模式、ESLint/Prettier 配置 → 生成 `coding-standards.spec.md`
    - 扫描目录结构、路由配置 → 生成 `architecture.spec.md`
-   - 如步骤 4 已从 OpenSpec `context` / `rules` 提取内容，合并到对应 Global Spec 中
+   - 如步骤 2 检测到 OpenSpec 且其 `config.yaml` 含 `context` / `rules`，合并到对应 Global Spec
    - 每个 Global Spec 生成后输出 `📄 已生成: .specanchor/global/<type>.spec.md`
-   - 最后检查所有 Global Spec 合计是否 ≤ 200 行，超出则警告并建议精简
+   - 检查所有 Global Spec 合计是否 ≤ 200 行，超出则警告并建议精简
    - 提示用户 Review 生成的内容
 
-6. **Frontmatter 适配询问**（仅当步骤 4 检测到 `openspec/` 时）：
-   - 统计 `openspec/specs/` 下缺少 YAML frontmatter 的文件数量
-   - 询问用户：
+10. **可选：Frontmatter 注入**（仅当 sources 中有 `frontmatter_inject: true` 的来源时）：
 
-     ```
-     ℹ️ openspec/specs/ 下有 <N> 个文件缺少 YAML frontmatter。
-     添加 frontmatter 后，这些文件将获得完整的 SpecAnchor 治理能力（版本追踪、负责人、状态管理、精确覆盖率检测）。
-     不添加也可正常使用，但覆盖率检测基于文件存在性而非元信息。
+    对每个启用了 frontmatter_inject 的来源：
+    - 统计缺少 YAML frontmatter 的文件数量
+    - 遍历文件，根据内容和路径推断元信息，在文件头部插入 frontmatter：
 
-     是否为这些文件添加 frontmatter？(Y/n)
-     ```
+      ```yaml
+      ---
+      specanchor:
+        level: module
+        module_name: "<从目录名推断>"
+        module_path: "<从 coverage.scan_paths 模糊匹配>"
+        version: "1.0.0"
+        owner: "@team"
+        status: active
+        last_synced: "<当前日期>"
+      ---
+      ```
 
-   - 用户确认 → 遍历文件，根据文件内容和路径推断元信息，在文件头部插入 frontmatter：
+    - 如果文件已有 frontmatter，在已有 frontmatter 中追加 `specanchor:` 段，不覆盖原有字段
+    - 每个文件处理后输出 `✏️ 已添加 frontmatter: <path>`
 
-     ```yaml
-     ---
-     specanchor:
-       level: module
-       module_name: "<从目录名推断>"
-       module_path: "<从 coverage.scan_paths 模糊匹配>"
-       version: "1.0.0"
-       owner: "@team"
-       status: active
-       last_synced: "<当前日期>"
-     ---
-     ```
+11. **输出完成信息**：
 
-   - 每个文件处理后输出 `✏️ 已添加 frontmatter: openspec/specs/<path>`
-   - 用户拒绝 → 跳过，输出：`⏭️ 跳过 frontmatter 添加，文件保持原样。可随时运行"为 OpenSpec 文件添加 frontmatter"手动执行。`
-
-7. 输出完成信息和目录结构
+    ```
+    ✅ SpecAnchor 初始化完成 [<mode>]
+      配置: anchor.yaml
+      目录: .specanchor/ (仅 full 模式显示)
+      来源: <N> 个外部 spec 体系已纳入治理
+      脚本: .specanchor/scripts/scan.sh
+      Git Hook: 已配置 / 未配置
+    ```
