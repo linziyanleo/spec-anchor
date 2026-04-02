@@ -28,6 +28,24 @@ specanchor:
         frontmatter_inject: false
         scan_on_init: true
 
+    - path: "docs/superpowers/specs/"
+      type: "custom"
+      maps_to: task_specs
+      file_pattern: "**/*.md"
+      governance:
+        stale_check: true
+        frontmatter_inject: true
+        scan_on_init: true
+
+    - path: "docs/superpowers/plans/"
+      type: "custom"
+      maps_to: task_specs
+      file_pattern: "**/*.md"
+      governance:
+        stale_check: true
+        frontmatter_inject: true
+        scan_on_init: true
+
   # === 写作协议 ===
   writing_protocol:
     schema: "sdd-riper-one"
