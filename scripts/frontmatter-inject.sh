@@ -156,7 +156,10 @@ detect_task_name() {
   h1=$(grep -m1 '^# ' "$file" 2>/dev/null | sed 's/^# *//' || echo "")
 
   if [[ -n "$h1" ]]; then
+    # SDD-RIPER-ONE 格式
     h1=$(echo "$h1" | sed 's/^SDD Spec: *//' | sed 's/^Research: *//' | sed 's/^Change: *//' | sed 's/^Task: *//')
+    # Superpowers 格式
+    h1=$(echo "$h1" | sed 's/ Implementation Plan$//' | sed 's/ Design$//' | sed 's/ Design Spec$//')
     echo "$h1"
     return
   fi
@@ -173,6 +176,7 @@ detect_sdd_phase() {
   local content
   content=$(cat "$file" 2>/dev/null || echo "")
 
+  # SDD-RIPER-ONE 格式（优先检测）
   if echo "$content" | grep -q '^## 7\. Plan-Execution Diff'; then
     echo "DONE"
   elif echo "$content" | grep -q '^## 6\. Review Verdict'; then
@@ -184,6 +188,21 @@ detect_sdd_phase() {
   elif echo "$content" | grep -q '^## 3\. Innovate'; then
     echo "INNOVATE"
   elif echo "$content" | grep -q '^## 2\. Research'; then
+    echo "RESEARCH"
+  # Superpowers plan 格式 fallback（### Task N: + checkbox 风格）
+  elif echo "$content" | grep -qE '^### Task [0-9]+:'; then
+    local total_checks done_checks
+    total_checks=$(echo "$content" | grep -cE '^\s*- \[(x| )\]' || echo "0")
+    done_checks=$(echo "$content" | grep -cE '^\s*- \[x\]' || echo "0")
+    if [[ "$total_checks" -gt 0 ]] && [[ "$total_checks" -eq "$done_checks" ]]; then
+      echo "DONE"
+    elif [[ "$done_checks" -gt 0 ]]; then
+      echo "EXECUTE"
+    else
+      echo "PLAN"
+    fi
+  # Superpowers design spec 格式 fallback（**Goal:** + **Architecture:** 风格）
+  elif echo "$content" | grep -q '^\*\*Goal:\*\*'; then
     echo "RESEARCH"
   else
     echo "RESEARCH"
