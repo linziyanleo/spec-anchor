@@ -1,6 +1,6 @@
 ---
 name: spec-anchor
-description: 三级 Spec 体系（Global/Module/Task），在 AI 生成代码前自动加载编码规范与模块契约，保障团队一致性。只要项目中有 anchor.yaml 或 .specanchor/ 目录，就应该使用此 Skill——无论用户是在讨论编码规范、模块设计、任务规划，还是在开始开发任务、提交代码、代码评审。即使用户只是简单地说"开始做 XX 功能"或"改一下 XX"，也应该触发此 Skill 进行工作流选择（⚡/📋）。中英文关键词触发：规范、约定、对齐、覆盖率、spec、SA 前缀命令。
+description: 三级 Spec 体系（Global/Module/Task），在 AI 生成代码前自动加载编码规范与模块契约，保障团队一致性。只要项目中有 anchor.yaml 或 .specanchor/ 目录，或者正在生成 Spec 文档，就应该使用此 Skill——无论用户是在讨论编码规范、模块设计、任务规划，还是在开始开发任务、提交代码、代码评审。即使用户只是简单地说"开始做 XX 功能"或"改一下 XX"，也应该触发此 Skill 进行工作流选择（⚡/📋）。中英文关键词触发：规范、约定、对齐、覆盖率、spec、SA 前缀命令。
 ---
 
 # SpecAnchor
@@ -76,6 +76,45 @@ parasitic 模式下执行 full-only 命令时，提示：`⚠️ 此命令需要
 
 - 核心命令 → `🔧 <命令名> — <用途>`
 - 扩展命令 → `🔌 <命令名> — <用途>`
+
+## Spec 创建与新鲜度检测
+
+任何 Spec 的创建和注入都应走 anchor.yaml 配置 + 脚本检测流程，确保 frontmatter 规范化和新鲜度可追踪。
+
+### 创建新 Spec（specanchor_task / specanchor_module / specanchor_global）
+
+Agent 使用 Schema 模板直接创建文件，frontmatter 在创建时一步填充。创建完成后，运行 `scripts/specanchor-check.sh` 验证新鲜度：
+
+```bash
+# Task Spec 创建后检测
+bash scripts/specanchor-check.sh task <spec-file>
+
+# Module Spec 创建/更新后检测
+bash scripts/specanchor-check.sh module <spec-file>
+
+# 全局概览
+bash scripts/specanchor-check.sh global
+```
+
+### 给已有 Spec 注入 Frontmatter（外部来源 / 历史文件）
+
+使用 `scripts/frontmatter-inject.sh`（Layer 1）自动推断并注入 SpecAnchor YAML frontmatter，或使用 `scripts/frontmatter-inject-and-check.sh`（Layer 2）注入后自动运行新鲜度检测：
+
+```bash
+# Layer 1: 预览 → 注入
+bash scripts/frontmatter-inject.sh --dir <path> --dry-run
+bash scripts/frontmatter-inject.sh --dir <path>
+
+# Layer 2: 注入 + 检测一步完成
+bash scripts/frontmatter-inject-and-check.sh --dir <path>
+
+# 单文件注入
+bash scripts/frontmatter-inject.sh <file> --task-name "任务名"
+```
+
+脚本自动推断 author / branch / created / level / protocol / status / sdd_phase 等字段，Agent 只需提供核心参数（task_name、status 等可选覆盖）。脚本幂等安全——已有 `specanchor:` frontmatter 的文件会被自动跳过。
+
+详见 `references/external-sources-protocol.md` §6。
 
 ## Module Spec 集中管理
 
@@ -156,3 +195,6 @@ SpecAnchor 支持通过扩展按需加载增强功能。
 | `references/global-spec-template.md` | 执行 `specanchor_global` 时 |
 | `references/module-spec-template.md` | 执行 `specanchor_module` / `specanchor_infer` 时 |
 | `references/schemas/<name>/` | 执行 `specanchor_task` 时，加载对应 Schema 的 `schema.yaml` + `template.md` |
+| `scripts/frontmatter-inject.sh` | 给已有 spec 文件注入 SpecAnchor YAML frontmatter 时（Layer 1 纯注入） |
+| `scripts/frontmatter-inject-and-check.sh` | 注入 frontmatter 并自动运行新鲜度检测时（Layer 2 注入+检测） |
+| `scripts/specanchor-check.sh` | Spec 创建/更新后验证新鲜度，或运行 `specanchor_check` 命令时 |
