@@ -1,1 +1,3 @@
 /mydocs/*
+.DS_Store
+/tests/
