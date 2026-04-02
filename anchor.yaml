@@ -1,0 +1,54 @@
+specanchor:
+  version: "0.4.0"
+  project_name: "spec-anchor"
+
+  # === 运行模式 ===
+  # spec-anchor 本身是一个 Skill 项目（Markdown + Shell 脚本混合），
+  # 使用 full 模式管理自身的 Spec 体系
+  mode: "full"
+
+  # === 路径配置 ===
+  paths:
+    global_specs: ".specanchor/global/"
+    module_specs: ".specanchor/modules/"
+    task_specs: ".specanchor/tasks/"
+    archive: ".specanchor/archive/"
+    module_index: ".specanchor/module-index.md"
+    project_codemap: ".specanchor/project-codemap.md"
+
+  # === 外部来源 ===
+  # mydocs/specs/ 包含历史开发 spec（SDD-RIPER-ONE 格式），纳入治理但不注入 frontmatter
+  sources:
+    - path: "mydocs/specs/"
+      type: "mydocs"
+      maps_to: task_specs
+      file_pattern: "**/*.md"
+      governance:
+        stale_check: true
+        frontmatter_inject: false
+        scan_on_init: true
+
+  # === 写作协议 ===
+  writing_protocol:
+    schema: "sdd-riper-one"
+    schema_recommend: true
+
+  coverage:
+    scan_paths:
+      - "scripts/**"
+      - "references/**"
+      - "extensions/**"
+    ignore_paths:
+      - "references/schemas/**"
+      - "mydocs/**"
+      - "*.md"
+
+  check:
+    stale_days: 14
+    outdated_days: 30
+    warn_recent_commits_days: 14
+    task_base_branch: "main"
+
+  sync:
+    auto_check_on_mr: true
+    sprint_sync_reminder: false
