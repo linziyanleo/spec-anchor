@@ -116,33 +116,46 @@
 
 10. **可选：Frontmatter 注入**（仅当 sources 中有 `frontmatter_inject: true` 的来源时）：
 
-    对每个启用了 frontmatter_inject 的来源：
-    - 统计缺少 YAML frontmatter 的文件数量
-    - 遍历文件，根据内容和路径推断元信息，在文件头部插入 frontmatter：
+    使用 `scripts/frontmatter-inject.sh` 脚本自动注入。对每个启用了 frontmatter_inject 的来源：
 
-      ```yaml
-      ---
-      specanchor:
-        level: module
-        module_name: "<从目录名推断>"
-        module_path: "<从 coverage.scan_paths 模糊匹配>"
-        version: "1.0.0"
-        owner: "@team"
-        status: active
-        last_synced: "<当前日期>"
-      ---
-      ```
+    ```bash
+    # 先 dry-run 预览
+    bash scripts/frontmatter-inject.sh --dir <source_path> --level <maps_to_level> --dry-run
 
-    - 如果文件已有 frontmatter，在已有 frontmatter 中追加 `specanchor:` 段，不覆盖原有字段
-    - 每个文件处理后输出 `✏️ 已添加 frontmatter: <path>`
+    # 确认后实际注入
+    bash scripts/frontmatter-inject.sh --dir <source_path> --level <maps_to_level>
+    ```
 
-11. **输出完成信息**：
+    脚本自动处理三种情况：
+    - **文件无 frontmatter** → 在文件头部插入完整 `specanchor:` frontmatter
+    - **文件有 frontmatter 但无 `specanchor:` 段** → 在已有 frontmatter 中追加 `specanchor:` 段，不覆盖原有字段
+    - **文件已有 `specanchor:` 段** → 跳过（幂等安全）
+
+    脚本自动推断以下字段：`author`（git config）、`created`（git 首次提交日期或文件名日期前缀）、`branch`（当前分支）、`task_name`/`module_name`（从 H1 标题或文件名推断）、`writing_protocol`（从 anchor.yaml 读取）、`status`（从 checklist 完成度推断）、`sdd_phase`（从已完成章节推断）。
+
+    注入完成后自动输出摘要（N injected / M skipped / K failed）。
+
+11. **可选：注入后新鲜度检测**：
+
+    使用 `scripts/frontmatter-inject-and-check.sh`（Layer 2）可一步完成注入 + 检测：
+
+    ```bash
+    # 注入后自动运行新鲜度检测
+    bash scripts/frontmatter-inject-and-check.sh --dir <source_path> --level <maps_to_level>
+
+    # 或单独运行检测
+    bash scripts/specanchor-check.sh global
+    ```
+
+    检测结果展示各 spec 文件的新鲜度状态（FRESH / STALE / OUTDATED），Agent 根据检测结果向用户报告需要关注的腐化 spec。
+
+12. **输出完成信息**：
 
     ```
     ✅ SpecAnchor 初始化完成 [<mode>]
       配置: anchor.yaml
       目录: .specanchor/ (仅 full 模式显示)
       来源: <N> 个外部 spec 体系已纳入治理
-      脚本: .specanchor/scripts/scan.sh
+      脚本: scripts/frontmatter-inject.sh, scripts/specanchor-check.sh
       Git Hook: 已配置 / 未配置
     ```

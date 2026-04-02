@@ -46,7 +46,7 @@ specanchor:
 | 字段 | 默认 | 说明 |
 | ---- | ---- | ---- |
 | `stale_check` | `true` | 是否纳入腐化检测。启用后 `specanchor_check` 和 scan.sh 会扫描该来源 |
-| `frontmatter_inject` | `false` | 是否注入 SpecAnchor YAML frontmatter。仅在 `specanchor_init` 时询问用户 |
+| `frontmatter_inject` | `false` | 是否注入 SpecAnchor YAML frontmatter。`specanchor_init` 时询问用户确认后，使用 `scripts/frontmatter-inject.sh` 自动注入。也可随时手动运行脚本批量注入 |
 | `scan_on_init` | `true` | init 时是否扫描该来源并生成报告 |
 
 ## §2 启动检查扩展
@@ -142,7 +142,44 @@ Sources:
 2. 找到 source 来源 → 从外部路径读取 spec 文件并注入上下文
 3. 提示用户："ℹ️ 已加载外部来源的 Module Spec: `<path>`（来自 <type>，无 frontmatter）"
 
-## §6 注意事项
+## §6 Frontmatter 注入工具
+
+当 `governance.frontmatter_inject: true` 时，使用 `scripts/frontmatter-inject.sh`（Layer 1）自动注入 SpecAnchor YAML frontmatter。
+
+### 基本用法
+
+```bash
+# 预览注入效果（不修改文件）
+bash scripts/frontmatter-inject.sh --dir <source_path> --dry-run
+
+# 实际注入
+bash scripts/frontmatter-inject.sh --dir <source_path> --level module
+
+# 注入 + 新鲜度检测一步完成（Layer 2）
+bash scripts/frontmatter-inject-and-check.sh --dir <source_path> --level module
+```
+
+### 自动推断字段
+
+| 字段 | 推断方式 |
+| ---- | ---- |
+| `author` | `git config user.name` |
+| `created` | git 首次提交日期 → 文件名日期前缀 → 当前日期 |
+| `branch` | `git branch --show-current` |
+| `task_name` / `module_name` | 从 H1 标题提取 → 从文件名推断 |
+| `writing_protocol` | 从 `anchor.yaml` 的 `writing_protocol.schema` 读取 |
+| `status` | 从 checklist 完成度推断（全部完成→done，部分→in_progress，无→draft） |
+| `sdd_phase` | 从已完成章节推断（有 §6→REVIEW，有 §5→EXECUTE，等） |
+| `related_global` | 扫描 `.specanchor/global/` 列出所有 .spec.md |
+| `related_modules` | 从文件内容匹配 module-index.md |
+
+### 三种情况处理
+
+1. 文件无 frontmatter → 文件头部插入完整 frontmatter
+2. 有 frontmatter 无 `specanchor:` 段 → 追加 `specanchor:` 段，不覆盖原有字段
+3. 已有 `specanchor:` 段 → 跳过（幂等安全）
+
+## §7 注意事项
 
 - **不写入外部目录**：SpecAnchor 对 sources 中的目录只读，永远不写入或修改外部文件（frontmatter 注入除外，且需用户明确同意）
 - **优先级**：当 native 和 source 同时覆盖同一模块路径时，native 优先
