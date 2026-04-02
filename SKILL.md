@@ -172,6 +172,33 @@ Task Spec 创建完成后，输出解锁检查点：`🔓 标准流程已激活 
 
 此规则适用于所有 `philosophy: strict` 的 Schema 中声明的 gate。`philosophy: fluid` 的 Schema 无此约束。
 
+## 与 Superpowers 的集成
+
+当项目同时启用 superpowers 和 SpecAnchor 时，两者各司其职：superpowers 驱动工作流（brainstorm → plan → execute → review），SpecAnchor 治理 Spec（frontmatter 注入 → 新鲜度追踪 → 覆盖率管理）。
+
+### 协作顺序
+
+1. `superpowers:brainstorming` 产出 Design Spec → 保存到 `docs/superpowers/specs/`
+2. SpecAnchor 通过 `sources` 配置识别该文件，`frontmatter-inject.sh` 注入 `specanchor:` 元数据
+3. `superpowers:writing-plans` 产出 Plan → 保存到 `docs/superpowers/plans/`
+4. SpecAnchor 再次注入 frontmatter，`specanchor-check.sh` 纳入新鲜度追踪
+5. `superpowers:executing-plans` / `subagent-driven-development` 正常执行
+
+### 门禁降级规则
+
+superpowers 活跃时（即项目中存在 `docs/superpowers/` 目录），SpecAnchor 的行为调整：
+
+- **Task Spec 创建门禁**：从阻塞降级为建议。superpowers 的 Design Spec + Plan 已覆盖 Task Spec 的功能
+- **工作流选择（⚡/📋）**：仍然输出决策检查点，但不强制创建 Task Spec
+- **Schema 推荐**：不推荐，因为 superpowers 有自己的工作流阶段
+
+### 格式兼容
+
+`frontmatter-inject.sh` 自动识别 superpowers 文件格式：
+- H1 `# Feature Name Implementation Plan` → task_name 提取为 `Feature Name`
+- `### Task N:` + checkbox 风格 → sdd_phase 推断为 PLAN/EXECUTE/DONE
+- `**Goal:** + **Architecture:**` 风格 → sdd_phase 推断为 RESEARCH
+
 ## 扩展（可选）
 
 SpecAnchor 支持通过扩展按需加载增强功能。
