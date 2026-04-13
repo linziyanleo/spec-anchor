@@ -475,18 +475,20 @@ SpecAnchor 不要求一次性写全所有 Module Spec。它采用"**触碰即文
 SpecAnchor 提供了 Shell 脚本 `specanchor-check.sh` 进行自动化对齐检测，支持四种模式：
 
 ```bash
+# $SA_SKILL_DIR = Skill 安装目录（见 SKILL.md「脚本调用约定」）
+
 # Task Spec 检测：检查 Task Spec 的 Checklist 执行情况
-bash scripts/specanchor-check.sh task <spec-file>
+bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" task <spec-file>
 
 # Module Spec 检测：检查 Module Spec 与代码的新鲜度
-bash scripts/specanchor-check.sh module <spec-file>
+bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" module <spec-file>
 # 输出: FRESH / DRIFTED / STALE / OUTDATED
 
 # Global 概览：全项目 Spec 健康度报告
-bash scripts/specanchor-check.sh global
+bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" global
 
 # Coverage 检测：哪些代码目录没有 Module Spec 覆盖
-bash scripts/specanchor-check.sh coverage
+bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" coverage
 ```
 
 新鲜度状态机：

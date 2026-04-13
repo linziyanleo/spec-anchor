@@ -116,14 +116,14 @@
 
 10. **可选：Frontmatter 注入**（仅当 sources 中有 `frontmatter_inject: true` 的来源时）：
 
-    使用 `scripts/frontmatter-inject.sh` 脚本自动注入。对每个启用了 frontmatter_inject 的来源：
+    使用 frontmatter-inject.sh 脚本自动注入（`$SA_SKILL_DIR` 定义见 SKILL.md「脚本调用约定」）。对每个启用了 frontmatter_inject 的来源：
 
     ```bash
     # 先 dry-run 预览
-    bash scripts/frontmatter-inject.sh --dir <source_path> --level <maps_to_level> --dry-run
+    bash "$SA_SKILL_DIR/scripts/frontmatter-inject.sh" --dir <source_path> --level <maps_to_level> --dry-run
 
     # 确认后实际注入
-    bash scripts/frontmatter-inject.sh --dir <source_path> --level <maps_to_level>
+    bash "$SA_SKILL_DIR/scripts/frontmatter-inject.sh" --dir <source_path> --level <maps_to_level>
     ```
 
     脚本自动处理三种情况：
@@ -137,14 +137,14 @@
 
 11. **可选：注入后新鲜度检测**：
 
-    使用 `scripts/frontmatter-inject-and-check.sh`（Layer 2）可一步完成注入 + 检测：
+    使用 frontmatter-inject-and-check.sh（Layer 2）可一步完成注入 + 检测：
 
     ```bash
     # 注入后自动运行新鲜度检测
-    bash scripts/frontmatter-inject-and-check.sh --dir <source_path> --level <maps_to_level>
+    bash "$SA_SKILL_DIR/scripts/frontmatter-inject-and-check.sh" --dir <source_path> --level <maps_to_level>
 
     # 或单独运行检测
-    bash scripts/specanchor-check.sh global
+    bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" global
     ```
 
     检测结果展示各 spec 文件的新鲜度状态（FRESH / STALE / OUTDATED），Agent 根据检测结果向用户报告需要关注的腐化 spec。
@@ -156,6 +156,6 @@
       配置: anchor.yaml
       目录: .specanchor/ (仅 full 模式显示)
       来源: <N> 个外部 spec 体系已纳入治理
-      脚本: scripts/frontmatter-inject.sh, scripts/specanchor-check.sh
+      脚本: $SA_SKILL_DIR/scripts/ (见 SKILL.md「脚本调用约定」)
       Git Hook: 已配置 / 未配置
     ```

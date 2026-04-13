@@ -149,14 +149,16 @@ Sources:
 ### 基本用法
 
 ```bash
+# $SA_SKILL_DIR = Skill 安装目录（见 SKILL.md「脚本调用约定」）
+
 # 预览注入效果（不修改文件）
-bash scripts/frontmatter-inject.sh --dir <source_path> --dry-run
+bash "$SA_SKILL_DIR/scripts/frontmatter-inject.sh" --dir <source_path> --dry-run
 
 # 实际注入
-bash scripts/frontmatter-inject.sh --dir <source_path> --level module
+bash "$SA_SKILL_DIR/scripts/frontmatter-inject.sh" --dir <source_path> --level module
 
 # 注入 + 新鲜度检测一步完成（Layer 2）
-bash scripts/frontmatter-inject-and-check.sh --dir <source_path> --level module
+bash "$SA_SKILL_DIR/scripts/frontmatter-inject-and-check.sh" --dir <source_path> --level module
 ```
 
 ### 自动推断字段

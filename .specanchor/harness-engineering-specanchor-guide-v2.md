@@ -261,17 +261,19 @@ SpecAnchor 的治理能力不只停留在协议层面，它附带了三个可以
 **specanchor-check.sh** 是对齐检测的核心工具，支持四种模式：
 
 ```bash
+# $SA_SKILL_DIR = Skill 安装目录（见 SKILL.md「脚本调用约定」）
+
 # Task 检测：检查 Checklist 完成情况，比对 Plan 和实际执行的偏差
-bash scripts/specanchor-check.sh task path/to/task.spec.md
+bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" task path/to/task.spec.md
 
 # Module 检测：联动 Git 历史，判断 Module Spec 的新鲜度
-bash scripts/specanchor-check.sh module path/to/module.spec.md
+bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" module path/to/module.spec.md
 
 # Global 概览：扫描全项目，输出 Spec 健康度报告
-bash scripts/specanchor-check.sh global
+bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" global
 
 # Coverage 检测：传入文件路径，检查是否被 Module Spec 覆盖
-bash scripts/specanchor-check.sh coverage src/modules/auth/index.ts src/modules/auth/types.ts
+bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" coverage src/modules/auth/index.ts src/modules/auth/types.ts
 ```
 
 Module 检测的工作方式：脚本读取 Spec 的 frontmatter 中的 `last_synced` 时间戳，再用 `git log` 查询该模块目录下的最近提交时间，两者比对得出新鲜度状态。DRIFTED 表示代码变了但 Spec 没更新，STALE 表示超过 14 天未同步，OUTDATED 表示超过 30 天。阈值在 `anchor.yaml` 中可配。
@@ -282,10 +284,10 @@ Module 检测的工作方式：脚本读取 Spec 的 frontmatter 中的 `last_sy
 
 ```bash
 # 预览：看看会注入什么，不实际修改文件
-bash scripts/frontmatter-inject.sh --dir docs/specs/ --dry-run
+bash "$SA_SKILL_DIR/scripts/frontmatter-inject.sh" --dir docs/specs/ --dry-run
 
 # 执行注入
-bash scripts/frontmatter-inject.sh --dir docs/specs/
+bash "$SA_SKILL_DIR/scripts/frontmatter-inject.sh" --dir docs/specs/
 ```
 
 **frontmatter-inject-and-check.sh** 是前两者的组合：先注入 frontmatter，再自动运行新鲜度检测。适合首次接入时一步完成。

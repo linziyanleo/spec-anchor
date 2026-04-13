@@ -13,7 +13,7 @@
 
 1. 确定关联模块（用户指定 or 从任务描述自动推断目标文件路径）
 2. **Module Spec 覆盖度检查**：
-   - 运行 `scripts/specanchor-check.sh coverage <file1> [file2] ...` 传入任务涉及的所有目标文件路径
+   - 运行 `bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" coverage <file1> [file2] ...` 传入任务涉及的所有目标文件路径
    - 脚本自动扫描 `.specanchor/modules/` 中所有 Module Spec 的 `module_path` 字段，通过路径前缀匹配判断覆盖度
    - **已覆盖** → 输出 `✅ 已覆盖: <模块名> (<spec文件>)`，On-Demand 加载对应 Module Spec，继续后续步骤
    - **未覆盖** → 输出 `⚠️ 未覆盖: <路径> → 自动推断 Module Spec`，执行 `specanchor_infer` 生成草稿（status=draft），然后加载并继续

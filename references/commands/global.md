@@ -43,7 +43,7 @@
 1. 读取 `extensions/workflow/scripts/codereview.sh.template`
 2. 用 project-setup.spec.md 中收集到的配置（CR 目标分支、评审人）填充模板
 3. 生成 `codereview.sh` 到项目根目录，`chmod +x`
-4. 同时检查 `scripts/specanchor-check.sh` 是否存在，不存在则从 SpecAnchor 的 `scripts/specanchor-check.sh` 复制并 `chmod +x`
+4. 同时检查项目根目录 `scripts/specanchor-check.sh` 是否存在，不存在则从 `$SA_SKILL_DIR/scripts/specanchor-check.sh` 复制并 `chmod +x`
 5. 告知用户：脚本已生成，如需修改推送命令（如切换到 GitHub PR / GitLab MR），编辑 `codereview.sh` 中标注的位置
 
 生成后的 `codereview.sh` 属于用户项目，后续不再由 SpecAnchor 自动修改。

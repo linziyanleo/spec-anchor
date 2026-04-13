@@ -14,9 +14,9 @@
 
 ## 执行
 
-调用 `scripts/specanchor-check.sh` 并传递参数。无脚本时由 Agent 直接执行等效 git 命令。如存在 `.specanchor/scripts/scan.sh`，自动调用以扫描 sources 中的外部 spec 文件。
+调用 `$SA_SKILL_DIR/scripts/specanchor-check.sh` 并传递参数（`$SA_SKILL_DIR` 定义见 SKILL.md「脚本调用约定」）。无脚本时由 Agent 直接执行等效 git 命令。如存在 `.specanchor/scripts/scan.sh`，自动调用以扫描 sources 中的外部 spec 文件。
 
-**脚本详细逻辑**: `scripts/specanchor-check.sh`
+**脚本详细逻辑**: `$SA_SKILL_DIR/scripts/specanchor-check.sh`
 
 ## 三个级别
 
@@ -35,6 +35,6 @@
 - "看看哪些模块还没有规范"
 
 **Coverage 级** — 检查文件是否被 Module Spec 覆盖（`specanchor_task` 创建时自动调用）：
-- `scripts/specanchor-check.sh coverage <file1> [file2] ...`
+- `bash "$SA_SKILL_DIR/scripts/specanchor-check.sh" coverage <file1> [file2] ...`
 - 输出每个文件的覆盖状态和覆盖它的 Module Spec
 - 列出未覆盖的模块目录，建议执行 `specanchor_infer`
