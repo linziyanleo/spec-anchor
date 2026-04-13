@@ -2,7 +2,34 @@
 
 ## §1 启动检查流程
 
-Skill 激活时，按以下顺序执行：
+Skill 激活时，按以下顺序执行。**首选方式**是运行 `scripts/specanchor-boot.sh` 脚本一次性完成所有检查（节省 60-90% token）；**降级方式**是逐步手动执行。
+
+### §1.1 脚本化启动（首选）
+
+```bash
+# 在用户项目根目录运行
+SPECANCHOR_SKILL_DIR="<skill_install_dir>" bash "<skill_install_dir>/scripts/specanchor-boot.sh"
+
+# 可选格式：
+#   --format=summary   精简摘要（默认）
+#   --format=full      含 Global Spec 完整内容
+#   --format=json      JSON 机器可读
+```
+
+脚本执行步骤 1-5 的全部检查，输出结构化摘要。Agent 读取摘要即可获得启动上下文。
+
+如果需要 Global Spec 内容用于约束代码生成，使用 `--format=full`。
+
+脚本出错时的行为：
+
+- 配置文件缺失 → 输出 `⛔ 未找到 anchor.yaml 或 .specanchor/config.yaml` 并退出
+- `.specanchor/` 目录缺失（full 模式）→ 输出 `⛔ mode 为 full 但 .specanchor/ 目录不存在` 并退出
+
+`SPECANCHOR_SKILL_DIR` 环境变量指向 Skill 安装目录，用于查找内置 schemas。未设置时 fallback 到脚本自身上级目录。
+
+### §1.2 手动启动（降级）
+
+脚本不可用时，按以下顺序逐步执行：
 
 ```
 1. 查找配置文件（双路径查找）
@@ -43,28 +70,37 @@ Skill 激活时，按以下顺序执行：
 5. 输出加载状态摘要
 ```
 
-加载状态摘要格式（full 模式）：
+### §1.3 加载状态摘要格式
+
+脚本和手动方式的输出格式一致。
+
+full 模式：
 
 ```
-SpecAnchor 已加载 [full]
-  Config: anchor.yaml
-  Global Specs: coding-standards (v1.2), architecture (v1.0)
-  Module Specs: (按需加载)
-  Sources: (无外部来源)
-  Available Schemas:
-    [custom] <name>: "<description 或 match.when 首条>"
-    <name> (default): "<description 或 match.when 首条>"
-    <name>: "<description 或 match.when 首条>"
-```
-
-加载状态摘要格式（parasitic 模式）：
-
-```
-SpecAnchor 已加载 [parasitic]
-  Config: anchor.yaml
+SpecAnchor Boot [full]
+  Config: anchor.yaml (v0.4.0, project: my-project)
+  Global Specs: 3 files, 134 lines total
+    - architecture.spec.md (51 lines)
+    - coding-standards.spec.md (47 lines)
+    - project-setup.spec.md (36 lines)
+  Module Specs: 3 module(s) (按需加载)
+  Task Specs: 1 active, 0 archived
   Sources:
-    specs/ [spec-kit]: 12 files, stale_check: ✅, frontmatter_inject: ❌
-    .qoder/specs/ [qoder]: 5 files, stale_check: ✅, frontmatter_inject: ✅
+    ✓ mydocs/specs/ [mydocs]: stale_check=true, frontmatter_inject=false
+  Available Schemas:
+    sdd-riper-one (default) [strict]: SDD-RIPER-ONE 流程...
+    bug-fix [strict]: Bug 修复流程...
+    simple [fluid]: 轻量级 Task Spec...
+```
+
+parasitic 模式：
+
+```
+SpecAnchor Boot [parasitic]
+  Config: anchor.yaml (v0.4.0, project: my-project)
+  Sources:
+    ✓ specs/ [spec-kit]: stale_check=true, frontmatter_inject=false
+    ✓ .qoder/specs/ [qoder]: stale_check=true, frontmatter_inject=true
   Note: parasitic 模式仅提供治理能力（腐化检测 + 扫描），不支持创建 Spec
 ```
 
