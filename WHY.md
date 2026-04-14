@@ -40,7 +40,7 @@ Spec 规范本身会随着模型能力的增强而逐渐消退——上下文窗
 5. **Module Spec 集中管理**——存放在 `.specanchor/modules/`，通过 `module-index.md` 索引到真实模块路径
 6. **全量更新 + git 管理版本**——Module Spec 更新时全文重写，通过 `git diff` 和 Code Review 管理变更
 7. **平台无关**——纯文本 Skill，支持 Cursor、Claude Code、Cline 及任何可读取文件的 AI 工具
-8. **扩展式增强**——非核心功能通过 Extension 按需加载，不增加核心 Skill 的 token 预算
+8. **单一职责**——非 Spec 治理能力应由独立 skill 负责，不塞进主 Skill 的 token 预算
 
 ## 不同角色的使用建议
 
@@ -53,25 +53,17 @@ Spec 规范本身会随着模型能力的增强而逐渐消退——上下文窗
 ```
 1. 拿到需求
    ↓
-2. "启动项目"                              启动开发服务器（workflow 扩展）
+2. "创建任务：<任务名>"                     创建 Task Spec
    ↓
-3. "创建任务：<任务名>"                     创建 Task Spec
+3. （AI 自动加载 Global + Module Spec）
    ↓
-4. （AI 自动加载 Global + Module Spec）
+4. 按 Task Spec 开发（默认走 SDD-RIPER-ONE 的 RIPER 流程）
    ↓
-5. 按 Task Spec 开发（默认走 SDD-RIPER-ONE 的 RIPER 流程）
+5. 开发完成，检查 Module Spec 是否需要更新
    ↓
-6. 开发完成，检查 Module Spec 是否需要更新
+6. "检查 Spec 和代码对齐"                   确认 Spec-代码对齐
    ↓
-7. "提交代码"                              自动 commit + push（workflow 扩展）
-   ↓
-8. "提交代码评审"                          创建 CR + 质量检查（workflow 扩展）
-   ↓
-9. "检查 Spec 和代码对齐"                   确认 Spec-代码对齐
-   ↓
-10. 收到 Review 反馈 → 修改 → 重复 7-9
-   ↓
-11. "停止项目"                             停止开发服务器（workflow 扩展）
+7. 收到 Review 反馈 → 修改 → 重复 5-6
 ```
 
 **推荐频率**：
@@ -95,7 +87,6 @@ Spec 规范本身会随着模型能力的增强而逐渐消退——上下文窗
 | 修改 Global Spec      | ❌              |
 | 创建/修改 Module Spec | 需工程师 Review |
 | 创建/执行 Task Spec   | ✅              |
-| 使用工作流命令        | ✅              |
 | 运行对齐检测          | ✅              |
 
 ## 存量项目冷启动方案

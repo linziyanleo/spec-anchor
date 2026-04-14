@@ -27,10 +27,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     H[用户输入自然语言描述意图] --> I[Agent 匹配意图<br/>参考 commands-quickref.md]
-    I --> J{识别到的命令类型}
-
-    J -->|SpecAnchor 核心命令| K[SpecAnchor 命令]
-    J -->|工作流命令| L[加载 Workflow 扩展<br/>extensions/workflow/SKILL.md]
+    I --> K[SpecAnchor 核心命令]
 
     K --> K1["specanchor_init<br/>→ commands/init.md"]
     K --> K2["specanchor_global<br/>→ commands/global.md"]
@@ -41,8 +38,7 @@ flowchart TD
     K --> K7["specanchor_status<br/>→ commands/status.md"]
     K --> K8["specanchor_check<br/>→ commands/check.md"]
     K --> K9["specanchor_index<br/>→ commands/index.md"]
-
-    L --> L1[按 Workflow SKILL.md<br/>指引执行对应命令]
+    K --> K10["specanchor_import<br/>→ commands/import.md"]
 
     K1 --> T[Agent 按需读取<br/>对应命令文件]
     K2 --> T
@@ -53,12 +49,11 @@ flowchart TD
     K7 --> T
     K8 --> T
     K9 --> T
-    L1 --> T
+    K10 --> T
 
     T --> U[执行命令逻辑]
 
     style K fill:#74c0fc,color:#fff
-    style L fill:#ff922b,color:#fff
 ```
 
 ## 3. 核心场景链路：首次使用
@@ -132,12 +127,10 @@ flowchart TD
         B3[specanchor-protocol.md<br/>~190行]
         B4[Module Spec<br/>按模块]
         B5[模板文件<br/>按命令需要]
-        B6["extensions/workflow/SKILL.md<br/>~50行（工作流扩展）"]
     end
 
     A1 --> B1
     B1 -->|识别核心命令| B2
-    B1 -->|识别工作流命令| B6
     B2 -->|需要协议约束| B3
     A2 -->|定位模块| B4
     B2 -->|需要模板| B5
@@ -146,7 +139,6 @@ flowchart TD
     style A2 fill:#74c0fc,color:#fff
     style A3 fill:#74c0fc,color:#fff
     style B2 fill:#ffd43b,color:#333
-    style B6 fill:#ff922b,color:#fff
 ```
 
 ## 6. 全景架构图
@@ -172,14 +164,7 @@ graph TB
         C7[status.md]
         C8[check.md]
         C9[index.md]
-    end
-
-    subgraph "扩展层 (extensions/)"
-        EW[workflow/SKILL.md<br/>工作流扩展]
-        EW1[commit_push.md]
-        EW2[submit_cr.md]
-        EW3[start_dev.md]
-        EW4[stop_dev.md]
+        C10[import.md]
     end
 
     subgraph "协议层"
@@ -207,10 +192,8 @@ graph TB
 
     U --> S
     S --> Q
-    Q --> C1 & C2 & C3 & C4 & C5 & C6 & C7 & C8 & C9
-    Q -->|工作流意图| EW
-    EW --> EW1 & EW2 & EW3 & EW4
-    C1 & C2 & C3 & C4 & C5 & C6 & C7 & C8 & C9 --> P1
+    Q --> C1 & C2 & C3 & C4 & C5 & C6 & C7 & C8 & C9 & C10
+    C1 & C2 & C3 & C4 & C5 & C6 & C7 & C8 & C9 & C10 --> P1
     C5 --> P2
     C2 --> T1
     C3 & C4 --> T2
@@ -221,12 +204,10 @@ graph TB
     C5 --> O4
     C3 & C4 & C7 & C9 --> O5
     C8 --> D1
-    EW1 & EW2 & EW3 & EW4 --> O2
 
     style U fill:#845ef7,color:#fff
     style S fill:#74c0fc,color:#fff
     style Q fill:#74c0fc,color:#fff
-    style EW fill:#ff922b,color:#fff
     style P1 fill:#ff922b,color:#fff
     style P2 fill:#ff922b,color:#fff
     style C2 fill:#51cf66,color:#fff

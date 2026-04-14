@@ -30,20 +30,7 @@
 - **项目名称**：从 `package.json` 的 `name` 字段
 - **项目启动命令**：从 `package.json` 的 `scripts` 中选取（优先级：start > dev > serve）
 - **项目本地运行地址**：根据项目框架推断（Vite → 5173，Next → 3000，CRA → 3000，Vue CLI → 8080）
-- **默认代码评审人**：从 `package.json` 的 `scripts.cr` 中提取末尾参数，或提示用户补充
-- **CR 脚本路径**：检测项目根目录是否有 `codereview.sh` 等 CR 脚本
-- **CR 目标分支**：从 `scripts.cr` 中提取，或提示用户补充
 
 无法自动识别的信息列出已识别项和待补充项，提示用户提供或使用推荐值。
 
-### CR 脚本生成
-
-当 project-setup 类型的 Global Spec 生成完成后，如果项目根目录没有 `codereview.sh`：
-
-1. 读取 `extensions/workflow/scripts/codereview.sh.template`
-2. 用 project-setup.spec.md 中收集到的配置（CR 目标分支、评审人）填充模板
-3. 生成 `codereview.sh` 到项目根目录，`chmod +x`
-4. 同时检查项目根目录 `scripts/specanchor-check.sh` 是否存在，不存在则从 `$SA_SKILL_DIR/scripts/specanchor-check.sh` 复制并 `chmod +x`
-5. 告知用户：脚本已生成，如需修改推送命令（如切换到 GitHub PR / GitLab MR），编辑 `codereview.sh` 中标注的位置
-
-生成后的 `codereview.sh` 属于用户项目，后续不再由 SpecAnchor 自动修改。
+`project-setup` 类型只生成 Spec 内容，不生成或修改工作流脚本。

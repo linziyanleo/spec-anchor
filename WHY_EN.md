@@ -40,7 +40,7 @@ So SpecAnchor will evolve alongside model capabilities:
 5. **Centralized Module Spec management** — stored in `.specanchor/modules/`, indexed to real module paths via `module-index.md`
 6. **Full rewrite + git versioning** — Module Spec updates are full rewrites, with changes managed through `git diff` and Code Review
 7. **Platform agnostic** — plain-text Skill, works with Cursor, Claude Code, Cline, and any AI tool that can read files
-8. **Extension-based enhancement** — non-core features loaded on demand via Extensions, keeping core Skill's token budget lean
+8. **Single responsibility** — non-Spec governance capabilities should live in separate skills, not inside the core Skill token budget
 
 ## Usage Recommendations by Role
 
@@ -53,25 +53,17 @@ Engineers are **full participants** in the SpecAnchor system.
 ```
 1. Receive requirements
    ↓
-2. "Start project"                            Start dev server (workflow extension)
+2. "Create task: <task name>"                 Create Task Spec
    ↓
-3. "Create task: <task name>"                 Create Task Spec
+3. (AI auto-loads Global + Module Spec)
    ↓
-4. (AI auto-loads Global + Module Spec)
+4. Develop following Task Spec (defaults to SDD-RIPER-ONE's RIPER flow)
    ↓
-5. Develop following Task Spec (defaults to SDD-RIPER-ONE's RIPER flow)
+5. Development done, check if Module Spec needs updating
    ↓
-6. Development done, check if Module Spec needs updating
+6. "Check Spec alignment"                     Confirm Spec-code alignment
    ↓
-7. "Commit code"                              Auto commit + push (workflow extension)
-   ↓
-8. "Submit code review"                       Create CR + quality check (workflow extension)
-   ↓
-9. "Check Spec alignment"                     Confirm Spec-code alignment
-   ↓
-10. Receive review feedback → fix → repeat 7-9
-   ↓
-11. "Stop project"                            Stop dev server (workflow extension)
+7. Receive review feedback → fix → repeat 5-6
 ```
 
 **Recommended frequency**:
@@ -95,7 +87,6 @@ Collaborators are the **biggest beneficiaries** of the SpecAnchor system — Glo
 | Modify Global Spec | ❌ |
 | Create/modify Module Spec | Requires engineer Review |
 | Create/execute Task Spec | ✅ |
-| Use workflow commands | ✅ |
 | Run alignment detection | ✅ |
 
 ## Cold Start Guide for Existing Projects

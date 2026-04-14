@@ -1,6 +1,6 @@
 ---
 name: spec-anchor
-description: 三级 Spec 体系（Global/Module/Task），在 AI 生成代码前自动加载编码规范与模块契约，保障团队一致性。只要项目中有 anchor.yaml 或 .specanchor/ 目录，或者正在生成 Spec 文档，就应该使用此 Skill——无论用户是在讨论编码规范、模块设计、任务规划，还是在开始开发任务、提交代码、代码评审。即使用户只是简单地说"开始做 XX 功能"或"改一下 XX"，也应该触发此 Skill 进行工作流选择（⚡/📋）。中英文关键词触发：规范、约定、对齐、覆盖率、spec、SA 前缀命令。
+description: 三级 Spec 体系（Global/Module/Task），在 AI 生成代码前自动加载编码规范与模块契约，保障团队一致性。只要项目中有 anchor.yaml 或 .specanchor/ 目录，或者正在生成 Spec 文档，就应该使用此 Skill——无论用户是在讨论编码规范、模块设计、任务规划，还是在开始开发任务、生成或更新 Spec 文档。即使用户只是简单地说"开始做 XX 功能"或"改一下 XX"，也应该触发此 Skill 进行流程选择（⚡/📋）。中英文关键词触发：规范、约定、对齐、覆盖率、spec、SA 前缀命令。
 ---
 
 # SpecAnchor
@@ -8,6 +8,8 @@ description: 三级 Spec 体系（Global/Module/Task），在 AI 生成代码前
 Spec 是锚，代码是船。锚定住了，船才不会漂。
 
 SpecAnchor 管理三级 Spec 体系：Global（全局规范）→ Module（模块契约）→ Task（任务执行）。它在 AI 生成代码之前，确保 AI 已经读取并遵循团队的编码规范和模块契约。
+
+它只负责 Spec 治理与流程门禁，不负责代码提交、代码评审或开发服务器管理。
 
 内置 SDD-RIPER-ONE 作为默认写作协议，可通过 Schema 系统替换。`references/` 路径相对于 Skill 安装目录，`.specanchor/` 路径相对于用户工作区。
 
@@ -98,7 +100,7 @@ On-Demand 触发场景：
 
 ## 命令
 
-用户可以用自然语言描述意图，也可以用 SA 前缀的精确命令。遇到用户意图时，先查阅 `references/commands-quickref.md` 的意图映射表确定要执行的命令，然后读取对应的命令详细定义文件执行。
+用户可以用自然语言描述意图，也可以用 SA 前缀的精确命令。这个 Skill 只路由 SpecAnchor 核心命令。遇到用户意图时，先查阅 `references/commands-quickref.md` 的意图映射表确定要执行的核心命令，然后读取对应的命令详细定义文件执行。
 
 | 命令 | 用途 | 详细定义 | 模式 |
 | ---- | ---- | -------- | ---- |
@@ -115,12 +117,7 @@ On-Demand 触发场景：
 
 parasitic 模式下执行 full-only 命令时，提示：`⚠️ 此命令需要 full 模式。运行"升级到 full 模式"以创建 .specanchor/ 目录。`
 
-工作流命令（提交代码/代码评审/启停服务器）由扩展提供，见下方「扩展」段落。
-
-匹配到命令后，**输出决策检查点**：
-
-- 核心命令 → `🔧 <命令名> — <用途>`
-- 扩展命令 → `🔌 <命令名> — <用途>`
+匹配到命令后，**输出决策检查点**：`🔧 <命令名> — <用途>`
 
 ## Spec 创建与新鲜度检测
 
@@ -244,16 +241,6 @@ superpowers 活跃时（即项目中存在 `docs/superpowers/` 目录），SpecA
 - H1 `# Feature Name Implementation Plan` → task_name 提取为 `Feature Name`
 - `### Task N:` + checkbox 风格 → sdd_phase 推断为 PLAN/EXECUTE/DONE
 - `**Goal:** + **Architecture:**` 风格 → sdd_phase 推断为 RESEARCH
-
-## 扩展（可选）
-
-SpecAnchor 支持通过扩展按需加载增强功能。
-
-| 扩展 | 用途 | 触发时机 | 入口 |
-| ---- | ---- | -------- | ---- |
-| workflow | 开发工作流（提交/评审/启停服务器） | 用户提及工作流操作 | `extensions/workflow/SKILL.md` |
-
-当用户需要工作流能力时，读取对应扩展的 SKILL.md 并按其指引执行。
 
 ## 引用文件指引
 

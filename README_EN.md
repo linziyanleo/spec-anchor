@@ -8,6 +8,8 @@ SpecAnchor is an **AI Skill** that provides a three-level Spec management system
 
 It's a "library" for Specs, not a "writing tool" — compatible with SDD-RIPER-ONE, OpenSpec, and any Markdown-based Spec format. It anchors not just AI context, but human understanding of code.
 
+It only handles Spec governance. Commit/review/server lifecycle workflow actions belong to a separate skill.
+
 ---
 
 ## Core Concept
@@ -71,7 +73,6 @@ SpecAnchor is a plain-text Skill that works with any AI tool that can read files
 ```
 "Create task: add login captcha" → Auto-loads Global + Module Spec, creates Task Spec
  ↓ Develop following Task Spec
-"Commit code"                    → Auto commit + push
 "Check Spec alignment"           → Spec-code consistency check
 ```
 
@@ -84,7 +85,6 @@ SpecAnchor is a plain-text Skill that works with any AI tool that can read files
 | Module Spec | "Create auth module spec" / "Infer module spec from code" |
 | Task | "Create task: feature X" |
 | Check | "Check Spec alignment" / "Coverage report" / "Are module specs stale?" |
-| Workflow | "Commit code" / "Start project" / "Code review" / "Stop project" |
 | Import | "Import OpenSpec config" / "Migrate from OpenSpec" |
 
 ---
@@ -175,7 +175,6 @@ Neither OpenSpec nor SDD-RIPER-ONE provides these governance features:
 ```
 SpecAnchor/
 ├── SKILL.md                     ← Skill entry point
-├── extensions/workflow/         ← Workflow extension
 ├── references/
 │   ├── specanchor-protocol.md   ← Core protocol
 │   ├── commands/                ← Command definitions (loaded on demand)
