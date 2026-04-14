@@ -1,0 +1,6 @@
+# Format: <type>(<scope>): <subject>
+# Example: fix(scripts): handle init scan on macOS bash
+#
+# Types: feat | fix | docs | refactor | test | chore
+# Scopes: skill | scripts | schemas | workflow | protocol | spec
+

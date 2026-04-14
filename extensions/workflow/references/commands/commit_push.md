@@ -8,7 +8,7 @@
 
 1. `git status` 查看变更文件
 2. 分析变更文件类型和内容，确定变更类型
-3. 生成 commit message：`<type>: <简洁描述>`（50 字符内）
+3. 生成 commit message：`<type>(<scope>): <简洁描述>`
 4. `git add . && git commit -m "<message>" && git push`
 
 ## Commit Message 类型
@@ -18,13 +18,15 @@
 | `feat` | 新增文件/组件/模块/路由/API |
 | `fix` | 修复逻辑错误/样式问题/配置错误 |
 | `docs` | 修改 README / docs/ / CHANGELOG |
-| `style` | 修改 CSS/样式文件、代码格式调整 |
 | `refactor` | 重构代码结构、提取公共组件 |
-| `perf` | 性能优化 |
 | `test` | 测试文件变更 |
 | `chore` | 构建配置、依赖更新 |
 
-混合变更时按优先级选择：feat > fix > refactor > perf > style > docs > test > chore。变更过于复杂时询问用户确认。
+## Scope
+
+`skill` / `scripts` / `schemas` / `workflow` / `protocol` / `spec`
+
+混合变更时按优先级选择：feat > fix > refactor > docs > test > chore。变更过于复杂时询问用户确认。
 
 ## 参数
 

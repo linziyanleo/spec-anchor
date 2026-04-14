@@ -11,7 +11,7 @@ specanchor:
   created: "2026-04-02"
   updated: "2026-04-14"
   last_synced: "2026-04-14"
-  last_change: "职责收口：明确为独立 skill，不再由主 SKILL 路由"
+  last_change: "提交工作流口径与全局 commit 规范对齐，补 repo-local commit 格式约束"
   status: active
   depends_on:
     - "references/"

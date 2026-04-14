@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -eu
+
+msg_file="${1:-}"
+
+if [ -z "$msg_file" ] || [ ! -f "$msg_file" ]; then
+  echo "error: commit-msg hook requires a commit message file" >&2
+  exit 1
+fi
+
+first_line="$(awk 'NF && $0 !~ /^[[:space:]]*#/ { print; exit }' "$msg_file")"
+
+case "$first_line" in
+  ""|Merge\ *|Revert\ *|fixup!\ *|squash!\ *)
+    exit 0
+    ;;
+esac
+
+if printf '%s\n' "$first_line" | grep -Eq '^(feat|fix|docs|refactor|test|chore)\((skill|scripts|schemas|workflow|protocol|spec)\): .+'; then
+  exit 0
+fi
+
+echo "error: invalid commit message format: $first_line" >&2
+echo "use: <type>(<scope>): <subject>" >&2
+echo "types: feat | fix | docs | refactor | test | chore" >&2
+echo "scopes: skill | scripts | schemas | workflow | protocol | spec" >&2
+exit 1
