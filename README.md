@@ -14,6 +14,8 @@ SpecAnchor 是一个 **AI Skill**，提供三级 Spec 管理体系（Global → 
 
 ## 核心理念
 
+与 RAG 式的"每次从代码重新推导"不同，SpecAnchor 采用**编译式知识**范式——把代码洞察提前编译为持久化的 Spec 文件，AI 编码前直接加载已编译的上下文。一次编写，反复使用，知识持续复利。（详见 [WHY.md §编译式知识 vs 检索式知识](WHY.md#编译式知识-vs-检索式知识)）
+
 ```
 SpecAnchor = 组织管理层（Spec 放在哪、健不健康、谁有权改）
 写作协议   = 可插拔（SDD-RIPER-ONE / OpenSpec / 自定义 Schema）

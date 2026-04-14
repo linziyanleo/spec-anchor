@@ -3,6 +3,7 @@ specanchor:
   level: module
   module_name: "scripts"
   module_path: "scripts/"
+  summary: "Shell 自动化工具层：对齐检测、Frontmatter 注入、组合检测"
   version: "1.0.0"
   owner: "@fanghu"
   created: "2026-04-02"

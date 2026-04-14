@@ -3,6 +3,7 @@ specanchor:
   level: module
   module_name: "工作流扩展"
   module_path: "extensions/workflow/"
+  summary: "独立工作流 skill：提交推送、代码评审、dev server 启停"
   version: "1.0.0"
   owner: "@fanghu"
   author: "@fanghu"

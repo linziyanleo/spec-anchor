@@ -3,6 +3,7 @@ specanchor:
   level: module
   module_name: "协议层"
   module_path: "references/"
+  summary: "协议声明层：命令定义、Spec 模板、Schema 系统、核心协议"
   version: "1.0.0"
   owner: "@fanghu"
   author: "@fanghu"

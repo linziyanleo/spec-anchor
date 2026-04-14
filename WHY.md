@@ -22,6 +22,26 @@ Spec 规范本身会随着模型能力的增强而逐渐消退——上下文窗
 
 ---
 
+## 编译式知识 vs 检索式知识
+
+SpecAnchor 的方法论可以用一组对比来理解：
+
+| 模式 | 做法 | 代价 |
+|------|------|------|
+| **检索式**（RAG 范式） | 每次提问时从原始代码中临时检索相关片段，让 AI 现场推导 | 每次都从零开始，跨模块洞察靠运气，知识不积累 |
+| **编译式**（SpecAnchor 范式） | 把代码洞察提前编译为持久化的 Spec 文件，AI 编码前直接加载已编译的上下文 | 需要维护 Spec，但一次编写、反复使用，知识持续复利 |
+
+这个对比并非 SpecAnchor 的发明。Karpathy 在 [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) 中为个人知识管理提出了相同的模式：不要在每次提问时让 LLM 从原始文档重新推导，而是让 LLM 把知识**编译**为持久化的 Wiki，此后 LLM 在已编译的知识上工作。
+
+SpecAnchor 是这个模式在**AI 辅助开发**领域的实例：
+- LLM Wiki 的 Raw Sources = 项目源代码
+- LLM Wiki 的 Wiki = `.specanchor/` 下的三级 Spec 体系
+- LLM Wiki 的 Schema = `SKILL.md` + 声明式写作协议
+
+区别在于：LLM Wiki 追求知识的广度（越来越丰富），SpecAnchor 追求规范的精度（越来越准确）。但底层洞察一致——**维护的真正成本不在于阅读和思考，而在于 bookkeeping（交叉引用、一致性维护、过期检测）**。SpecAnchor 把这些 bookkeeping 交给 AI 和自动化脚本。
+
+---
+
 ## 它解决什么问题
 
 | 问题                           | SpecAnchor 的回答                            |

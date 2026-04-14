@@ -14,6 +14,8 @@ It only handles Spec governance. Commit/review/server lifecycle workflow actions
 
 ## Core Concept
 
+Unlike RAG-style "re-derive from code every time", SpecAnchor adopts a **compiled knowledge** paradigm — pre-compiling code insights into persistent Spec files that AI loads before coding. Write once, reuse repeatedly, knowledge compounds over time. (See [WHY_EN.md §Compiled Knowledge vs Retrieved Knowledge](WHY_EN.md#compiled-knowledge-vs-retrieved-knowledge))
+
 ```
 SpecAnchor = Organization layer (where Specs live, their health, who can modify them)
 Writing Protocol = Pluggable (SDD-RIPER-ONE / OpenSpec / Custom Schema)

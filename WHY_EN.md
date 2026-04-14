@@ -22,6 +22,26 @@ So SpecAnchor will evolve alongside model capabilities:
 
 ---
 
+## Compiled Knowledge vs Retrieved Knowledge
+
+SpecAnchor's approach can be understood through a simple contrast:
+
+| Mode | Approach | Cost |
+|------|----------|------|
+| **Retrieved** (RAG paradigm) | Retrieve relevant code fragments on every query, let AI deduce from scratch | Starts from zero every time, cross-module insights depend on luck, knowledge doesn't accumulate |
+| **Compiled** (SpecAnchor paradigm) | Pre-compile code insights into persistent Spec files, AI loads compiled context before coding | Requires maintaining Specs, but write once, reuse repeatedly — knowledge compounds over time |
+
+This contrast is not SpecAnchor's invention. Karpathy articulated the same pattern for personal knowledge management in [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f): don't let the LLM re-derive from raw documents on every query — let it **compile** knowledge into a persistent wiki, then work on already-compiled knowledge.
+
+SpecAnchor is this pattern instantiated for **AI-assisted development**:
+- LLM Wiki's Raw Sources = project source code
+- LLM Wiki's Wiki = the three-level Spec system under `.specanchor/`
+- LLM Wiki's Schema = `SKILL.md` + declarative writing protocols
+
+The difference: LLM Wiki pursues breadth of knowledge (richer over time), SpecAnchor pursues precision of standards (more accurate over time). But the underlying insight is the same — **the real cost of maintenance is not reading and thinking, it's bookkeeping** (cross-references, consistency checks, staleness detection). SpecAnchor delegates this bookkeeping to AI and automation scripts.
+
+---
+
 ## Problems It Solves
 
 | Problem | SpecAnchor's Answer |
