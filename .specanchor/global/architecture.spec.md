@@ -5,8 +5,8 @@ specanchor:
   version: "2.0.0"
   author: "@fanghu"
   reviewers: []
-  last_synced: "2026-04-02"
-  last_change: "审计后更新：明确层内依赖、.specanchor 结构、Protocol↔Scripts 边界"
+  last_synced: "2026-04-14"
+  last_change: "职责收口：明确 extensions/ 为独立 skill，不由主 Skill 路由"
   applies_to: "**/*"
 ---
 
@@ -16,12 +16,12 @@ specanchor:
 1. **Core 层**（`SKILL.md`）：入口、路由、工作流选择、门禁，不含实现细节
 2. **Protocol 层**（`references/`）：协议、命令定义、模板——纯声明式，不含脚本
 3. **Scripts 层**（`scripts/`）：自动化工具——纯命令式，不依赖 Skill 上下文
-4. **Extension 层**（`extensions/`）：按需加载的增强能力，通过主 Skill 路由
+4. **Extension 层**（`extensions/`）：与主 Skill 并列维护的独立 skill，不由主 Skill 路由
 
 ## 层间依赖规则
 - Core → Protocol：Core 引用 Protocol 文件路径，按需读取
 - Core → Scripts：Core 指引 Agent 调用脚本，不直接执行
-- Core → Extension：按用户意图按需加载
+- Core ↛ Extension：主 Skill 不负责加载独立 workflow skill
 - Protocol → Scripts：Protocol 文件可声明"应调用某脚本"（如 `specanchor_check` 命令定义引用 `specanchor-check.sh`），但 Protocol 本身不执行脚本
 - Scripts → 无外部依赖：脚本不依赖 Skill 上下文或 Agent，仅读取 anchor.yaml 和文件系统
 - Scripts → 层内依赖允许：组合脚本（如 Layer 2）可调用同层其他脚本，共享库 `scripts/lib/` 可被 source

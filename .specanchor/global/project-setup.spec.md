@@ -5,8 +5,8 @@ specanchor:
   version: "1.0.0"
   author: "@fanghu"
   reviewers: []
-  last_synced: "2026-04-02"
-  last_change: "初始创建 — Skill 专家审计后补全"
+  last_synced: "2026-04-14"
+  last_change: "职责收口：移除 workflow 专属评审人字段"
   applies_to: "**/*"
 ---
 
@@ -16,7 +16,6 @@ specanchor:
 - 项目名称：spec-anchor (SpecAnchor)
 - 项目类型：AI Agent Skill（纯 Markdown + Shell 脚本，无编译 / 构建步骤）
 - 本地运行：无 dev server，脚本直接 `bash scripts/<name>.sh` 执行
-- 默认代码评审人：@fanghu
 
 ## 环境要求
 - Shell：Bash 4+（macOS 需 `brew install bash`，系统自带为 3.x）

@@ -29,8 +29,8 @@ spec-anchor/
 │   ├── specanchor-check.sh           #   Spec-Commit 对齐检测（548 行）
 │   ├── frontmatter-inject.sh         #   Frontmatter 自动注入 Layer 1（581 行）
 │   └── frontmatter-inject-and-check.sh  # 注入+检测 Layer 2（207 行）
-├── extensions/                       # 扩展层
-│   └── workflow/                     #   开发工作流扩展（提交/评审/启停）
+├── extensions/                       # 独立 skill 存放区
+│   └── workflow/                     #   独立工作流 skill（提交/评审/启停）
 │       ├── SKILL.md
 │       ├── references/commands/
 │       └── scripts/

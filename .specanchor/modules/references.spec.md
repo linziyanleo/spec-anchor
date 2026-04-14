@@ -8,9 +8,9 @@ specanchor:
   author: "@fanghu"
   reviewers: []
   created: "2026-04-02"
-  updated: "2026-04-02"
-  last_synced: "2026-04-02"
-  last_change: "初始创建 — Skill 专家审计后补全"
+  updated: "2026-04-14"
+  last_synced: "2026-04-14"
+  last_change: "命令边界收口：commands-quickref 仅保留主 skill 核心命令"
   status: active
   depends_on: []
 ---
@@ -26,7 +26,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 - 所有命令定义文件独立自包含：Agent 仅需读取单个 `commands/<cmd>.md` 即可执行
 - Schema 每个目录必须包含 `schema.yaml` + `template.md` 两个文件
 - 模板文件中使用 `<placeholder>` 标记占位符，不使用 Jinja/Handlebars 等模板语法
-- `commands-quickref.md` 必须与 `commands/` 目录保持同步（新增/删除命令时同步更新）
+- `commands-quickref.md` 必须与 `commands/` 目录保持同步（仅覆盖主 skill 的 `specanchor_*` 核心命令）
 - Global Spec 模板中各类型合计 ≤ 200 行的硬约束在模板文件内声明
 
 ## 3. 公开接口
@@ -71,7 +71,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 |------|------|
 | `specanchor-protocol.md` | 核心协议（启动检查、加载规则、Schema 发现、管理协议） |
 | `external-sources-protocol.md` | 外部来源治理协议（sources 配置、frontmatter 注入、腐化检测） |
-| `commands-quickref.md` | 意图映射快速参考（自然语言 → 命令路由） |
+| `commands-quickref.md` | 意图映射快速参考（自然语言 → 核心命令路由） |
 
 ## 4. 内部状态
 

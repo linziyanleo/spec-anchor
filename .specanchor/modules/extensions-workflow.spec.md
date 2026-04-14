@@ -8,9 +8,9 @@ specanchor:
   author: "@fanghu"
   reviewers: []
   created: "2026-04-02"
-  updated: "2026-04-02"
-  last_synced: "2026-04-02"
-  last_change: "初始创建 — Skill 专家审计后补全"
+  updated: "2026-04-14"
+  last_synced: "2026-04-14"
+  last_change: "职责收口：明确为独立 skill，不再由主 SKILL 路由"
   status: active
   depends_on:
     - "references/"
@@ -20,7 +20,7 @@ specanchor:
 
 ## 1. 职责
 
-为 SpecAnchor 提供开发工作流能力：代码提交推送、代码评审、开发服务器启停。作为可选扩展存在，由主 SKILL.md 按需路由加载，不独立触发。
+独立提供开发工作流能力：代码提交推送、代码评审、开发服务器启停。不由主 SKILL.md 路由；仅在用户明确提出这些工作流操作时触发。
 
 ## 2. 业务规则
 
@@ -54,7 +54,7 @@ specanchor:
 
 - 扩展内部遵循主 Skill 相同的四层架构：SKILL.md（入口） → references/（命令定义） → scripts/（模板）
 - 命令定义结构与主 Skill 的 `references/commands/` 格式一致
-- 新增命令需同时更新主 Skill 的 `commands-quickref.md` 工作流命令段
+- 新增命令需同步更新本 `SKILL.md` 中的命令表与推荐流程
 
 ## 6. 约束
 
