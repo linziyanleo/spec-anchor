@@ -84,6 +84,7 @@ SpecAnchor Boot [full]
     - coding-standards.spec.md (47 lines)
     - project-setup.spec.md (36 lines)
   Module Specs: 3 module(s) (按需加载)
+  Module Index: v2 (structured) — 🟢2 🟡1 🟠0 🔴0
   Task Specs: 1 active, 0 archived
   Sources:
     ✓ mydocs/specs/ [mydocs]: stale_check=true, frontmatter_inject=false
@@ -280,13 +281,25 @@ packages/shared/utils      → packages-shared-utils     → packages-shared-uti
 
 ### 5.2 module-index.md 索引
 
-`.specanchor/module-index.md` 是 Module Spec 的集中索引文件，记录每个 Module Spec 到真实模块路径的映射。
+`.specanchor/module-index.md` 是 Module Spec 的集中索引文件，记录每个 Module Spec 到真实模块路径的映射，同时包含每个模块的摘要和健康度状态。
+
+**格式**：v2（YAML frontmatter + Markdown），详见 `references/commands/index.md`。
+
+v2 格式的 YAML frontmatter 包含：
+- `specanchor.type: module-index` — 格式标识
+- `modules[]` — 结构化模块列表（path、spec、summary、health 等）
+- `health_summary` — 按健康度分组的统计（fresh / drifted / stale / outdated）
+- `uncovered[]` — 无 Spec 覆盖的模块列表
+
+Markdown 正文是 frontmatter 的人类可读渲染，由 `specanchor_index` 自动生成。
 
 **更新时机**：
 
 - 创建或更新 Module Spec（`specanchor_module` / `specanchor_infer`）时自动更新
 - 查看状态或更新索引（`specanchor_status` / `specanchor_index`）时自动更新
 - `specanchor-check.sh` 执行时自动更新
+
+**boot 脚本集成**：`specanchor-boot.sh` 启动时自动检测格式（v2 / legacy / missing），v2 时提取健康度统计展示在启动摘要中。
 
 ### 5.3 全量更新协议
 
