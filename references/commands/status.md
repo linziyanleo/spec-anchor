@@ -6,12 +6,28 @@
 
 ## 执行
 
-1. 列出当前已加载的 Spec（Global + Module）
-2. 扫描 `.specanchor/modules/`，统计 Module Spec 覆盖率
-3. 统计活跃/归档 Task Spec 数量
-4. 自动更新 `.specanchor/module-index.md`
-5. 如 `anchor.yaml` 中存在 `sources`，统计各来源文件数和治理状态
-6. 输出简洁摘要：
+**首选方式**：运行 `scripts/specanchor-status.sh` 脚本获取状态报告：
+
+```bash
+bash "<skill_install_dir>/scripts/specanchor-status.sh"
+
+# 可选参数：
+#   --config=<path>       指定配置文件（默认自动查找 anchor.yaml）
+#   --format=summary|json 输出格式（默认 summary）
+```
+
+脚本自动完成以下步骤：
+
+1. 读取配置文件
+2. 扫描 `.specanchor/global/`，统计 Global Spec 数量和总行数
+3. 扫描 `.specanchor/modules/`，统计 Module Spec 覆盖率和健康度
+4. 统计活跃/归档 Task Spec 数量
+5. 检测 module-index.md 格式（v2/legacy/missing）
+6. 输出简洁摘要
+
+Agent 可在脚本输出基础上补充"已加载的 Spec"信息（session-specific，脚本无法感知）。
+
+### 输出格式
 
 full 模式：
 

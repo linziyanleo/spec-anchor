@@ -1,0 +1,234 @@
+#!/usr/bin/env bash
+# SpecAnchor Status - 显示 Spec 状态和覆盖率
+#
+# Usage:
+#   specanchor-status.sh [--config=anchor.yaml] [--format=summary|json]
+#
+# 输出: Global Spec 统计、Module Spec 覆盖率和健康度、Task Spec 统计、来源统计。
+
+set -euo pipefail
+
+if [[ -t 1 ]]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[0;33m'
+  CYAN='\033[0;36m'
+  DIM='\033[2m'
+  BOLD='\033[1m'
+  RESET='\033[0m'
+else
+  RED='' GREEN='' YELLOW='' CYAN='' DIM='' BOLD='' RESET=''
+fi
+
+die() { echo -e "${RED}error:${RESET} $*" >&2; exit 1; }
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+parse_yaml_field() {
+  local file="$1" field="$2" default="$3"
+  if [[ -f "$file" ]]; then
+    local val
+    val=$(grep "^    ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^    ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+    if [[ -z "$val" ]]; then
+      val=$(grep "^  ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+    fi
+    [[ -n "$val" ]] && echo "$val" || echo "$default"
+  else
+    echo "$default"
+  fi
+}
+
+parse_frontmatter_field() {
+  local file="$1" field="$2"
+  sed -n '/^---$/,/^---$/p' "$file" | grep "^  ${field}:" | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//"
+}
+
+find_config() {
+  if [[ -f "anchor.yaml" ]]; then
+    echo "anchor.yaml"
+  elif [[ -f ".specanchor/config.yaml" ]]; then
+    echo ".specanchor/config.yaml"
+  else
+    die "未找到配置文件（anchor.yaml 或 .specanchor/config.yaml）"
+  fi
+}
+
+collect_stats() {
+  local config="$1"
+
+  local mode
+  mode=$(parse_yaml_field "$config" "mode" "full")
+
+  local stale_days outdated_days
+  stale_days=$(parse_yaml_field "$config" "stale_days" "14")
+  outdated_days=$(parse_yaml_field "$config" "outdated_days" "30")
+
+  local global_count=0 global_lines=0
+  if [[ -d ".specanchor/global" ]]; then
+    for f in .specanchor/global/*.spec.md; do
+      [[ -f "$f" ]] || continue
+      ((global_count++))
+      local lines
+      lines=$(wc -l < "$f" | tr -d ' ')
+      global_lines=$((global_lines + lines))
+    done
+  fi
+
+  local module_count=0 fresh=0 drifted=0 stale=0 outdated=0
+  if [[ -d ".specanchor/modules" ]]; then
+    for f in .specanchor/modules/*.spec.md; do
+      [[ -f "$f" ]] || continue
+      ((module_count++))
+
+      local mp ls
+      mp=$(parse_frontmatter_field "$f" "module_path")
+      ls=$(parse_frontmatter_field "$f" "last_synced")
+
+      if [[ -z "$mp" ]] || [[ -z "$ls" ]] || [[ ! -d "$mp" ]]; then
+        ((stale++))
+        continue
+      fi
+
+      local commits_since=0
+      if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+        commits_since=$(git log --oneline --since="${ls} 00:00:00" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
+      fi
+
+      if [[ $commits_since -eq 0 ]]; then
+        ((fresh++))
+      else
+        local synced_epoch now_epoch days_since
+        synced_epoch=$(date -j -f "%Y-%m-%d" "$ls" "+%s" 2>/dev/null || date -d "$ls" "+%s" 2>/dev/null || echo 0)
+        now_epoch=$(date "+%s")
+        days_since=$(( (now_epoch - synced_epoch) / 86400 ))
+        if [[ $days_since -ge $outdated_days ]]; then
+          ((outdated++))
+        elif [[ $days_since -ge $stale_days ]]; then
+          ((stale++))
+        else
+          ((drifted++))
+        fi
+      fi
+    done
+  fi
+
+  local task_active=0 task_archived=0
+  if [[ -d ".specanchor/tasks" ]]; then
+    task_active=$(find ".specanchor/tasks" -name "*.spec.md" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+  if [[ -d ".specanchor/archive" ]]; then
+    task_archived=$(find ".specanchor/archive" -name "*.spec.md" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+
+  local index_format="missing"
+  if [[ -f ".specanchor/module-index.md" ]]; then
+    local first_line
+    first_line=$(head -1 ".specanchor/module-index.md")
+    if [[ "$first_line" == "---" ]]; then
+      local idx_type
+      idx_type=$(parse_yaml_field ".specanchor/module-index.md" "type" "")
+      [[ "$idx_type" == "module-index" ]] && index_format="v2" || index_format="legacy"
+    else
+      index_format="legacy"
+    fi
+  fi
+
+  S_MODE="$mode"
+  S_GLOBAL_COUNT=$global_count
+  S_GLOBAL_LINES=$global_lines
+  S_MODULE_COUNT=$module_count
+  S_FRESH=$fresh
+  S_DRIFTED=$drifted
+  S_STALE=$stale
+  S_OUTDATED=$outdated
+  S_TASK_ACTIVE=$task_active
+  S_TASK_ARCHIVED=$task_archived
+  S_INDEX_FORMAT="$index_format"
+  S_STALE_DAYS=$stale_days
+  S_OUTDATED_DAYS=$outdated_days
+}
+
+output_summary() {
+  local config="$1"
+
+  echo -e "${BOLD}SpecAnchor Status [${S_MODE}]${RESET}"
+  echo -e "  Config: ${CYAN}${config}${RESET}"
+  echo ""
+
+  echo -e "  Global Specs: ${S_GLOBAL_COUNT} file(s), ${S_GLOBAL_LINES} lines total"
+
+  echo -e "  Module Specs: ${S_MODULE_COUNT} module(s)"
+  if [[ $S_MODULE_COUNT -gt 0 ]]; then
+    echo -e "    健康度: 🟢${S_FRESH} FRESH  🟡${S_DRIFTED} DRIFTED  🟠${S_STALE} STALE  🔴${S_OUTDATED} OUTDATED"
+  fi
+
+  echo -n "  Module Index: "
+  case "$S_INDEX_FORMAT" in
+    v2)     echo -e "${GREEN}v2 (structured)${RESET}" ;;
+    legacy) echo -e "${YELLOW}legacy (Markdown table)${RESET} — 建议运行 specanchor_index 迁移" ;;
+    missing) echo -e "${YELLOW}missing${RESET} — 建议运行 specanchor_index 生成" ;;
+  esac
+
+  echo -e "  Task Specs: ${S_TASK_ACTIVE} active, ${S_TASK_ARCHIVED} archived"
+  echo -e "  ${DIM}Thresholds: stale_days=${S_STALE_DAYS}, outdated_days=${S_OUTDATED_DAYS}${RESET}"
+
+  if [[ $S_MODULE_COUNT -gt 0 ]]; then
+    echo ""
+    echo -e "  ${BOLD}Module Details:${RESET}"
+    for f in .specanchor/modules/*.spec.md; do
+      [[ -f "$f" ]] || continue
+      local name mp ls status version
+      name=$(parse_frontmatter_field "$f" "module_name")
+      mp=$(parse_frontmatter_field "$f" "module_path")
+      ls=$(parse_frontmatter_field "$f" "last_synced")
+      status=$(parse_frontmatter_field "$f" "status")
+      version=$(parse_frontmatter_field "$f" "version")
+      [[ -z "$name" ]] && name=$(basename "$f" .spec.md)
+      [[ -z "$status" ]] && status="unknown"
+      [[ -z "$version" ]] && version="?"
+
+      echo -e "    ${CYAN}${name}${RESET} (${mp:-?}) — v${version}, synced ${ls:-unknown}, ${status}"
+    done
+  fi
+}
+
+output_json() {
+  printf '{\n'
+  printf '  "mode": "%s",\n' "$S_MODE"
+  printf '  "global_specs": {"count": %d, "lines": %d},\n' "$S_GLOBAL_COUNT" "$S_GLOBAL_LINES"
+  printf '  "module_specs": {"count": %d, "health": {"fresh": %d, "drifted": %d, "stale": %d, "outdated": %d}},\n' \
+    "$S_MODULE_COUNT" "$S_FRESH" "$S_DRIFTED" "$S_STALE" "$S_OUTDATED"
+  printf '  "task_specs": {"active": %d, "archived": %d},\n' "$S_TASK_ACTIVE" "$S_TASK_ARCHIVED"
+  printf '  "module_index_format": "%s",\n' "$S_INDEX_FORMAT"
+  printf '  "thresholds": {"stale_days": %d, "outdated_days": %d}\n' "$S_STALE_DAYS" "$S_OUTDATED_DAYS"
+  printf '}\n'
+}
+
+main() {
+  local config_file=""
+  local format="summary"
+
+  for arg in "$@"; do
+    case "$arg" in
+      --config=*)  config_file="${arg#--config=}" ;;
+      --format=*)  format="${arg#--format=}" ;;
+      --help|-h)
+        echo "Usage: specanchor-status.sh [--config=anchor.yaml] [--format=summary|json]"
+        echo ""
+        echo "显示 SpecAnchor 状态和覆盖率概览。"
+        exit 0
+        ;;
+    esac
+  done
+
+  [[ -z "$config_file" ]] && config_file=$(find_config)
+  collect_stats "$config_file"
+
+  case "$format" in
+    summary) output_summary "$config_file" ;;
+    json)    output_json ;;
+    *)       die "Unknown format: $format (use: summary | json)" ;;
+  esac
+}
+
+main "$@"

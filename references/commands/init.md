@@ -11,6 +11,21 @@
 
 ## 执行
 
+**首选方式**：先运行 `scripts/specanchor-init.sh` 完成目录结构和配置的确定性部分，再由 Agent 完成 Global Spec 生成等需要代码分析的步骤：
+
+```bash
+# 步骤 1: 脚本完成目录和配置初始化
+bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name> [--scan-sources]
+
+# 步骤 2: Agent 扫描代码生成 Global Spec（需要代码语义分析）
+# 由 Agent 执行 specanchor_global 命令
+```
+
+**脚本处理的部分**（步骤 1, 4-6）：检查已初始化、目录结构创建、anchor.yaml 生成、module-index.md 初始化、外部来源检测。
+**Agent 处理的部分**（步骤 2-3, 7-12）：来源治理策略确认、模式选择（需交互）、scan.sh 生成、git hook 配置、Global Spec 生成、Frontmatter 注入。
+
+### 详细步骤
+
 1. **检查是否已初始化**。检查项目根目录 `anchor.yaml` 是否已存在。已存在则报错：`anchor.yaml 已存在，如需重新初始化请先手动删除`
 
 2. **扫描项目根目录，自动检测已有 spec 体系**（基于 Type Registry，见 `specanchor-protocol.md` 附录 B）：
