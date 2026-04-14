@@ -107,6 +107,17 @@ run_scan_if_available() {
   fi
 }
 
+refresh_module_index() {
+  local config="$1"
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local index_script="${script_dir}/specanchor-index.sh"
+  if [[ -f "$index_script" ]]; then
+    echo ""
+    bash "$index_script" --config="$config"
+  fi
+}
+
 # ─── Task 级检测 ───
 
 check_task() {
@@ -533,6 +544,7 @@ main() {
       [[ -z "$config" ]] && config=$(find_config)
       run_scan_if_available
       check_global "$config"
+      refresh_module_index "$config"
       ;;
     coverage)
       [[ $# -lt 1 ]] && die "coverage 级需要指定至少一个文件路径"

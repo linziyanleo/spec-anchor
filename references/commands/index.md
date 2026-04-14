@@ -6,11 +6,24 @@
 
 ## 执行
 
+**首选方式**：运行 `scripts/specanchor-index.sh` 脚本一次性完成全部步骤：
+
+```bash
+bash "<skill_install_dir>/scripts/specanchor-index.sh"
+
+# 可选参数：
+#   --config=<path>    指定配置文件（默认自动查找 anchor.yaml）
+#   --output=<path>    指定输出路径（默认 .specanchor/module-index.md）
+```
+
+脚本自动执行以下步骤：
+
 1. 扫描 `.specanchor/modules/` 下所有 `.spec.md` 文件
 2. 读取每个文件的 frontmatter（提取 `module_path`、`summary`、`status`、`version`、`last_synced`、`owner`）
-3. 扫描 `anchor.yaml` 中 `scan_paths` 下的模块目录，识别无 Spec 覆盖的模块
-4. 根据 `anchor.yaml` 的 `check.stale_days` / `check.outdated_days` 计算每个模块的健康度
-5. 生成/更新 `.specanchor/module-index.md`
+3. 根据 `anchor.yaml` 的 `check.stale_days` / `check.outdated_days` 和 git 历史计算每个模块的健康度
+4. 生成/覆盖 `.specanchor/module-index.md`（v2 格式）
+
+Agent 也可在创建/更新 Module Spec 后直接调用此脚本刷新索引，而非手动编辑 `module-index.md`。
 
 ## 输出格式（v2 — YAML frontmatter + Markdown）
 
