@@ -233,17 +233,40 @@ detect_related_modules() {
   local content
   content=$(cat "$file" 2>/dev/null || echo "")
 
-  while IFS='|' read -r _ module_path spec_file _ _; do
-    module_path=$(echo "$module_path" | xargs 2>/dev/null || echo "")
-    spec_file=$(echo "$spec_file" | xargs 2>/dev/null || echo "")
-    [[ -z "$module_path" ]] && continue
-    [[ "$module_path" == "模块路径" ]] && continue
-    [[ "$module_path" == "--------" ]] && continue
+  local first_line
+  first_line=$(head -1 "$index_file")
 
-    if echo "$content" | grep -q "$module_path" 2>/dev/null; then
-      result="${result}    - \"${spec_file}\"\n"
-    fi
-  done < "$index_file"
+  if [[ "$first_line" == "---" ]]; then
+    local current_path="" current_spec=""
+    while IFS= read -r line; do
+      local trimmed
+      trimmed=$(echo "$line" | sed 's/^[[:space:]]*//')
+      if [[ "$trimmed" == path:* ]]; then
+        current_path=$(echo "$trimmed" | sed 's/^path: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')
+      elif [[ "$trimmed" == spec:* ]]; then
+        current_spec=$(echo "$trimmed" | sed 's/^spec: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')
+        if [[ -n "$current_path" ]] && [[ -n "$current_spec" ]]; then
+          if echo "$content" | grep -q "$current_path" 2>/dev/null; then
+            result="${result}    - \"${current_spec}\"\n"
+          fi
+        fi
+        current_path=""
+        current_spec=""
+      fi
+    done < "$index_file"
+  else
+    while IFS='|' read -r _ module_path spec_file _ _; do
+      module_path=$(echo "$module_path" | xargs 2>/dev/null || echo "")
+      spec_file=$(echo "$spec_file" | xargs 2>/dev/null || echo "")
+      [[ -z "$module_path" ]] && continue
+      [[ "$module_path" == "模块路径" ]] && continue
+      [[ "$module_path" == "--------" ]] && continue
+
+      if echo "$content" | grep -q "$module_path" 2>/dev/null; then
+        result="${result}    - \"${spec_file}\"\n"
+      fi
+    done < "$index_file"
+  fi
 
   echo -e "$result"
 }

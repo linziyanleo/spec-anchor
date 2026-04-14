@@ -33,7 +33,7 @@ specanchor:
 - `tasks/<module>/`：Task Spec 按模块分组
 - `tasks/_cross-module/`：跨模块 Task Spec
 - `archive/`：已完成的 Task Spec 归档
-- `module-index.md`：模块索引（必须与 `modules/` 目录保持同步）
+- `module-index.md`：模块索引（v2 结构化格式：YAML frontmatter 含模块列表与健康度统计 + Markdown 渲染表格，必须与 `modules/` 目录保持同步）
 - `project-codemap.md`：项目架构可视化
 
 ## 路径约定

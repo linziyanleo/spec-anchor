@@ -96,20 +96,37 @@ mode: parasitic 时:
 
 ## §4 module-index.md 扩展
 
-当存在 sources 时，`module-index.md` 的格式扩展，增加"来源"列：
+当存在 sources 时，`module-index.md` 的 v2 格式在 `modules[]` 数组中通过 `source` 字段区分来源：
 
-```markdown
-# Module Spec 索引
+```yaml
+modules:
+  - path: "src/modules/auth"
+    spec: "src-modules-auth.spec.md"
+    summary: "用户认证与鉴权"
+    source: native
+    status: active
+    health: FRESH
+    # ...
 
-| 模块路径 | Spec 文件 | 来源 | 状态 |
-| -------- | --------- | ---- | ---- |
-| src/modules/auth | .specanchor/modules/src-modules-auth.spec.md | native | ✅ active |
-| src/modules/payment | specs/payments/spec.md | source:spec-kit | ⚠️ 无 frontmatter |
-| src/modules/ui | .qoder/specs/ui.md | source:qoder | ✅ active |
+  - path: "src/modules/payment"
+    spec: "specs/payments/spec.md"
+    summary: "支付处理"
+    source: "external:spec-kit"
+    status: active
+    health: DRIFTED
+    # ...
+
+  - path: "src/modules/ui"
+    spec: ".qoder/specs/ui.md"
+    summary: "UI 组件库"
+    source: "external:qoder"
+    status: active
+    health: FRESH
+    # ...
 ```
 
 - `native`：SpecAnchor 原生格式（有 YAML frontmatter），存放在 `.specanchor/modules/`
-- `source:<type>`：外部来源，标注其类型。`⚠️ 无 frontmatter` 提示覆盖率检测基于文件存在性而非元信息
+- `external:<type>`：外部来源，标注其类型。外部来源的 `spec` 字段指向原始路径而非 `.specanchor/modules/` 下的副本
 
 ## §5 命令行为扩展
 
