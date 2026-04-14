@@ -186,8 +186,13 @@ graph TB
         O5[module-index.md]
     end
 
-    subgraph "检测层"
+    subgraph "脚本层"
         D1[specanchor-check.sh]
+        D2[specanchor-index.sh]
+        D3[specanchor-boot.sh]
+        D4[specanchor-init.sh]
+        D5[specanchor-status.sh]
+        D6[frontmatter-inject.sh]
     end
 
     U --> S

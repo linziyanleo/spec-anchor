@@ -183,7 +183,13 @@ SpecAnchor/
 │   ├── schemas/                 ← 写作协议 Schema 定义
 │   └── *.md                    ← 模板和参考文件
 └── scripts/
-    └── specanchor-check.sh      ← 对齐检测脚本
+    ├── specanchor-init.sh       ← 初始化脚本（目录+配置）
+    ├── specanchor-boot.sh       ← 启动检查脚本
+    ├── specanchor-status.sh     ← 状态报告脚本
+    ├── specanchor-index.sh      ← 索引生成脚本
+    ├── specanchor-check.sh      ← 对齐检测脚本
+    ├── frontmatter-inject.sh    ← Frontmatter 注入
+    └── frontmatter-inject-and-check.sh ← 注入+检测组合
 ```
 
 ### 安装后的项目结构（full 模式）

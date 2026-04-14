@@ -1,7 +1,7 @@
 ---
 specanchor:
   type: module-index
-  generated_at: "2026-04-14T14:53:20"
+  generated_at: "2026-04-14T15:23:17"
   module_count: 3
   covered_count: 3
   uncovered_count: 0
@@ -34,11 +34,11 @@ modules:
 
   - path: "scripts/"
     spec: "scripts.spec.md"
-    summary: "Shell 自动化工具层：对齐检测、Frontmatter 注入、组合检测"
+    summary: "Shell 自动化工具层：初始化、状态报告、索引生成、对齐检测、Frontmatter 注入"
     source: native
     status: active
-    version: "1.0.0"
-    last_synced: "2026-04-02"
+    version: "2.0.0"
+    last_synced: "2026-04-14"
     owner: "@fanghu"
     health: DRIFTED
 
@@ -55,4 +55,4 @@ uncovered: []
 |----------|------|------|--------|------|---------|
 | extensions/workflow/ | 独立工作流 skill：提交推送、代码评审、dev server 启停 | ✅ active | 🟡 DRIFTED | 1.0.0 | 2026-04-14 |
 | references/ | 协议声明层：命令定义、Spec 模板、Schema 系统、核心协议 | ✅ active | 🟡 DRIFTED | 1.0.0 | 2026-04-14 |
-| scripts/ | Shell 自动化工具层：对齐检测、Frontmatter 注入、组合检测 | ✅ active | 🟡 DRIFTED | 1.0.0 | 2026-04-02 |
+| scripts/ | Shell 自动化工具层：初始化、状态报告、索引生成、对齐检测、Frontmatter 注入 | ✅ active | 🟡 DRIFTED | 2.0.0 | 2026-04-14 |

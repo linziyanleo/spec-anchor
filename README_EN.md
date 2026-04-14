@@ -183,7 +183,13 @@ SpecAnchor/
 │   ├── schemas/                 ← Writing protocol Schema definitions
 │   └── *.md                    ← Templates and reference files
 └── scripts/
-    └── specanchor-check.sh      ← Alignment detection script
+    ├── specanchor-init.sh       ← Initialization script (dirs + config)
+    ├── specanchor-boot.sh       ← Boot check script
+    ├── specanchor-status.sh     ← Status report script
+    ├── specanchor-index.sh      ← Index generation script
+    ├── specanchor-check.sh      ← Alignment detection script
+    ├── frontmatter-inject.sh    ← Frontmatter injection
+    └── frontmatter-inject-and-check.sh ← Injection + detection combo
 ```
 
 ### After Installation (full mode)

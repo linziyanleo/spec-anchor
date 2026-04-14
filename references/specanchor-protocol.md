@@ -27,6 +27,17 @@ SPECANCHOR_SKILL_DIR="<skill_install_dir>" bash "<skill_install_dir>/scripts/spe
 
 `SPECANCHOR_SKILL_DIR` 环境变量指向 Skill 安装目录，用于查找内置 schemas。未设置时 fallback 到脚本自身上级目录。
 
+### §1.1.1 其他脚本化命令
+
+以下命令也有对应脚本，详见各命令定义文件：
+
+| 命令 | 脚本 | 说明 |
+|------|------|------|
+| `specanchor_init` | `scripts/specanchor-init.sh` | 目录结构和 anchor.yaml 创建（半脚本化，Global Spec 生成仍由 Agent 完成） |
+| `specanchor_status` | `scripts/specanchor-status.sh` | 状态/覆盖率报告（支持 summary/json 输出） |
+| `specanchor_index` | `scripts/specanchor-index.sh` | 生成/更新 module-index.md（v2 格式） |
+| `specanchor_check` | `scripts/specanchor-check.sh` | Spec-Code 对齐检测 |
+
 ### §1.2 手动启动（降级）
 
 脚本不可用时，按以下顺序逐步执行：

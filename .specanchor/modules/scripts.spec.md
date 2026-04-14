@@ -3,12 +3,13 @@ specanchor:
   level: module
   module_name: "scripts"
   module_path: "scripts/"
-  summary: "Shell 自动化工具层：对齐检测、Frontmatter 注入、组合检测"
-  version: "1.0.0"
+  summary: "Shell 自动化工具层：初始化、状态报告、索引生成、对齐检测、Frontmatter 注入"
+  version: "2.0.0"
   owner: "@fanghu"
   created: "2026-04-02"
   status: active
-  last_synced: "2026-04-02"
+  last_synced: "2026-04-14"
+  last_change: "新增 init/status/index 脚本，升级为 7 脚本全覆盖"
   depends_on: []
 ---
 
@@ -27,6 +28,51 @@ specanchor:
 - 幂等安全：重复运行同一脚本不产生副作用
 
 ## 3. 公开接口（脚本入口）
+
+### specanchor-init.sh
+
+目录和配置初始化（半脚本化）：
+
+| 参数 | 说明 |
+|------|------|
+| `--project=<name>` | 项目名称（默认取当前目录名） |
+| `--mode=full\|parasitic` | 运行模式（默认 full） |
+| `--scan-sources` | 扫描检测已有 spec 体系 |
+
+**脚本处理**: 目录创建、anchor.yaml 生成、module-index.md 初始化、来源检测
+**Agent 处理**: 来源策略确认、Global Spec 生成（需代码分析）
+
+### specanchor-status.sh
+
+状态和覆盖率报告：
+
+| 参数 | 说明 |
+|------|------|
+| `--config=<path>` | 配置文件路径（默认自动查找） |
+| `--format=summary\|json` | 输出格式（默认 summary） |
+
+输出内容: Global Spec 统计、Module Spec 覆盖率/健康度、Task Spec 统计、Module Index 格式状态
+
+### specanchor-index.sh
+
+生成/更新 module-index.md（v2 YAML frontmatter 格式）：
+
+| 参数 | 说明 |
+|------|------|
+| `--config=<path>` | 配置文件路径（默认自动查找） |
+| `--output=<path>` | 输出路径（默认 .specanchor/module-index.md） |
+
+自动扫描 `.specanchor/modules/` 下所有 Module Spec，读取 frontmatter，计算健康度（FRESH/DRIFTED/STALE/OUTDATED），生成 v2 格式索引文件。
+
+### specanchor-boot.sh
+
+启动检查（只读），输出项目 SpecAnchor 配置状态摘要：
+
+| 参数 | 说明 |
+|------|------|
+| `--format=summary\|full\|json` | 输出格式（默认 summary） |
+
+环境变量 `SPECANCHOR_SKILL_DIR` 指向 Skill 安装目录，用于查找内置 schemas。
 
 ### specanchor-check.sh
 
@@ -85,11 +131,15 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 
 ## 7. 代码结构
 
-| 文件 | 行数 | 职责 |
-|------|------|------|
-| `specanchor-check.sh` | ~548 | Spec-Commit 对齐检测（task/module/global/coverage） |
-| `frontmatter-inject.sh` | ~581 | Frontmatter 自动推断与注入 Layer 1 |
-| `frontmatter-inject-and-check.sh` | ~207 | Layer 2 组合器（注入 + 检测） |
+| 文件 | 职责 |
+|------|------|
+| `specanchor-init.sh` | 目录结构和配置初始化（半脚本化） |
+| `specanchor-status.sh` | 状态/覆盖率报告（summary/json） |
+| `specanchor-index.sh` | module-index.md 生成/更新（v2 格式） |
+| `specanchor-boot.sh` | 启动检查（只读摘要输出） |
+| `specanchor-check.sh` | Spec-Commit 对齐检测（task/module/global/coverage） |
+| `frontmatter-inject.sh` | Frontmatter 自动推断与注入 Layer 1 |
+| `frontmatter-inject-and-check.sh` | Layer 2 组合器（注入 + 检测） |
 
 ## 8. 已知问题（待修复）
 
