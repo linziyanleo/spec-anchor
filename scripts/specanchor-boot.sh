@@ -57,6 +57,11 @@ B_MODULE_COUNT=0
 B_TASK_ACTIVE=0
 B_TASK_ARCHIVED=0
 B_MODULE_INDEX=""     # ok | missing
+B_MODULE_INDEX_FORMAT=""  # v2 | legacy | ""
+B_INDEX_HEALTH_FRESH=0
+B_INDEX_HEALTH_DRIFTED=0
+B_INDEX_HEALTH_STALE=0
+B_INDEX_HEALTH_OUTDATED=0
 
 # Global Specs
 B_GLOBAL_STATUS=""    # ok | missing
@@ -149,6 +154,23 @@ boot_specanchor_dir() {
 
   if [[ -f ".specanchor/module-index.md" ]]; then
     B_MODULE_INDEX="ok"
+    local first_line
+    first_line=$(head -1 ".specanchor/module-index.md")
+    if [[ "$first_line" == "---" ]]; then
+      local idx_type
+      idx_type=$(parse_yaml_field ".specanchor/module-index.md" "type" "")
+      if [[ "$idx_type" == "module-index" ]]; then
+        B_MODULE_INDEX_FORMAT="v2"
+        B_INDEX_HEALTH_FRESH=$(parse_yaml_field ".specanchor/module-index.md" "fresh" "0")
+        B_INDEX_HEALTH_DRIFTED=$(parse_yaml_field ".specanchor/module-index.md" "drifted" "0")
+        B_INDEX_HEALTH_STALE=$(parse_yaml_field ".specanchor/module-index.md" "stale" "0")
+        B_INDEX_HEALTH_OUTDATED=$(parse_yaml_field ".specanchor/module-index.md" "outdated" "0")
+      else
+        B_MODULE_INDEX_FORMAT="legacy"
+      fi
+    else
+      B_MODULE_INDEX_FORMAT="legacy"
+    fi
   else
     B_MODULE_INDEX="missing"
   fi
@@ -349,8 +371,14 @@ output_summary() {
 
     # Module / Task
     echo -e "  Module Specs: ${B_MODULE_COUNT} module(s) (按需加载)"
+    if [[ "$B_MODULE_INDEX" == "ok" ]] && [[ "$B_MODULE_INDEX_FORMAT" == "v2" ]]; then
+      echo -e "  Module Index: ${GREEN}v2 (structured)${RESET} — 🟢${B_INDEX_HEALTH_FRESH} 🟡${B_INDEX_HEALTH_DRIFTED} 🟠${B_INDEX_HEALTH_STALE} 🔴${B_INDEX_HEALTH_OUTDATED}"
+    elif [[ "$B_MODULE_INDEX" == "ok" ]]; then
+      echo -e "  Module Index: ${YELLOW}legacy (Markdown table)${RESET} — 建议运行 specanchor_index 迁移到 v2 格式"
+    else
+      echo -e "  ${YELLOW}⚠️ module-index.md 不存在，建议运行 specanchor_index${RESET}"
+    fi
     echo -e "  Task Specs: ${B_TASK_ACTIVE} active, ${B_TASK_ARCHIVED} archived"
-    [[ "$B_MODULE_INDEX" == "missing" ]] && echo -e "  ${YELLOW}⚠️ module-index.md 不存在，建议运行 specanchor_index${RESET}"
 
     # Sources
     if [[ $B_SOURCES_COUNT -gt 0 ]]; then
@@ -440,6 +468,11 @@ output_json() {
     printf '  "task_active": %d,\n' "$B_TASK_ACTIVE"
     printf '  "task_archived": %d,\n' "$B_TASK_ARCHIVED"
     printf '  "module_index": "%s",\n' "$B_MODULE_INDEX"
+    printf '  "module_index_format": "%s",\n' "$B_MODULE_INDEX_FORMAT"
+    if [[ "$B_MODULE_INDEX_FORMAT" == "v2" ]]; then
+      printf '  "index_health": {"fresh":%d,"drifted":%d,"stale":%d,"outdated":%d},\n' \
+        "$B_INDEX_HEALTH_FRESH" "$B_INDEX_HEALTH_DRIFTED" "$B_INDEX_HEALTH_STALE" "$B_INDEX_HEALTH_OUTDATED"
+    fi
   fi
 
   printf '  "sources": ['
