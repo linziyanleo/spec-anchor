@@ -1,8 +1,13 @@
+---
+name: spec-anchor-workflow-extension
+description: 独立的 SpecAnchor 开发工作流 Skill，负责代码提交、代码评审、开发服务器启停。仅在用户明确需要提交、评审、启动项目或停止项目等工作流操作时使用。
+---
+
 # SpecAnchor Workflow Extension
 
-开发工作流扩展，为 SpecAnchor 提供代码提交、评审、开发服务器管理能力。
+独立工作流 skill，为使用 SpecAnchor 的项目提供代码提交、评审、开发服务器管理能力。
 
-此扩展通过 SpecAnchor 主 Skill 按需加载，不独立触发。
+这是独立 skill，不由主 SKILL.md 路由。
 
 ## 路径约定
 
@@ -12,7 +17,7 @@
 
 ## 依赖
 
-- `.specanchor/global/project-setup.spec.md`：提供项目启动命令、本地地址、评审人等配置
+- `.specanchor/global/project-setup.spec.md`：提供项目启动命令、本地地址，以及可选的 CR 配置提示
 - 如果 `project-setup.spec.md` 不存在，提示用户先执行 `specanchor_global`（project-setup 类型）生成
 
 ## 命令
@@ -27,18 +32,17 @@
 ## 平台适配
 
 CR 命令的具体执行方式由用户项目配置驱动：
-- CR 脚本路径和参数格式在 `project-setup.spec.md` 中声明
+- `project-setup.spec.md` 可选声明 CR 脚本路径、目标分支、评审人
 - 扩展只负责：检查代码状态 → 提交变更 → 调用用户配置的 CR 命令 → 提取结果
 - 如果用户项目没有 CR 脚本，自动从 `scripts/codereview.sh.template` 复制并引导用户配置
 
 ## 脚本管理
 
-以下脚本在 `specanchor_global`（project-setup 类型）执行时自动生成到用户项目，后续不再自动修改：
+以下脚本由 workflow skill 在需要时按需检查/生成：
 
 | 脚本 | 生成时机 | 目标 | 用途 |
 |------|----------|------|------|
-| `codereview.sh` | project-setup 初始化时 | 项目根目录 | CR 评审脚本（基于模板 + 用户配置生成） |
-| `specanchor-check.sh` | project-setup 初始化时 | 项目 `scripts/` 目录 | Spec-代码对齐检测 |
+| `codereview.sh` | 首次执行 `workflow_submit_cr` 且脚本缺失时 | 项目根目录 | CR 评审脚本（基于模板 + 用户配置生成） |
 
 模板位置：`scripts/codereview.sh.template`（相对于本文件所在目录）。如果用户项目已有这些脚本则跳过生成。
 
