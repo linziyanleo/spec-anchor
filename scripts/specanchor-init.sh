@@ -135,25 +135,21 @@ EOF
 scan_external_sources() {
   echo -e "\n${BOLD}Scanning for existing spec systems...${RESET}"
 
-  # Keep init compatible with macOS system Bash 3.2.
-  local registry=(
-    "openspec/:openspec"
-    "specs/:spec-kit"
-    "mydocs/specs/:mydocs"
-    ".qoder/specs/:qoder"
-    "docs/specs/:generic"
+  local -A type_registry=(
+    ["openspec/"]="openspec"
+    ["specs/"]="spec-kit"
+    ["mydocs/specs/"]="mydocs"
+    [".qoder/specs/"]="qoder"
+    ["docs/specs/"]="generic"
   )
-  local found=0
-  local entry=""
-  local dir=""
-  local type=""
-  local count=""
 
-  for entry in "${registry[@]}"; do
-    dir="${entry%%:*}"
-    type="${entry#*:}"
+  local found=0
+
+  for dir in "${!type_registry[@]}"; do
     if [[ -d "$dir" ]]; then
-      count=$(find "$dir" \( -name "*.md" -o -name "*.yaml" \) 2>/dev/null | wc -l | tr -d ' ')
+      local type="${type_registry[$dir]}"
+      local count
+      count=$(find "$dir" -name "*.md" -o -name "*.yaml" 2>/dev/null | wc -l | tr -d ' ')
       echo -e "  ${CYAN}📂${RESET} ${dir} [${type}] — ${count} files"
       ((found++))
     fi

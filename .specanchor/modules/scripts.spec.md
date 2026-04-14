@@ -9,7 +9,7 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-04-14"
-  last_change: "修复 specanchor-init.sh 在 macOS Bash 3 下的 source scan 崩溃，保留 init 入口兼容性"
+  last_change: "新增 init/status/index 脚本，升级为 7 脚本全覆盖"
   depends_on: []
 ---
 
