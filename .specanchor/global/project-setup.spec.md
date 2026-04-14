@@ -2,11 +2,11 @@
 specanchor:
   level: global
   type: project-setup
-  version: "1.0.0"
+  version: "1.1.0"
   author: "@fanghu"
   reviewers: []
   last_synced: "2026-04-14"
-  last_change: "职责收口：移除 workflow 专属评审人字段"
+  last_change: "更新常用命令列表，反映 7 脚本全覆盖架构"
   applies_to: "**/*"
 ---
 
@@ -24,10 +24,14 @@ specanchor:
 - 可选：ShellCheck（`brew install shellcheck`）用于静态分析
 
 ## 常用命令
-- 脚本执行：`bash scripts/specanchor-check.sh <subcommand>`
+- 初始化：`bash scripts/specanchor-init.sh --project=<name>`
+- 启动检查：`bash scripts/specanchor-boot.sh`
+- 状态报告：`bash scripts/specanchor-status.sh`
+- 索引生成：`bash scripts/specanchor-index.sh`
+- 对齐检测：`bash scripts/specanchor-check.sh <task|module|global|coverage>`
 - Frontmatter 注入：`bash scripts/frontmatter-inject.sh <file|--dir path>`
 - 注入+检测：`bash scripts/frontmatter-inject-and-check.sh --dir <path>`
-- 回归测试：`bash tests/run_all.sh`（待建）
+- 回归测试：`bats tests/`
 
 ## 开发约定
 - 分支策略：main 为主分支，feature 分支 → PR → merge

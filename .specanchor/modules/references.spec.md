@@ -4,14 +4,14 @@ specanchor:
   module_name: "协议层"
   module_path: "references/"
   summary: "协议声明层：命令定义、Spec 模板、Schema 系统、核心协议"
-  version: "1.0.0"
+  version: "1.1.0"
   owner: "@fanghu"
   author: "@fanghu"
   reviewers: []
   created: "2026-04-02"
   updated: "2026-04-14"
   last_synced: "2026-04-14"
-  last_change: "命令边界收口：commands-quickref 仅保留主 skill 核心命令"
+  last_change: "修正 Schema 哲学标注（bug-fix/refactor/research 均为 strict）"
   status: active
   depends_on: []
 ---
@@ -52,9 +52,9 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | Schema | 哲学 | 用途 |
 |--------|------|------|
 | `sdd-riper-one` | strict | 默认 — 规范驱动开发 |
-| `bug-fix` | fluid | Bug 修复快速流程 |
-| `refactor` | fluid | 重构任务 |
-| `research` | fluid | 调研任务 |
+| `bug-fix` | strict | Bug 修复快速流程 |
+| `refactor` | strict | 重构任务 |
+| `research` | strict | 调研任务 |
 | `simple` | fluid | 简单变更 |
 | `openspec-compat` | strict | OpenSpec 兼容 |
 

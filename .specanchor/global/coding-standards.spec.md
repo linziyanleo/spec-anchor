@@ -5,8 +5,8 @@ specanchor:
   version: "2.0.0"
   author: "@fanghu"
   reviewers: []
-  last_synced: "2026-04-02"
-  last_change: "审计后全面更新：补充错误处理、tmpfile、共享函数、参数风格约定"
+  last_synced: "2026-04-14"
+  last_change: "补充测试约定（bats-core）和脚本驱动边界原则"
   applies_to: "scripts/**/*.sh, **/*.md"
 ---
 
@@ -41,7 +41,19 @@ specanchor:
 - Schema 目录：kebab-case（`sdd-riper-one/`）
 - 共享库：`scripts/lib/<name>.sh`
 
+## 测试约定
+- 测试框架：bats-core（Bash Automated Testing System）
+- 测试文件：`tests/test_<subject>.bats`
+- 每个脚本至少有一个对应测试文件
+- 测试名使用英文（bats 对中文编码有兼容问题）
+- 测试隔离：通过 `setup_helper.bash` 创建 sandbox 临时目录，teardown 中清理
+
+## 脚本驱动边界
+- 结构化数据操作（YAML 解析、日期计算、文件扫描）→ 脚本驱动
+- 代码语义分析和 Spec 内容生成 → 模型驱动
+- 两者混合时，脚本处理确定性部分，模型处理需要推理的部分
+
 ## Git 提交约定
 - 格式：`<type>(<scope>): <subject>`
 - type：feat / fix / docs / refactor / test / chore
-- scope：skill / scripts / schemas / workflow / protocol
+- scope：skill / scripts / schemas / workflow / protocol / spec
