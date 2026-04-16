@@ -1,3 +1,4 @@
 /mydocs/*
 .DS_Store
 /tests/
+.specanchor/

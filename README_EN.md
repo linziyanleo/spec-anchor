@@ -36,27 +36,29 @@ Writing Protocol = Pluggable (SDD-RIPER-ONE / OpenSpec / Custom Schema)
 ### Cursor
 
 ```bash
-# Project-level install
-cp -r /path/to/SpecAnchor/ your-project/.cursor/skills/specanchor/
+# Project-level install (rsync excludes dev-only files)
+rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ your-project/.cursor/skills/specanchor/
 
 # Or symlink (recommended for development)
 ln -s /path/to/SpecAnchor your-project/.cursor/skills/specanchor
 
 # Or global install
-cp -r /path/to/SpecAnchor/ ~/.cursor/skills/specanchor/
+rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ ~/.cursor/skills/specanchor/
 ```
 
 ### Claude Code
 
 ```bash
-cp -r /path/to/SpecAnchor/ your-project/.agents/skills/specanchor/
+rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ your-project/.agents/skills/specanchor/
 ```
 
 Add to `CLAUDE.md` or `AGENTS.md`: `Use SpecAnchor for Spec management: see .agents/skills/specanchor/SKILL.md`
 
 ### Other AI Tools
 
-SpecAnchor is a plain-text Skill that works with any AI tool that can read files. Copy the directory into your project and reference `SKILL.md` in your AI tool's configuration.
+SpecAnchor is a plain-text Skill that works with any AI tool that can read files. Use `rsync -a --exclude-from=.skillexclude` to copy to your project, then reference `SKILL.md` in your AI tool's configuration.
+
+> **Why rsync instead of cp -r?** The skill repo contains dev-only directories (`.specanchor/`, `mydocs/`, `tests/`) that should not be copied into target projects. `.skillexclude` declares which paths to exclude. Without rsync, use `cp -r` then manually remove `.specanchor/`, `mydocs/`, `tests/` from the target.
 
 ---
 

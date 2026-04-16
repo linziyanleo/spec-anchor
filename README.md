@@ -36,27 +36,29 @@ SpecAnchor = 组织管理层（Spec 放在哪、健不健康、谁有权改）
 ### Cursor
 
 ```bash
-# 项目级安装
-cp -r /path/to/SpecAnchor/ your-project/.cursor/skills/specanchor/
+# 项目级安装（使用 rsync 排除开发文件）
+rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ your-project/.cursor/skills/specanchor/
 
 # 或 symlink（开发时推荐）
 ln -s /path/to/SpecAnchor your-project/.cursor/skills/specanchor
 
 # 或全局安装
-cp -r /path/to/SpecAnchor/ ~/.cursor/skills/specanchor/
+rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ ~/.cursor/skills/specanchor/
 ```
 
 ### Claude Code
 
 ```bash
-cp -r /path/to/SpecAnchor/ your-project/.agents/skills/specanchor/
+rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ your-project/.agents/skills/specanchor/
 ```
 
 在 `CLAUDE.md` 或 `AGENTS.md` 中添加：`使用 SpecAnchor 管理 Spec：参考 .agents/skills/specanchor/SKILL.md`
 
 ### 其他 AI 工具
 
-SpecAnchor 是纯文本 Skill，可在任何支持读取文件的 AI 工具中使用。将目录复制到项目中，在 AI 工具配置中引用 `SKILL.md` 即可。
+SpecAnchor 是纯文本 Skill，可在任何支持读取文件的 AI 工具中使用。使用 `rsync -a --exclude-from=.skillexclude` 复制到项目中，在 AI 工具配置中引用 `SKILL.md` 即可。
+
+> **为什么用 rsync 而不是 cp -r？** Skill 仓库包含开发用的 `.specanchor/`、`mydocs/`、`tests/` 等目录，这些不应被复制到目标项目。`.skillexclude` 文件声明了需要排除的路径。如无 rsync，可手动排除：`cp -r` 后删除目标目录下的 `.specanchor/`、`mydocs/`、`tests/`。
 
 ---
 

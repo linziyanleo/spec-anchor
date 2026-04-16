@@ -1,0 +1,8 @@
+# Paths excluded when installing this skill into a project.
+# Used by: rsync --exclude-from, or manual cp filtering.
+.specanchor/
+mydocs/
+tests/
+.git/
+.gitignore
+.skillexclude
