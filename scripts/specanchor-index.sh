@@ -23,15 +23,53 @@ fi
 
 die() { echo -e "${RED}error:${RESET} $*" >&2; exit 1; }
 
+normalize_scalar() {
+  local value="${1:-}"
+  value=$(printf '%s' "$value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+  if [[ ${#value} -ge 2 ]]; then
+    local first_char="${value:0:1}"
+    local last_char="${value:$((${#value} - 1)):1}"
+    if [[ "$first_char" == "$last_char" ]] && { [[ "$first_char" == '"' ]] || [[ "$first_char" == "'" ]]; }; then
+      value="${value:1:$((${#value} - 2))}"
+    fi
+  fi
+  printf '%s\n' "$value"
+}
+
+date_to_epoch() {
+  local value="$1"
+  local epoch
+  epoch=$(date -j -f "%Y-%m-%d" "$value" "+%s" 2>/dev/null || date -d "$value" "+%s" 2>/dev/null || true)
+  printf '%s\n' "$epoch"
+}
+
 parse_yaml_field() {
   local file="$1" field="$2" default="$3"
   if [[ -f "$file" ]]; then
-    local val
-    val=$(grep "^    ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^    ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+    local raw val
+    raw=$(awk -v field="$field" '
+      $0 ~ "^    " field ":" {
+        sub("^    " field ": *", "", $0)
+        print
+        exit
+      }
+      $0 ~ "^  " field ":" {
+        sub("^  " field ": *", "", $0)
+        print
+        exit
+      }
+      $0 ~ "^" field ":" {
+        sub("^" field ": *", "", $0)
+        print
+        exit
+      }
+    ' "$file")
+    val=$(printf '%s' "$raw" | sed 's/[[:space:]]#.*$//')
     if [[ -z "$val" ]]; then
-      val=$(grep "^  ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+      echo "$default"
+      return
     fi
-    [[ -n "$val" ]] && echo "$val" || echo "$default"
+    normalize_scalar "$val"
   else
     echo "$default"
   fi
@@ -39,7 +77,16 @@ parse_yaml_field() {
 
 parse_frontmatter_field() {
   local file="$1" field="$2"
-  sed -n '/^---$/,/^---$/p' "$file" | grep "^  ${field}:" | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//"
+  local raw
+  raw=$(awk -v field="$field" '
+    /^---$/ { in_frontmatter = !in_frontmatter; next }
+    in_frontmatter && $0 ~ "^  " field ":" {
+      sub("^  " field ": *", "", $0)
+      print
+      exit
+    }
+  ' "$file")
+  normalize_scalar "$raw"
 }
 
 find_config() {
@@ -71,7 +118,11 @@ compute_health() {
   fi
 
   local synced_epoch now_epoch days_since
-  synced_epoch=$(date -j -f "%Y-%m-%d" "$last_synced" "+%s" 2>/dev/null || date -d "$last_synced" "+%s" 2>/dev/null || echo 0)
+  synced_epoch=$(date_to_epoch "$last_synced")
+  if [[ -z "$synced_epoch" ]]; then
+    echo "STALE"
+    return
+  fi
   now_epoch=$(date "+%s")
   days_since=$(( (now_epoch - synced_epoch) / 86400 ))
 

@@ -56,6 +56,19 @@ skip() { echo -e "${DIM}⏭️${RESET} $*"; }
 
 # ─── 配置查找 ───
 
+normalize_scalar() {
+  local value="${1:-}"
+  value=$(printf '%s' "$value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+  if [[ ${#value} -ge 2 ]]; then
+    local first_char="${value:0:1}"
+    local last_char="${value:$((${#value} - 1)):1}"
+    if [[ "$first_char" == "$last_char" ]] && { [[ "$first_char" == '"' ]] || [[ "$first_char" == "'" ]]; }; then
+      value="${value:1:$((${#value} - 2))}"
+    fi
+  fi
+  printf '%s\n' "$value"
+}
+
 find_config() {
   if [[ -f "anchor.yaml" ]]; then
     echo "anchor.yaml"
@@ -70,12 +83,25 @@ find_config() {
 parse_yaml_field() {
   local file="$1" field="$2" default="$3"
   if [[ -f "$file" ]]; then
-    local val
-    val=$(grep "^    ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^    ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+    local raw val
+    raw=$(awk -v field="$field" '
+      $0 ~ "^    " field ":" {
+        sub("^    " field ": *", "", $0)
+        print
+        exit
+      }
+      $0 ~ "^  " field ":" {
+        sub("^  " field ": *", "", $0)
+        print
+        exit
+      }
+    ' "$file")
+    val=$(printf '%s' "$raw" | sed 's/[[:space:]]#.*$//')
     if [[ -z "$val" ]]; then
-      val=$(grep "^  ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+      echo "$default"
+      return
     fi
-    [[ -n "$val" ]] && echo "$val" || echo "$default"
+    normalize_scalar "$val"
   else
     echo "$default"
   fi

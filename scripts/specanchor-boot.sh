@@ -89,19 +89,47 @@ declare -a B_SCH_DESCS=()
 
 die() { echo -e "${RED}error:${RESET} $*" >&2; exit 1; }
 
+normalize_scalar() {
+  local value="${1:-}"
+  value=$(printf '%s' "$value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+  if [[ ${#value} -ge 2 ]]; then
+    local first_char="${value:0:1}"
+    local last_char="${value:$((${#value} - 1)):1}"
+    if [[ "$first_char" == "$last_char" ]] && { [[ "$first_char" == '"' ]] || [[ "$first_char" == "'" ]]; }; then
+      value="${value:1:$((${#value} - 2))}"
+    fi
+  fi
+  printf '%s\n' "$value"
+}
+
 parse_yaml_field() {
   local file="$1" field="$2" default="${3:-}"
   if [[ -f "$file" ]]; then
-    local val
+    local raw val
     # 尝试 4 空格缩进（嵌套字段）→ 2 空格 → 0 缩进（顶层字段）
-    val=$(grep "^    ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^    ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+    raw=$(awk -v field="$field" '
+      $0 ~ "^    " field ":" {
+        sub("^    " field ": *", "", $0)
+        print
+        exit
+      }
+      $0 ~ "^  " field ":" {
+        sub("^  " field ": *", "", $0)
+        print
+        exit
+      }
+      $0 ~ "^" field ":" {
+        sub("^" field ": *", "", $0)
+        print
+        exit
+      }
+    ' "$file")
+    val=$(printf '%s' "$raw" | sed 's/[[:space:]]#.*$//')
     if [[ -z "$val" ]]; then
-      val=$(grep "^  ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+      echo "$default"
+      return
     fi
-    if [[ -z "$val" ]]; then
-      val=$(grep "^${field}:" "$file" 2>/dev/null | head -1 | sed "s/^${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
-    fi
-    [[ -n "$val" ]] && echo "$val" || echo "$default"
+    normalize_scalar "$val"
   else
     echo "$default"
   fi
@@ -110,8 +138,17 @@ parse_yaml_field() {
 parse_yaml_list_first() {
   local file="$1" field="$2"
   if [[ ! -f "$file" ]]; then return; fi
-  # 匹配任意缩进级别的字段名，然后取第一个列表项
-  sed -n "/^ *${field}:/,/^ *[a-z]/p" "$file" | grep '^ *- ' | head -1 | sed 's/^ *- *"\{0,1\}//;s/"\{0,1\} *$//'
+  local raw
+  raw=$(awk -v field="$field" '
+    $0 ~ "^ *" field ":" { in_list = 1; next }
+    in_list && $0 ~ "^ *- " {
+      sub("^ *- *", "", $0)
+      print
+      exit
+    }
+    in_list && $0 ~ "^ *[A-Za-z0-9_-]+:" { exit }
+  ' "$file")
+  normalize_scalar "$raw"
 }
 
 # ─── 核心检查函数（直接写全局变量）───

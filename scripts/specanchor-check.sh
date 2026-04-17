@@ -35,13 +35,42 @@ fi
 
 die() { echo -e "${RED}error:${RESET} $*" >&2; exit 1; }
 
+normalize_scalar() {
+  local value="${1:-}"
+  value=$(printf '%s' "$value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+  if [[ ${#value} -ge 2 ]]; then
+    local first_char="${value:0:1}"
+    local last_char="${value:$((${#value} - 1)):1}"
+    if [[ "$first_char" == "$last_char" ]] && { [[ "$first_char" == '"' ]] || [[ "$first_char" == "'" ]]; }; then
+      value="${value:1:$((${#value} - 2))}"
+    fi
+  fi
+  printf '%s\n' "$value"
+}
+
+date_to_epoch() {
+  local value="$1"
+  local epoch
+  epoch=$(date -j -f "%Y-%m-%d" "$value" "+%s" 2>/dev/null || date -d "$value" "+%s" 2>/dev/null || true)
+  printf '%s\n' "$epoch"
+}
+
 check_git() {
   git rev-parse --is-inside-work-tree &>/dev/null || die "当前目录不在 git 仓库内"
 }
 
 parse_frontmatter_field() {
   local file="$1" field="$2"
-  sed -n '/^---$/,/^---$/p' "$file" | grep "^  ${field}:" | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//"
+  local raw
+  raw=$(awk -v field="$field" '
+    /^---$/ { in_frontmatter = !in_frontmatter; next }
+    in_frontmatter && $0 ~ "^  " field ":" {
+      sub("^  " field ": *", "", $0)
+      print
+      exit
+    }
+  ' "$file")
+  normalize_scalar "$raw"
 }
 
 parse_frontmatter_list() {
@@ -67,12 +96,30 @@ path_to_module_id() {
 parse_yaml_field() {
   local file="$1" field="$2" default="$3"
   if [[ -f "$file" ]]; then
-    local val
-    val=$(grep "^    ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^    ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+    local raw val
+    raw=$(awk -v field="$field" '
+      $0 ~ "^    " field ":" {
+        sub("^    " field ": *", "", $0)
+        print
+        exit
+      }
+      $0 ~ "^  " field ":" {
+        sub("^  " field ": *", "", $0)
+        print
+        exit
+      }
+      $0 ~ "^" field ":" {
+        sub("^" field ": *", "", $0)
+        print
+        exit
+      }
+    ' "$file")
+    val=$(printf '%s' "$raw" | sed 's/[[:space:]]#.*$//')
     if [[ -z "$val" ]]; then
-      val=$(grep "^  ${field}:" "$file" 2>/dev/null | head -1 | sed "s/^  ${field}: *\"\{0,1\}//;s/\"\{0,1\} *$//" | sed 's/ *#.*//')
+      echo "$default"
+      return
     fi
-    [[ -n "$val" ]] && echo "$val" || echo "$default"
+    normalize_scalar "$val"
   else
     echo "$default"
   fi
@@ -234,27 +281,60 @@ check_single_module() {
 
   local module_path
   module_path=$(parse_frontmatter_field "$spec_file" "module_path")
-  [[ -z "$module_path" ]] && return
 
   local last_synced
   last_synced=$(parse_frontmatter_field "$spec_file" "last_synced")
 
   local module_name
   module_name=$(parse_frontmatter_field "$spec_file" "module_name")
-  [[ -z "$module_name" ]] && module_name=$(basename "$module_path")
-
-  local commits_since=0
-  if [[ -n "$last_synced" ]] && [[ -d "$module_path" ]]; then
-    commits_since=$(git log --oneline --since="${last_synced} 00:00:00" -- "$module_path" 2>/dev/null | wc -l | tr -d ' ')
-  fi
+  [[ -z "$module_name" ]] && module_name=$(basename "${module_path:-$spec_file}" .spec.md)
 
   local status_icon status_label
+
+  if [[ -z "$module_path" ]]; then
+    status_icon="${YELLOW}~${RESET}"
+    status_label="STALE (missing module_path)"
+    printf "  %b %-18s %-25s synced %-12s %3d commits since   %s\n" \
+      "$status_icon" "${module_name}" "unknown" "${last_synced:-unknown}" 0 "$status_label"
+    echo -e "    ${DIM}spec: ${spec_file}${RESET}"
+    return
+  fi
+
+  if [[ ! -d "$module_path" ]]; then
+    status_icon="${YELLOW}~${RESET}"
+    status_label="STALE (invalid module_path)"
+    printf "  %b %-18s %-25s synced %-12s %3d commits since   %s\n" \
+      "$status_icon" "${module_name}" "${module_path}" "${last_synced:-unknown}" 0 "$status_label"
+    echo -e "    ${DIM}spec: ${spec_file}${RESET}"
+    return
+  fi
+
+  if [[ -z "$last_synced" ]]; then
+    status_icon="${YELLOW}~${RESET}"
+    status_label="STALE (missing last_synced)"
+    printf "  %b %-18s %-25s synced %-12s %3d commits since   %s\n" \
+      "$status_icon" "${module_name}" "${module_path}" "unknown" 0 "$status_label"
+    echo -e "    ${DIM}spec: ${spec_file}${RESET}"
+    return
+  fi
+
+  local commits_since=0
+  commits_since=$(git log --oneline --since="${last_synced} 00:00:00" -- "$module_path" 2>/dev/null | wc -l | tr -d ' ')
+
   if [[ $commits_since -eq 0 ]]; then
     status_icon="${GREEN}✓${RESET}"
     status_label="FRESH"
-  elif [[ -n "$last_synced" ]]; then
+  else
     local synced_epoch
-    synced_epoch=$(date -j -f "%Y-%m-%d" "$last_synced" "+%s" 2>/dev/null || date -d "$last_synced" "+%s" 2>/dev/null || echo 0)
+    synced_epoch=$(date_to_epoch "$last_synced")
+    if [[ -z "$synced_epoch" ]]; then
+      status_icon="${YELLOW}~${RESET}"
+      status_label="STALE (invalid last_synced)"
+      printf "  %b %-18s %-25s synced %-12s %3d commits since   %s\n" \
+        "$status_icon" "${module_name}" "${module_path}" "${last_synced}" "$commits_since" "$status_label"
+      echo -e "    ${DIM}spec: ${spec_file}${RESET}"
+      return
+    fi
     local now_epoch
     now_epoch=$(date "+%s")
     local days_since=$(( (now_epoch - synced_epoch) / 86400 ))
@@ -268,9 +348,6 @@ check_single_module() {
       status_icon="${YELLOW}~${RESET}"
       status_label="DRIFTED"
     fi
-  else
-    status_icon="${YELLOW}~${RESET}"
-    status_label="STALE"
   fi
 
   printf "  %b %-18s %-25s synced %-12s %3d commits since   %s\n" \
@@ -375,31 +452,51 @@ check_global() {
       [[ -f "$spec_file" ]] || continue
       local mp
       mp=$(parse_frontmatter_field "$spec_file" "module_path")
-      [[ -z "$mp" ]] && continue
       local mod_name
       mod_name=$(parse_frontmatter_field "$spec_file" "module_name")
-      [[ -z "$mod_name" ]] && mod_name=$(basename "$mp")
+      [[ -z "$mod_name" ]] && mod_name=$(basename "${mp:-$spec_file}" .spec.md)
 
       local ls
       ls=$(parse_frontmatter_field "$spec_file" "last_synced")
-      if [[ -n "$ls" ]] && [[ -d "$mp" ]]; then
-        local synced_epoch now_epoch days_since commits_since
-        synced_epoch=$(date -j -f "%Y-%m-%d" "$ls" "+%s" 2>/dev/null || date -d "$ls" "+%s" 2>/dev/null || echo 0)
-        now_epoch=$(date "+%s")
-        days_since=$(( (now_epoch - synced_epoch) / 86400 ))
-        commits_since=$(git log --oneline --since="${ls} 00:00:00" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
-        if [[ $days_since -gt $CFG_OUTDATED_DAYS ]] && [[ $commits_since -gt 0 ]]; then
-          echo -e "  ${RED}!${RESET} ${mod_name} (${mp}) OUTDATED (${days_since} days, ${commits_since} commits)"
-          has_warnings=1
-        elif [[ $days_since -gt $CFG_STALE_DAYS ]] && [[ $commits_since -gt 0 ]]; then
-          echo -e "  ${YELLOW}~${RESET} ${mod_name} (${mp}) STALE (${days_since} days, ${commits_since} commits)"
-          has_warnings=1
-        fi
+      if [[ -z "$mp" ]]; then
+        echo -e "  ${YELLOW}~${RESET} ${mod_name} (unknown) STALE (missing module_path)"
+        has_warnings=1
+        continue
+      fi
+      if [[ ! -d "$mp" ]]; then
+        echo -e "  ${YELLOW}~${RESET} ${mod_name} (${mp}) STALE (invalid module_path)"
+        has_warnings=1
+        continue
+      fi
+      if [[ -z "$ls" ]]; then
+        echo -e "  ${YELLOW}~${RESET} ${mod_name} (${mp}) STALE (missing last_synced)"
+        has_warnings=1
+        continue
+      fi
+
+      local synced_epoch now_epoch days_since commits_since
+      synced_epoch=$(date_to_epoch "$ls")
+      if [[ -z "$synced_epoch" ]]; then
+        echo -e "  ${YELLOW}~${RESET} ${mod_name} (${mp}) STALE (invalid last_synced)"
+        has_warnings=1
+        continue
+      fi
+      now_epoch=$(date "+%s")
+      days_since=$(( (now_epoch - synced_epoch) / 86400 ))
+      commits_since=$(git log --oneline --since="${ls} 00:00:00" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
+      if [[ $days_since -gt $CFG_OUTDATED_DAYS ]] && [[ $commits_since -gt 0 ]]; then
+        echo -e "  ${RED}!${RESET} ${mod_name} (${mp}) OUTDATED (${days_since} days, ${commits_since} commits)"
+        has_warnings=1
+      elif [[ $days_since -gt $CFG_STALE_DAYS ]] && [[ $commits_since -gt 0 ]]; then
+        echo -e "  ${YELLOW}~${RESET} ${mod_name} (${mp}) STALE (${days_since} days, ${commits_since} commits)"
+        has_warnings=1
       fi
     done
   fi
 
-  [[ $has_warnings -eq 0 ]] && echo -e "  ${GREEN}(none)${RESET}"
+  if [[ $has_warnings -eq 0 ]]; then
+    echo -e "  ${GREEN}(none)${RESET}"
+  fi
 }
 
 # ─── Coverage 检测 ───
