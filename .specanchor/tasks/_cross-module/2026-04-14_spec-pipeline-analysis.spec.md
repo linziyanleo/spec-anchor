@@ -60,7 +60,7 @@ specanchor:
 | `specanchor_index` | 更新模块索引 | **脚本优先** | `specanchor-index.sh` | 调用脚本 → 确认结果 |
 | `specanchor_import` | 从外部框架导入 | **模型** | 无 | 分析外部格式 → 转译 → 生成配置 |
 
-**关键发现**: 
+**关键发现**:
 - 纯模型驱动：init、global、task、load、import（5/10）
 - 脚本优先：check、index（2/10）
 - 混合：module、infer、status（3/10）
