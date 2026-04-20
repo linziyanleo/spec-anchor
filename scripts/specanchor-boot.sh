@@ -519,7 +519,12 @@ output_json() {
   collect_all
 
   if [[ "$B_CONFIG_STATUS" == "missing" ]]; then
-    echo '{"status":"error","message":"未找到配置文件"}'
+    echo '{"status":"error","error_code":"CONFIG_MISSING","message":"未找到配置文件"}'
+    exit 1
+  fi
+
+  if [[ "$B_MODE" == "full" ]] && [[ "$B_SA_DIR" == "missing" ]]; then
+    echo '{"status":"error","error_code":"FULL_MODE_SPECANCHOR_MISSING","message":"mode 为 full 但 .specanchor/ 目录不存在"}'
     exit 1
   fi
 

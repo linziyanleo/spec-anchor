@@ -53,13 +53,17 @@ specanchor:
 
   coverage:
     scan_paths:
+      - "SKILL.md"
+      - "README.md"
+      - "README_CN.md"
+      - "WHY.md"
+      - "FLOWCHART.md"
       - "scripts/**"
       - "references/**"
       - "extensions/**"
     ignore_paths:
-      - "references/schemas/**"
+      - "references/schemas/**/template.md"
       - "mydocs/**"
-      - "*.md"
 
   check:
     stale_days: 14
