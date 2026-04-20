@@ -98,6 +98,25 @@ On-Demand 触发场景：
 - 执行 `specanchor_task` / `specanchor_module` 时自动定位关联模块
 - RIPER Research 阶段发现相关模块
 
+## Assembly Trace
+
+为了避免“口径上 Always Load，实际只读了摘要还是全文”不透明，每轮对话都必须显式打印一次 assembly trace；发生按需加载时，再追加一条更新后的 trace。
+
+标准格式：
+
+```text
+Assembly Trace:
+  - Global: summary|full|none|skipped -> <spec files or reason>
+  - Module: summary|full|deferred|sources-only -> <spec files or reason>
+```
+
+- `summary`：只加载文件名、摘要、索引或统计信息，不注入正文全文
+- `full`：已读取并注入 Spec 正文
+- `deferred`：本轮尚未加载 Module Spec，后续按需触发
+- `sources-only`：parasitic 模式下仅从 external sources 按需读取
+
+启动检查后先输出一次 trace。若后续通过 `specanchor_load` 或自动匹配额外读取了 Module Spec，必须再次输出 trace，明确新增了哪些文件以及是 `summary` 还是 `full`。
+
 ## 命令
 
 用户可以用自然语言描述意图，也可以用 SA 前缀的精确命令。这个 Skill 只路由 SpecAnchor 核心命令。遇到用户意图时，先查阅 `references/commands-quickref.md` 的意图映射表确定要执行的核心命令，然后读取对应的命令详细定义文件执行。

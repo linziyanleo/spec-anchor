@@ -24,6 +24,8 @@ die() { echo -e "${RED}error:${RESET} $*" >&2; exit 1; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+declare -a S_GLOBAL_FILES=()
+
 normalize_scalar() {
   local value="${1:-}"
   value=$(printf '%s' "$value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
@@ -35,6 +37,22 @@ normalize_scalar() {
     fi
   fi
   printf '%s\n' "$value"
+}
+
+join_by() {
+  local sep="$1"
+  shift
+
+  local out="" item
+  for item in "$@"; do
+    if [[ -n "$out" ]]; then
+      out="${out}${sep}${item}"
+    else
+      out="$item"
+    fi
+  done
+
+  printf '%s' "$out"
 }
 
 date_to_epoch() {
@@ -103,6 +121,8 @@ find_config() {
 collect_stats() {
   local config="$1"
 
+  S_GLOBAL_FILES=()
+
   local mode
   mode=$(parse_yaml_field "$config" "mode" "full")
 
@@ -115,6 +135,7 @@ collect_stats() {
     for f in .specanchor/global/*.spec.md; do
       [[ -f "$f" ]] || continue
       ((global_count++))
+      S_GLOBAL_FILES+=("$(basename "$f")")
       local lines
       lines=$(wc -l < "$f" | tr -d ' ')
       global_lines=$((global_lines + lines))
@@ -206,6 +227,19 @@ output_summary() {
   echo -e "  Config: ${CYAN}${config}${RESET}"
   echo ""
 
+  echo -e "  Assembly Trace:"
+  if [[ ${#S_GLOBAL_FILES[@]} -gt 0 ]]; then
+    echo -e "    - Global: ${CYAN}summary${RESET} -> $(join_by ", " "${S_GLOBAL_FILES[@]}")"
+  else
+    echo -e "    - Global: ${YELLOW}none${RESET} -> .specanchor/global/ has no loadable spec"
+  fi
+  if [[ "$S_MODE" == "full" ]]; then
+    echo -e "    - Module: ${DIM}deferred${RESET} -> none (status does not preload module bodies)"
+  else
+    echo -e "    - Module: ${DIM}sources-only${RESET} -> none (external specs load on demand)"
+  fi
+  echo ""
+
   echo -e "  Global Specs: ${S_GLOBAL_COUNT} file(s), ${S_GLOBAL_LINES} lines total"
 
   echo -e "  Module Specs: ${S_MODULE_COUNT} module(s)"
@@ -246,6 +280,20 @@ output_summary() {
 output_json() {
   printf '{\n'
   printf '  "mode": "%s",\n' "$S_MODE"
+  printf '  "assembly_trace": {\n'
+  printf '    "global": {"mode":"summary","files":['
+  local i
+  for i in "${!S_GLOBAL_FILES[@]}"; do
+    [[ $i -gt 0 ]] && printf ','
+    printf '"%s"' "${S_GLOBAL_FILES[$i]}"
+  done
+  printf ']},\n'
+  if [[ "$S_MODE" == "full" ]]; then
+    printf '    "module": {"mode":"deferred","files":[],"note":"status does not preload module bodies"}\n'
+  else
+    printf '    "module": {"mode":"sources-only","files":[],"note":"external specs load on demand"}\n'
+  fi
+  printf '  },\n'
   printf '  "global_specs": {"count": %d, "lines": %d},\n' "$S_GLOBAL_COUNT" "$S_GLOBAL_LINES"
   printf '  "module_specs": {"count": %d, "health": {"fresh": %d, "drifted": %d, "stale": %d, "outdated": %d}},\n' \
     "$S_MODULE_COUNT" "$S_FRESH" "$S_DRIFTED" "$S_STALE" "$S_OUTDATED"

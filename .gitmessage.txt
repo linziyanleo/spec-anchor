@@ -2,5 +2,5 @@
 # Example: fix(scripts): handle init scan on macOS bash
 #
 # Types: feat | fix | docs | refactor | test | chore
-# Scopes: skill | scripts | schemas | workflow | protocol | spec | extension | all
+# Scopes: skill | scripts | schemas | workflow | protocol | spec | extension | all | trace
 

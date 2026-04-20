@@ -151,6 +151,45 @@ parse_yaml_list_first() {
   normalize_scalar "$raw"
 }
 
+join_by() {
+  local sep="$1"
+  shift
+
+  local out="" item
+  for item in "$@"; do
+    if [[ -n "$out" ]]; then
+      out="${out}${sep}${item}"
+    else
+      out="$item"
+    fi
+  done
+
+  printf '%s' "$out"
+}
+
+emit_assembly_trace() {
+  local global_mode="$1"
+  local i
+
+  echo -e "  Assembly Trace:"
+
+  if [[ "$B_MODE" == "full" ]]; then
+    if [[ "$B_GLOBAL_COUNT" -gt 0 ]]; then
+      local global_files=()
+      for i in "${!B_GLOBAL_NAMES[@]}"; do
+        global_files+=("${B_GLOBAL_NAMES[$i]}.spec.md")
+      done
+      echo -e "    - Global: ${CYAN}${global_mode}${RESET} -> $(join_by ", " "${global_files[@]}")"
+    else
+      echo -e "    - Global: ${YELLOW}none${RESET} -> .specanchor/global/ has no loadable spec"
+    fi
+    echo -e "    - Module: ${DIM}deferred${RESET} -> none (on-demand after module/path match)"
+  else
+    echo -e "    - Global: ${DIM}skipped${RESET} -> parasitic mode does not auto-load global specs"
+    echo -e "    - Module: ${DIM}sources-only${RESET} -> none (external specs load on demand)"
+  fi
+}
+
 # ─── 核心检查函数（直接写全局变量）───
 
 boot_config() {
@@ -375,6 +414,8 @@ collect_all() {
 # ─── 输出格式化 ───
 
 output_summary() {
+  local global_mode="${1:-summary}"
+
   collect_all
 
   if [[ "$B_CONFIG_STATUS" == "missing" ]]; then
@@ -394,6 +435,7 @@ output_summary() {
 
   echo -e "${BOLD}SpecAnchor Boot [${B_MODE}]${RESET}"
   echo -e "  Config: ${CYAN}${B_CONFIG_PATH}${RESET} (v${B_VERSION}, project: ${B_PROJECT_NAME})"
+  emit_assembly_trace "$global_mode"
 
   if [[ "$B_MODE" == "full" ]]; then
     # Global Specs
@@ -458,7 +500,7 @@ output_summary() {
 }
 
 output_full() {
-  output_summary
+  output_summary "full"
 
   # 额外输出 Global Spec 内容
   if [[ "$B_MODE" == "full" ]] && [[ -d ".specanchor/global" ]]; then
@@ -511,6 +553,21 @@ output_json() {
         "$B_INDEX_HEALTH_FRESH" "$B_INDEX_HEALTH_DRIFTED" "$B_INDEX_HEALTH_STALE" "$B_INDEX_HEALTH_OUTDATED"
     fi
   fi
+
+  printf '  "assembly_trace": {\n'
+  if [[ "$B_MODE" == "full" ]]; then
+    printf '    "global": {"mode":"summary","files":['
+    for i in "${!B_GLOBAL_NAMES[@]}"; do
+      [[ $i -gt 0 ]] && printf ','
+      printf '"%s.spec.md"' "${B_GLOBAL_NAMES[$i]}"
+    done
+    printf ']},\n'
+    printf '    "module": {"mode":"deferred","files":[],"note":"boot does not preload module specs"}\n'
+  else
+    printf '    "global": {"mode":"skipped","files":[]},\n'
+    printf '    "module": {"mode":"sources-only","files":[],"note":"external specs load on demand"}\n'
+  fi
+  printf '  },\n'
 
   printf '  "sources": ['
   for i in "${!B_SRC_PATHS[@]}"; do

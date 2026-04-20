@@ -162,6 +162,26 @@ references/commands/
 anchor.yaml → Global Specs → Module Spec(s)（via module-index.md） → Project Codemap（如需要）
 ```
 
+### 3.4 Assembly Trace（每轮必显式输出）
+
+Agent 每轮都必须显式输出本轮的上下文装配结果，禁止仅靠隐式提示词或内部状态。
+
+标准格式：
+
+```text
+Assembly Trace:
+  - Global: summary|full|none|skipped -> <spec files or reason>
+  - Module: summary|full|deferred|sources-only -> <spec files or reason>
+```
+
+规则：
+
+1. 启动检查完成后立即输出一次 trace
+2. 若后续触发 On-Demand Load，再输出一次更新后的 trace
+3. `summary` 表示仅加载文件名/摘要/统计；`full` 表示已读取 Spec 正文
+4. `deferred` 表示本轮尚未加载 Module Spec；`sources-only` 用于 parasitic 模式
+5. 若无可加载 Global Spec，明确输出 `none`，不要省略该行
+
 ## §4 与 SDD-RIPER-ONE 集成协议
 
 ### 4.1 写作协议选择（Schema 系统）
