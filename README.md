@@ -112,6 +112,8 @@ SpecAnchor is a plain-text Skill that works with any AI tool that can read files
 
 ### Command Quick Reference
 
+Natural language is the primary user interface. `specanchor_*` names are internal routing IDs, and `SA:` is only optional shorthand for advanced users.
+
 | Intent | Example Phrases |
 |--------|----------------|
 | Initialize | "Initialize SpecAnchor" / "Set up project info" |

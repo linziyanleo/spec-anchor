@@ -22,8 +22,8 @@
 </p>
 
 <p align="center">
-  <a href="README_EN.md">🇬🇧 English</a> ·
-  <a href="README.md">🇨🇳 中文</a> ·
+  <a href="README.md">🇬🇧 English</a> ·
+  <a href="README_CN.md">🇨🇳 中文</a> ·
   <a href="WHY.md">📖 为什么需要</a> ·
   <a href="SKILL.md">🧭 协议入口</a>
 </p>
@@ -148,6 +148,8 @@ rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude \
 ---
 
 ## 🗺️ 命令速查
+
+自然语言是主用户入口；`specanchor_*` 只是 Skill 内部命令 ID，`SA:` 仅是可选 shorthand。
 
 | 意图 | 说法示例 |
 | :--- | :--- |

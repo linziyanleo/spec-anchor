@@ -146,7 +146,7 @@ flowchart TD
 ```mermaid
 graph TB
     subgraph "用户层"
-        U[用户自然语言 / SA 命令]
+        U[用户自然语言 / 可选 SA: shorthand]
     end
 
     subgraph "Skill 入口层"
