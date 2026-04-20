@@ -1,48 +1,78 @@
-# SpecAnchor
+<div align="center">
+  <img src="assets/SpecAnchor_logo.png" alt="SpecAnchor Logo" width="140" />
+</div>
 
-[English](README_EN.md) | [为什么需要 SpecAnchor](WHY.md)
+<h1 align="center">SpecAnchor</h1>
 
-> Spec 是锚，代码是船。锚定住了，船才不会漂。
+<p align="center">
+  <em>Spec is the anchor, code is the ship. With the anchor set, the ship won't drift.</em>
 
-SpecAnchor 是一个 **AI Skill**，提供三级 Spec 管理体系（Global → Module → Task），在 AI 生成代码之前自动加载团队规范和模块契约。
+</p>
 
-它是 Spec 的"图书馆"，不是"写作工具"——兼容 SDD-RIPER-ONE、OpenSpec 及任何 Markdown 格式的 Spec。锚定的不只是 AI 上下文，更是人对代码的认知。
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
+  <img src="https://img.shields.io/badge/version-0.4.0-brightgreen.svg" alt="Version 0.4.0" />
+  <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
+  <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
+  <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
+  <img src="https://img.shields.io/badge/Gemini-%E2%9C%93-blueviolet" alt="Gemini" />
+</p>
 
-它只负责 Spec 治理，不承接提交、评审或启停项目这类开发工作流操作。
-
----
-
-## 核心理念
-
-与 RAG 式的"每次从代码重新推导"不同，SpecAnchor 采用**编译式知识**范式——把代码洞察提前编译为持久化的 Spec 文件，AI 编码前直接加载已编译的上下文。一次编写，反复使用，知识持续复利。（详见 [WHY.md §编译式知识 vs 检索式知识](WHY.md#编译式知识-vs-检索式知识)）
-
-```
-SpecAnchor = 组织管理层（Spec 放在哪、健不健康、谁有权改）
-写作协议   = 可插拔（SDD-RIPER-ONE / OpenSpec / 自定义 Schema）
-```
-
-**三级 Spec 体系**：
-
-| 层级  | 名称          | 内容              | 变更频率 | 路径                     |
-| --- | ----------- | --------------- | ---- | ---------------------- |
-| L1  | Global Spec | 编码标准、架构约定、项目配置  | 季度级  | `.specanchor/global/`  |
-| L2  | Module Spec | 接口契约、业务规则、代码结构  | 迭代级  | `.specanchor/modules/` |
-| L3  | Task Spec   | 单次变更的目标、计划、执行日志 | 每任务  | `.specanchor/tasks/`   |
+<p align="center">
+  <a href="README.md">🇬🇧 English</a> ·
+  <a href="README_CN.md">🇨🇳 中文</a> ·
+  <a href="WHY.md">📖 WHY</a> ·
+  <a href="SKILL.md">🧭 SKILL</a>
+</p>
 
 ---
 
-## 快速安装
+> Spec is the anchor, code is the ship. With the anchor set, the ship won't drift.
+
+**Your AI agent re-derives your team's conventions from source on every run. SpecAnchor makes that the last time.**
+
+SpecAnchor compiles your coding standards, module contracts, and change history into persistent Spec files — loaded automatically *before* the AI writes a single line of code. Write once, reuse forever: knowledge compounds instead of evaporating at the end of each session.
+
+It's a **library for Specs, not a writing tool** — pluggable with SDD-RIPER-ONE, OpenSpec, or your own schema. Specs anchor not only AI context, but human understanding of the code.
+
+---
+
+## What Makes SpecAnchor Different
+
+Most Spec tools teach you *how to write Specs*. SpecAnchor handles what nobody else does:
+
+- **📚 Compiled knowledge, not retrieval** — Specs are pre-compiled and loaded; AI never re-derives conventions from source.
+- **🧭 3-tier governance baked in** — Global (standards) · Module (contracts) · Task (change log), each with its own cadence.
+- **🩺 Spec health as a first-class concern** — coverage, staleness, role permissions, module index. OpenSpec / SDD-RIPER-ONE / spec-kit don't ship any of this.
+- **🔌 Protocol-agnostic** — write Specs in SDD-RIPER-ONE, OpenSpec, or your own schema. SpecAnchor governs the *organization*, not the *authoring*.
+- **🪢 Parasitic mode** — already using OpenSpec or spec-kit? Point SpecAnchor at your existing directory — no migration needed.
+
+---
+
+## Three-Level Spec System
+
+| Level | Name | Content | Change Frequency | Path |
+|-------|------|---------|-----------------|------|
+| L1 | Global Spec | Coding standards, architecture conventions, project config | Quarterly | `.specanchor/global/` |
+| L2 | Module Spec | Interface contracts, business rules, code structure | Per sprint | `.specanchor/modules/` |
+| L3 | Task Spec | Goals, plans, execution logs for each change | Per task | `.specanchor/tasks/` |
+
+> Unlike RAG-style "re-derive from code every time", SpecAnchor adopts a **compiled knowledge** paradigm — pre-compiling code insights into persistent Spec files that AI loads before coding. See [WHY_EN.md §Compiled Knowledge vs Retrieved Knowledge](WHY_EN.md#compiled-knowledge-vs-retrieved-knowledge).
+
+---
+
+## Quick Install
 
 ### Cursor
 
 ```bash
-# 项目级安装（使用 rsync 排除开发文件）
+# Project-level install (rsync excludes dev-only files)
 rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ your-project/.cursor/skills/specanchor/
 
-# 或 symlink（开发时推荐）
+# Or symlink (recommended for development)
 ln -s /path/to/SpecAnchor your-project/.cursor/skills/specanchor
 
-# 或全局安装
+# Or global install
 rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ ~/.cursor/skills/specanchor/
 ```
 
@@ -52,81 +82,81 @@ rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ ~
 rsync -a --exclude-from=/path/to/SpecAnchor/.skillexclude /path/to/SpecAnchor/ your-project/.agents/skills/specanchor/
 ```
 
-在 `CLAUDE.md` 或 `AGENTS.md` 中添加：`使用 SpecAnchor 管理 Spec：参考 .agents/skills/specanchor/SKILL.md`
+Add to `CLAUDE.md` or `AGENTS.md`: `Use SpecAnchor for Spec management: see .agents/skills/specanchor/SKILL.md`
 
-### 其他 AI 工具
+### Other AI Tools
 
-SpecAnchor 是纯文本 Skill，可在任何支持读取文件的 AI 工具中使用。使用 `rsync -a --exclude-from=.skillexclude` 复制到项目中，在 AI 工具配置中引用 `SKILL.md` 即可。
+SpecAnchor is a plain-text Skill that works with any AI tool that can read files. Use `rsync -a --exclude-from=.skillexclude` to copy to your project, then reference `SKILL.md` in your AI tool's configuration.
 
-> **为什么用 rsync 而不是 cp -r？** Skill 仓库包含开发用的 `.specanchor/`、`mydocs/`、`tests/` 等目录，这些不应被复制到目标项目。`.skillexclude` 文件声明了需要排除的路径。如无 rsync，可手动排除：`cp -r` 后删除目标目录下的 `.specanchor/`、`mydocs/`、`tests/`。
-
----
-
-## 推荐流程
-
-### 首次使用
-
-```
-"帮我初始化 SpecAnchor"          → 生成 anchor.yaml + 可选 .specanchor/ + 自动生成 Global Spec
-                                   （自动检测已有 spec 体系并写入 sources 配置）
-"帮我创建 auth 模块的规范"        → 触碰模块时按需创建 Module Spec
-```
-
-### 日常开发
-
-```
-"创建任务：登录页增加验证码"      → 自动加载 Global + Module Spec，创建 Task Spec
- ↓ 按 Task Spec 开发
-"检查 Spec 和代码对齐"           → Spec-代码一致性校验
-```
-
-### 命令速查
-
-| 意图   | 说法示例                                |
-| ---- | ----------------------------------- |
-| 初始化  | "初始化 SpecAnchor" / "初始化项目信息"        |
-| 全局规范 | "生成编码规范" / "生成架构约定"                 |
-| 模块规范 | "创建 auth 模块规范" / "从代码推断模块规范"        |
-| 任务   | "创建任务：XX功能"                         |
-| 检测   | "检查 Spec 对齐" / "覆盖率报告" / "模块规范是否过期" |
-| 外部导入 | "导入 OpenSpec 配置" / "兼容 OpenSpec"    |
+> **Why rsync instead of cp -r?** The skill repo contains dev-only directories (`.specanchor/`, `mydocs/`, `tests/`) that should not be copied into target projects. `.skillexclude` declares which paths to exclude. Without rsync, use `cp -r` then manually remove `.specanchor/`, `mydocs/`, `tests/` from the target.
 
 ---
 
-## 使用策略
+## Recommended Workflow
 
-### 团队标准
+### First Time Setup
 
-| 操作             | 建议频率         | 负责人                 |
-| -------------- | ------------ | ------------------- |
-| Global Spec 更新 | 季度级          | 工程师（Peer Review）    |
-| Module Spec 创建 | 触碰模块时        | 工程师 / 协作者（需 Review） |
-| Task Spec 创建   | 每个任务         | 工程师 & 协作者           |
-| 覆盖率检查          | 每个 Sprint 结束 | 工程师                 |
-| Spec-代码对齐检测    | MR 提交时       | 自动 / 手动             |
+```
+"Initialize SpecAnchor"          → Creates anchor.yaml + optional .specanchor/ + auto-generates Global Specs
+                                   (auto-detects existing spec systems and writes sources config)
+"Create module spec for auth"    → Create Module Spec on demand when touching a module
+```
 
-### 渐进式覆盖
+### Daily Development
 
-不追求 100% 覆盖，让最重要的模块先有 Spec。详见 [冷启动方案](WHY.md#存量项目冷启动方案)。
+```
+"Create task: add login captcha" → Auto-loads Global + Module Spec, creates Task Spec
+ ↓ Develop following Task Spec
+"Check Spec alignment"           → Spec-code consistency check
+```
+
+### Command Quick Reference
+
+| Intent | Example Phrases |
+|--------|----------------|
+| Initialize | "Initialize SpecAnchor" / "Set up project info" |
+| Global Spec | "Generate coding standards" / "Generate architecture conventions" |
+| Module Spec | "Create auth module spec" / "Infer module spec from code" |
+| Task | "Create task: feature X" |
+| Check | "Check Spec alignment" / "Coverage report" / "Are module specs stale?" |
+| Import | "Import OpenSpec config" / "Migrate from OpenSpec" |
 
 ---
 
-## 与 SDD-RIPER-ONE / OpenSpec 的关系
+## Usage Strategy
 
-SpecAnchor 只管"组织"，不管"写作"——通过声明式 Schema 系统兼容任何 Spec 格式：
+### Team Standards
 
-| 写作协议                  | 哲学     | 说明                                      | 切换方式                                         |
-| --------------------- | ------ | --------------------------------------- | -------------------------------------------- |
-| **SDD-RIPER-ONE**（默认） | strict | Research → Plan（门禁）→ Execute → Review   | 默认，无需配置                                      |
-| **OpenSpec**          | fluid  | Proposal → Delta Specs → Design → Tasks | `writing_protocol.schema: "openspec-compat"` |
-| **自定义**               | 用户定义   | 在 `.specanchor/schemas/` 下创建            | `writing_protocol.schema: "<name>"`          |
+| Action | Recommended Frequency | Owner |
+|--------|----------------------|-------|
+| Global Spec update | Quarterly | Engineers (Peer Review) |
+| Module Spec creation | When touching a module | Engineers / Contractors (need Review) |
+| Task Spec creation | Every task | Engineers & Contractors |
+| Coverage check | End of each Sprint | Engineers |
+| Spec-code alignment | On MR submission | Auto / Manual |
 
-### 兼容 OpenSpec
+### Progressive Coverage
 
-已有 OpenSpec 项目可通过 `sources` 配置将 `openspec/` 目录纳入 SpecAnchor 治理，无需移动文件：
+Don't aim for 100% coverage. Let the most critical modules have Specs first. See [Cold Start Guide](WHY_EN.md#cold-start-guide-for-existing-projects).
+
+---
+
+## Relationship with SDD-RIPER-ONE / OpenSpec
+
+SpecAnchor only handles "organization", not "writing" — through a declarative Schema system, it's compatible with any Spec format:
+
+| Writing Protocol | Philosophy | Description | Configuration |
+|-----------------|-----------|-------------|---------------|
+| **SDD-RIPER-ONE** (default) | strict | Research → Plan (gate) → Execute → Review | Default, no config needed |
+| **OpenSpec** | fluid | Proposal → Delta Specs → Design → Tasks | `writing_protocol.schema: "openspec-compat"` |
+| **Custom** | user-defined | Create under `.specanchor/schemas/` | `writing_protocol.schema: "<name>"` |
+
+### OpenSpec Compatibility
+
+Existing OpenSpec projects can map the `openspec/` directory into SpecAnchor governance via `sources`, without moving any files:
 
 ```yaml
-# anchor.yaml（项目根目录）
+# anchor.yaml (project root)
 specanchor:
   sources:
     - path: "openspec/specs"
@@ -143,108 +173,109 @@ specanchor:
         stale_check: true
 ```
 
-使用"导入 OpenSpec 配置"命令可自动生成以上配置。
+Use the "Import OpenSpec config" command to auto-generate this configuration.
 
-### 兼容其他 Spec 体系
+### Compatible Spec Systems
 
-SpecAnchor 支持治理多种 spec 体系，初始化时自动检测：
+SpecAnchor supports governing multiple spec systems, auto-detected during initialization:
 
-| 体系 | 检测路径 | 说明 |
-| ---- | ---- | ---- |
-| OpenSpec | `openspec/` | Spec-Driven Development 框架 |
-| spec-kit | `specs/` | 通用 spec 目录 |
-| mydocs | `mydocs/specs/` | SDD-RIPER-ONE 独立使用时的产出 |
-| qoder | `.qoder/specs/` | Qoder AI 框架 |
-| 自定义 | 用户指定 | 任何 Markdown spec 目录 |
+| System | Detection Path | Description |
+| ------ | -------------- | ----------- |
+| OpenSpec | `openspec/` | Spec-Driven Development framework |
+| spec-kit | `specs/` | Generic spec directory |
+| mydocs | `mydocs/specs/` | SDD-RIPER-ONE standalone output |
+| qoder | `.qoder/specs/` | Qoder AI framework |
+| custom | user-specified | Any Markdown spec directory |
 
-**两种运行模式**：
-- **full** — 有 `.specanchor/` 自有 Spec 体系 + 可选治理外部来源
-- **parasitic** — 无 `.specanchor/`，纯治理已有 spec 体系（腐化检测 + 扫描）
+**Two operating modes**:
 
-### SpecAnchor 的独有能力
+- **full** — Has `.specanchor/` with own Spec system + optional external source governance
+- **parasitic** — No `.specanchor/`, pure governance of existing spec systems (staleness detection + scanning)
 
-OpenSpec 和 SDD-RIPER-ONE 都不提供以下治理功能：
+### SpecAnchor's Unique Capabilities
 
-- **Spec 覆盖率检测** — 哪些模块有 Spec、哪些没有
-- **Spec 腐化检测** — 哪些 Spec 过期了（代码改了但 Spec 没同步）
-- **角色权限矩阵** — 工程师 vs外部协作者的 Spec 操作权限
-- **模块索引** — `module-index.md` 集中索引所有 Module Spec
+Neither OpenSpec nor SDD-RIPER-ONE provides these governance features:
+
+- **Spec coverage detection** — which modules have Specs and which don't
+- **Spec staleness detection** — which Specs are outdated (code changed but Spec not synced)
+- **Role permission matrix** — engineer vs contractor Spec operation permissions
+- **Module index** — `module-index.md` centralized index of all Module Specs
 
 ---
 
-## 目录结构
+## Directory Structure
 
-### Skill 本体
+### Skill (this repo)
 
 ```
 SpecAnchor/
-├── SKILL.md                     ← Skill 入口
+├── SKILL.md                     ← Skill entry point
 ├── references/
-│   ├── specanchor-protocol.md   ← 核心协议
-│   ├── commands/                ← 命令定义（按需读取）
-│   ├── schemas/                 ← 写作协议 Schema 定义
-│   └── *.md                    ← 模板和参考文件
+│   ├── specanchor-protocol.md   ← Core protocol
+│   ├── commands/                ← Command definitions (loaded on demand)
+│   ├── schemas/                 ← Writing protocol Schema definitions
+│   └── *.md                    ← Templates and reference files
 └── scripts/
-    ├── specanchor-init.sh       ← 初始化脚本（目录+配置）
-    ├── specanchor-boot.sh       ← 启动检查脚本
-    ├── specanchor-status.sh     ← 状态报告脚本
-    ├── specanchor-index.sh      ← 索引生成脚本
-    ├── specanchor-check.sh      ← 对齐检测脚本
-    ├── frontmatter-inject.sh    ← Frontmatter 注入
-    └── frontmatter-inject-and-check.sh ← 注入+检测组合
+    ├── specanchor-init.sh       ← Initialization script (dirs + config)
+    ├── specanchor-boot.sh       ← Boot check script
+    ├── specanchor-status.sh     ← Status report script
+    ├── specanchor-index.sh      ← Index generation script
+    ├── specanchor-check.sh      ← Alignment detection script
+    ├── frontmatter-inject.sh    ← Frontmatter injection
+    └── frontmatter-inject-and-check.sh ← Injection + detection combo
 ```
 
-### 安装后的项目结构（full 模式）
+### After Installation (full mode)
 
 ```
 your-project/
-├── anchor.yaml                  ← 配置（项目根目录，唯一入口）
-├── .specanchor/                 ← 纯数据目录
-│   ├── global/                  ← L1: Global Spec（≤200 行）
-│   ├── modules/                 ← L2: Module Spec（集中存放）
-│   ├── module-index.md          ← 模块索引
-│   ├── tasks/                   ← L3: Task Spec（按模块分目录）
-│   ├── archive/                 ← 已完成任务归档
-│   ├── schemas/                 ← 用户自定义 Schema（可选）
-│   └── scripts/                 ← 自动生成的扫描脚本
+├── anchor.yaml                  ← Configuration (project root, single entry point)
+├── .specanchor/                 ← Data directory only
+│   ├── global/                  ← L1: Global Spec (≤200 lines)
+│   ├── modules/                 ← L2: Module Spec (centralized)
+│   ├── module-index.md          ← Module index
+│   ├── tasks/                   ← L3: Task Spec (grouped by module)
+│   ├── archive/                 ← Completed task archive
+│   ├── schemas/                 ← User custom Schemas (optional)
+│   └── scripts/                 ← Auto-generated scan scripts
 └── src/
 ```
 
-### 安装后的项目结构（parasitic 模式）
+### After Installation (parasitic mode)
 
 ```
 your-project/
-├── anchor.yaml                  ← 配置（仅此一个文件）
+├── anchor.yaml                  ← Configuration (only this file)
 ├── .specanchor/
-│   └── scripts/                 ← 自动生成的扫描脚本
-├── specs/                       ← 已有 spec 体系（不动）
+│   └── scripts/                 ← Auto-generated scan scripts
+├── specs/                       ← Existing spec system (untouched)
 └── src/
 ```
 
 ---
 
-## 配置
+## Configuration
 
-项目根目录的 `anchor.yaml` 控制 SpecAnchor 的行为，完整配置见 `references/specanchor-protocol.md` 附录 A。
+`anchor.yaml` in the project root controls SpecAnchor's behavior. Full config reference in `references/specanchor-protocol.md` Appendix A.
 
-关键配置项：
+Key settings:
 
 ```yaml
 specanchor:
   version: "0.4.0"
   mode: "full"                      # full | parasitic
-  sources:                          # 外部 spec 体系（可选）
+  sources:                          # External spec systems (optional)
     - path: "specs/"
       type: "spec-kit"
       governance:
         stale_check: true
   writing_protocol:
-    schema: "sdd-riper-one"         # 写作协议：sdd-riper-one | openspec-compat | 自定义
+    schema: "sdd-riper-one"         # Writing protocol: sdd-riper-one | openspec-compat | custom
   coverage:
-    scan_paths: ["src/modules/**"]  # 覆盖率扫描范围
+    scan_paths: ["src/modules/**"]  # Coverage scan scope
   check:
-    stale_days: 14                  # Spec 过期天数阈值
-    outdated_days: 30               # Spec 严重过期天数阈值
+    stale_days: 14                  # Spec staleness threshold (days)
+    outdated_days: 30               # Spec severe staleness threshold (days)
 ```
 
 ---

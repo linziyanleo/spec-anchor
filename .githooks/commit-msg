@@ -17,12 +17,12 @@ case "$first_line" in
     ;;
 esac
 
-if printf '%s\n' "$first_line" | grep -Eq '^(feat|fix|docs|refactor|test|chore)\((skill|scripts|schemas|workflow|protocol|spec)\): .+'; then
+if printf '%s\n' "$first_line" | grep -Eq '^(feat|fix|docs|refactor|test|chore)(\((skill|scripts|schemas|workflow|protocol|spec)\))?: .+'; then
   exit 0
 fi
 
 echo "error: invalid commit message format: $first_line" >&2
-echo "use: <type>(<scope>): <subject>" >&2
+echo "use: <type>[(<scope>)]: <subject>" >&2
 echo "types: feat | fix | docs | refactor | test | chore" >&2
 echo "scopes: skill | scripts | schemas | workflow | protocol | spec | trace" >&2
 exit 1
