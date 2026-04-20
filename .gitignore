@@ -1,4 +1,27 @@
-/mydocs/*
 .DS_Store
+
+# Local SDD output / historical working docs
+/mydocs/*
+
+# Current commit scope: keep only self-dogfood Spec docs.
+/.github/
+/docs/
 /tests/
-.specanchor/
+/CHANGELOG.md
+/references/assembly-trace.md
+/references/script-contract.md
+/references/workflow-gates.md
+/references/integrations/
+/scripts/lib/
+/scripts/specanchor-doctor.sh
+/scripts/specanchor-resolve.sh
+/scripts/specanchor-validate.sh
+
+# Inside .specanchor, keep spec docs and indexes only.
+/.specanchor/archive/**
+/.specanchor/devtools/
+/.specanchor/scripts/
+/.specanchor/harness-engineering-specanchor-guide.md
+/.specanchor/harness-engineering-specanchor-guide-v2.md
+/.specanchor/local/
+/.specanchor/tmp/

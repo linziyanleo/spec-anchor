@@ -3,6 +3,8 @@
 .specanchor/
 mydocs/
 tests/
+.github/
 .git/
 .gitignore
 .skillexclude
+CODEX-BLOCKERS.md
