@@ -54,6 +54,58 @@ jobs:
       - name: Run usage proof examples
         run: bash tests/test_usage_proof.sh
 
+  agent-reliability:
+    name: agent reliability (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show environment
+        run: |
+          bash --version
+          git --version
+          python3 --version
+
+      - name: Ensure scripts are executable enough
+        run: |
+          chmod +x scripts/*.sh tests/run.sh tests/test_agent_reliability.sh || true
+
+      - name: Run agent reliability suite
+        run: bash tests/test_agent_reliability.sh
+
+  agent-reliability-gates:
+    name: agent reliability gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve v2 JSON smoke
+        run: |
+          bash scripts/specanchor-resolve.sh --files "scripts/specanchor-boot.sh" --intent "debug startup" --budget=normal --format=json | python3 -m json.tool >/dev/null
+
+      - name: Assembly v1 JSON smoke
+        run: |
+          bash scripts/specanchor-assemble.sh --files "scripts/specanchor-boot.sh" --intent "debug startup" --budget=normal --format=json | python3 -m json.tool >/dev/null
+
+      - name: Doctor agent profile
+        run: |
+          bash scripts/specanchor-doctor.sh --strict --profile=agent
+
+      - name: Doctor release profile
+        run: |
+          bash scripts/specanchor-doctor.sh --format=markdown --profile=release >/tmp/specanchor-doctor-release.md
+          grep -q "SpecAnchor Doctor" /tmp/specanchor-doctor-release.md
+
+      - name: Hygiene read-only
+        run: |
+          bash scripts/specanchor-hygiene.sh --format=json | python3 -m json.tool >/dev/null
+
   fresh-clone-smoke:
     name: fresh clone smoke
     runs-on: ubuntu-latest
@@ -111,3 +163,4 @@ jobs:
             echo "consumer install boot still reports missing sources" >&2
             exit 1
           fi
+          SPECANCHOR_SKILL_DIR="${skill_dir}" bash "${skill_dir}/scripts/specanchor-assemble.sh" --files "anchor.yaml" --intent "consumer install smoke" --budget=normal --format=json | python3 -m json.tool >/dev/null
