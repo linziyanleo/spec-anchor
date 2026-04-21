@@ -151,7 +151,7 @@ scan_external_sources() {
       local count
       count=$(find "$dir" -name "*.md" -o -name "*.yaml" 2>/dev/null | wc -l | tr -d ' ')
       echo -e "  ${CYAN}📂${RESET} ${dir} [${type}] — ${count} files"
-      ((found++))
+      found=$((found + 1))
     fi
   done
 

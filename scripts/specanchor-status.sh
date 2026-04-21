@@ -127,7 +127,7 @@ collect_stats() {
   if [[ -d ".specanchor/global" ]]; then
     for f in .specanchor/global/*.spec.md; do
       [[ -f "$f" ]] || continue
-      ((global_count++))
+      global_count=$((global_count + 1))
       S_GLOBAL_FILES+=("$(basename "$f")")
       local lines
       lines=$(wc -l < "$f" | tr -d ' ')
@@ -139,14 +139,14 @@ collect_stats() {
   if [[ -d ".specanchor/modules" ]]; then
     for f in .specanchor/modules/*.spec.md; do
       [[ -f "$f" ]] || continue
-      ((module_count++))
+      module_count=$((module_count + 1))
 
       local mp ls
       mp=$(parse_frontmatter_field "$f" "module_path")
       ls=$(parse_frontmatter_field "$f" "last_synced")
 
       if [[ -z "$mp" ]] || [[ -z "$ls" ]] || [[ ! -d "$mp" ]]; then
-        ((stale++))
+        stale=$((stale + 1))
         continue
       fi
 
@@ -156,22 +156,22 @@ collect_stats() {
       fi
 
       if [[ $commits_since -eq 0 ]]; then
-        ((fresh++))
+        fresh=$((fresh + 1))
       else
         local synced_epoch now_epoch days_since
         synced_epoch=$(sa_date_to_epoch "$ls")
         if [[ -z "$synced_epoch" ]]; then
-          ((stale++))
+          stale=$((stale + 1))
           continue
         fi
         now_epoch=$(date "+%s")
         days_since=$(( (now_epoch - synced_epoch) / 86400 ))
         if [[ $days_since -ge $outdated_days ]]; then
-          ((outdated++))
+          outdated=$((outdated + 1))
         elif [[ $days_since -ge $stale_days ]]; then
-          ((stale++))
+          stale=$((stale + 1))
         else
-          ((drifted++))
+          drifted=$((drifted + 1))
         fi
       fi
     done

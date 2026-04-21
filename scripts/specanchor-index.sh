@@ -178,12 +178,12 @@ generate_index() {
     health=$(compute_health "$mp" "$last_synced" "$stale_days" "$outdated_days")
 
     case "$health" in
-      FRESH)    ((fresh++)) ;;
-      DRIFTED)  ((drifted++)) ;;
-      STALE)    ((stale++)) ;;
-      OUTDATED) ((outdated++)) ;;
+      FRESH)    fresh=$((fresh + 1)) ;;
+      DRIFTED)  drifted=$((drifted + 1)) ;;
+      STALE)    stale=$((stale + 1)) ;;
+      OUTDATED) outdated=$((outdated + 1)) ;;
     esac
-    ((covered++))
+    covered=$((covered + 1))
 
     paths+=("$mp")
     specs+=("$ms")

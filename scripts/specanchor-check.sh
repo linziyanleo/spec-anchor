@@ -228,10 +228,10 @@ check_task() {
     done
     if [[ $found -eq 1 ]]; then
       echo -e "  ${GREEN}✓${RESET} ${pf}"
-      ((covered++))
+      covered=$((covered + 1))
     else
       echo -e "  ${RED}✗${RESET} ${pf}  ${DIM}(not in commit)${RESET}"
-      ((missing++))
+      missing=$((missing + 1))
     fi
   done
 
@@ -256,7 +256,7 @@ check_task() {
         label="test"
       fi
       echo -e "  ${CYAN}?${RESET} ${cf}  ${DIM}(${label})${RESET}"
-      ((unplanned++))
+      unplanned=$((unplanned + 1))
     fi
   done
 
@@ -385,7 +385,7 @@ check_module() {
 
     for spec_file in "$modules_dir"/*.spec.md; do
       [[ -f "$spec_file" ]] || continue
-      ((covered++))
+      covered=$((covered + 1))
       check_single_module "$spec_file"
       local ls
       ls=$(parse_frontmatter_field "$spec_file" "last_synced")
@@ -394,7 +394,9 @@ check_module() {
       if [[ -n "$ls" ]] && [[ -n "$mp" ]] && [[ -d "$mp" ]]; then
         local c
         c=$(git log --oneline --since="${ls} 00:00:00" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
-        [[ $c -eq 0 ]] && ((fresh++))
+        if [[ $c -eq 0 ]]; then
+          fresh=$((fresh + 1))
+        fi
       fi
     done
 
@@ -558,10 +560,10 @@ check_coverage() {
     if [[ -n "$best_match" ]]; then
       echo -e "  ${GREEN}✓${RESET} ${filepath}"
       echo -e "    ${DIM}covered by: ${best_name} (${best_spec})${RESET}"
-      ((covered++))
+      covered=$((covered + 1))
     else
       echo -e "  ${RED}✗${RESET} ${filepath}  ${DIM}(no module spec)${RESET}"
-      ((uncovered++))
+      uncovered=$((uncovered + 1))
       local dir_path
       dir_path=$(dirname "$filepath")
       local already_listed=0

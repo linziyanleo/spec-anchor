@@ -616,7 +616,7 @@ main() {
     local files_found=0
     while IFS= read -r f; do
       [[ -n "$f" ]] || continue
-      ((files_found++))
+      files_found=$((files_found + 1))
       inject_single_file "$f" "$opt_task_name" "$opt_status" "$opt_last_change" \
         "$opt_level" "$opt_protocol" "$opt_no_config" "$opt_dry_run" "$opt_force" "$config"
     done < <(find "$target_dir" -maxdepth 1 -name "$opt_file_pattern" -type f 2>/dev/null | sort)
