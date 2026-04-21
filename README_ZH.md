@@ -9,7 +9,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.4.0--alpha.1-brightgreen.svg" alt="Version 0.4.0-alpha.1" />
+  <img src="https://img.shields.io/badge/version-0.4.0--alpha.2-brightgreen.svg" alt="Version 0.4.0-alpha.2" />
 </p>
 
 <p align="center">
@@ -57,6 +57,13 @@ SPECANCHOR_SKILL_DIR="$PWD/.cursor/skills/specanchor" \
 
 更完整的安装方式见 [docs/INSTALL.md](docs/INSTALL.md)；贡献前的检查命令见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
+## Usage Proof
+
+- 总览：[`docs/USAGE_PROOF.md`](docs/USAGE_PROOF.md)
+- Full mode 示例：[`examples/minimal-full-project/`](examples/minimal-full-project/)
+- Parasitic mode 示例：[`examples/parasitic-openspec-project/`](examples/parasitic-openspec-project/)
+- Agent 提示词：[`examples/agent-walkthrough/`](examples/agent-walkthrough/)
+
 ## 定位
 
 - SpecAnchor 负责治理和防腐，不负责规定唯一的写作流程。
@@ -69,7 +76,7 @@ SPECANCHOR_SKILL_DIR="$PWD/.cursor/skills/specanchor" \
 
 ## 当前发布状态
 
-当前准备对外使用的预发布版本是 `v0.4.0-alpha.1`。
+当前准备对外使用的预发布版本是 `v0.4.0-alpha.2`。
 
-- Release note：[`docs/release/v0.4.0-alpha.1.md`](docs/release/v0.4.0-alpha.1.md)
+- Release note：[`docs/release/v0.4.0-alpha.2.md`](docs/release/v0.4.0-alpha.2.md)
 - 变更记录：[`CHANGELOG.md`](CHANGELOG.md)

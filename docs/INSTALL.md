@@ -9,6 +9,9 @@ This document covers the supported installation paths for the public SpecAnchor 
 - `rsync` recommended for installation
 - Python 3 recommended for JSON validation during development
 
+> Warning
+> SpecAnchor writes `anchor.yaml`, may create `.specanchor/`, and may update Markdown frontmatter. Start on a clean branch when testing a new install.
+
 ## Cursor
 
 Project-local install:
@@ -58,6 +61,13 @@ rsync -a --exclude-from=/absolute/path/to/spec-anchor/.skillexclude \
   /absolute/path/to/spec-anchor/ /absolute/path/to/your-tool-skill-dir/specanchor/
 ```
 
+## Usage Proof Examples
+
+- Overview: [`docs/USAGE_PROOF.md`](USAGE_PROOF.md)
+- Full mode example: [`examples/minimal-full-project/`](../examples/minimal-full-project/)
+- Parasitic mode example: [`examples/parasitic-openspec-project/`](../examples/parasitic-openspec-project/)
+- Agent walkthroughs: [`examples/agent-walkthrough/`](../examples/agent-walkthrough/)
+
 ## First-Success Check
 
 Run these commands from the target project root after installation:
@@ -70,13 +80,18 @@ SPECANCHOR_SKILL_DIR=/absolute/path/to/installed/specanchor \
 SPECANCHOR_SKILL_DIR=/absolute/path/to/installed/specanchor \
   bash /absolute/path/to/installed/specanchor/scripts/specanchor-boot.sh \
   --format=summary
+
+SPECANCHOR_SKILL_DIR=/absolute/path/to/installed/specanchor \
+  bash /absolute/path/to/installed/specanchor/scripts/specanchor-doctor.sh \
+  --strict
 ```
 
 The install is healthy when:
 
-- both commands exit `0`
+- all commands exit `0`
 - the boot summary prints the resolved config and mode
 - the boot summary does not show missing-source `✗` lines
+- doctor does not report blocking or strict warnings
 
 ## Why `rsync` Instead of `cp -r`
 

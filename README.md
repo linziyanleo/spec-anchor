@@ -13,7 +13,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.4.0--alpha.1-brightgreen.svg" alt="Version 0.4.0-alpha.1" />
+  <img src="https://img.shields.io/badge/version-0.4.0--alpha.2-brightgreen.svg" alt="Version 0.4.0-alpha.2" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -70,6 +70,13 @@ Success means the command exits `0` and the boot summary does not print missing-
 
 For Claude Code, symlink-based development installs, and other tool layouts, see [docs/INSTALL.md](docs/INSTALL.md).
 
+## Usage Proof
+
+- Overview: [docs/USAGE_PROOF.md](docs/USAGE_PROOF.md)
+- Full mode example: [examples/minimal-full-project/](examples/minimal-full-project/)
+- Parasitic mode example: [examples/parasitic-openspec-project/](examples/parasitic-openspec-project/)
+- Agent prompts: [examples/agent-walkthrough/](examples/agent-walkthrough/)
+
 ## What SpecAnchor Does
 
 - Loads Global, Module, and Task specs before code generation.
@@ -115,9 +122,9 @@ git diff --check
 
 ## Release Status
 
-Current public prerelease target: `v0.4.0-alpha.1`.
+Current public prerelease target: `v0.4.0-alpha.2`.
 
-- Release notes: [`docs/release/v0.4.0-alpha.1.md`](docs/release/v0.4.0-alpha.1.md)
+- Release notes: [`docs/release/v0.4.0-alpha.2.md`](docs/release/v0.4.0-alpha.2.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 - Install verification stays the same as the Validation block above.
 

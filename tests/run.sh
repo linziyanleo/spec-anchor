@@ -318,17 +318,22 @@ test_repo_docs_entrypoints_are_consistent() {
 }
 
 test_release_metadata_is_aligned() {
-  local anchor_contents readme_en changelog settings
+  local anchor_contents readme_en readme_zh changelog settings
   anchor_contents=$(cat "${REPO_ROOT}/anchor.yaml")
   readme_en=$(cat "${REPO_ROOT}/README.md")
+  readme_zh=$(cat "${REPO_ROOT}/README_ZH.md")
   changelog=$(cat "${REPO_ROOT}/CHANGELOG.md")
   settings=$(cat "${REPO_ROOT}/.github/settings.yml")
 
-  assert_contains "$anchor_contents" 'version: "0.4.0-alpha.1"'
-  assert_contains "$readme_en" 'badge/version-0.4.0--alpha.1-brightgreen.svg'
+  assert_contains "$anchor_contents" 'version: "0.4.0-alpha.2"'
+  assert_contains "$readme_en" 'badge/version-0.4.0--alpha.2-brightgreen.svg'
   assert_contains "$readme_en" 'actions/workflows/ci.yml/badge.svg'
-  assert_contains "$changelog" '## v0.4.0-alpha.1 — Public Prerelease'
-  assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-alpha.1.md"
+  assert_contains "$readme_en" '[docs/USAGE_PROOF.md](docs/USAGE_PROOF.md)'
+  assert_contains "$readme_en" '[examples/minimal-full-project/](examples/minimal-full-project/)'
+  assert_contains "$readme_zh" '[`docs/USAGE_PROOF.md`](docs/USAGE_PROOF.md)'
+  assert_contains "$changelog" '## v0.4.0-alpha.2 — Usage Proof'
+  assert_file_exists "${REPO_ROOT}/docs/USAGE_PROOF.md"
+  assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-alpha.2.md"
   assert_contains "$settings" 'Spec governance and anti-decay layer for AI coding agents.'
   assert_contains "$settings" 'ai-coding'
   assert_contains "$settings" 'spec-driven-development'

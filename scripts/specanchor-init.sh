@@ -51,7 +51,7 @@ generate_anchor_yaml() {
 
   cat > "anchor.yaml" <<YAML
 specanchor:
-  version: "0.4.0-alpha.1"
+  version: "0.4.0-alpha.2"
   project_name: "${project_name}"
 
   mode: "${mode}"
