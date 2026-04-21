@@ -18,4 +18,14 @@ The usage-proof smoke test installs SpecAnchor into a temp copy of this director
 - `specanchor-validate.sh --format=summary` exits `0`.
 - No missing-source `✗` lines are printed.
 
+Green health is the bootstrap checkpoint, not the end of the authoring flow.
+
+## What To Do Next
+
+After the initial health checks pass:
+
+- refine `project-setup`, `coding-standards`, and `architecture` so the starter Global Specs reflect the real project
+- keep `⚡` for a small single-file change, and switch to `📋` plus a Task Spec for non-trivial work
+- only start implementation after the relevant anchors and workflow gates are clear
+
 See `expected/README.md` for the generated files the smoke test checks.
