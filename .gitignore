@@ -3,21 +3,11 @@
 # Local SDD output / historical working docs
 /mydocs/*
 
-# Current commit scope: keep only self-dogfood Spec docs.
-/.github/
-/docs/
-/tests/
-/CHANGELOG.md
-/references/assembly-trace.md
-/references/script-contract.md
-/references/workflow-gates.md
-/references/integrations/
-/scripts/lib/
-/scripts/specanchor-doctor.sh
-/scripts/specanchor-resolve.sh
-/scripts/specanchor-validate.sh
+# Maintainer-only local docs / integration fixtures.
+/docs/superpowers/
+/tests/test_github_mirror_sync.bats
 
-# Inside .specanchor, keep spec docs and indexes only.
+# Inside .specanchor, keep the curated public sample only.
 /.specanchor/archive/**
 /.specanchor/devtools/
 /.specanchor/scripts/

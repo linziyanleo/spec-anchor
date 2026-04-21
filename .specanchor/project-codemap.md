@@ -30,11 +30,10 @@ spec-anchor/
 │   ├── specanchor-resolve.sh
 │   ├── specanchor-validate.sh
 │   └── lib/common.sh
-├── .specanchor/                      # self-dogfood Global/Module/Task Specs
+├── .specanchor/                      # curated public Global/Module sample + local task notes
 ├── tests/                            # public shell tests + fixtures
 ├── .github/workflows/ci.yml          # Ubuntu/macOS shell CI
-├── docs/release/v0.4.0-alpha.md      # alpha release prep note
-└── extensions/workflow/              # 独立 workflow skill
+└── docs/release/v0.4.0-alpha.md      # alpha release prep note
 ```
 
 ## 核心数据流

@@ -1,0 +1,11 @@
+specanchor:
+  version: "0.4.0"
+  project_name: "parasitic-with-sources"
+  mode: "parasitic"
+  sources:
+    - path: "specs/"
+      type: "custom"
+      maps_to: task_specs
+      governance:
+        stale_check: true
+        frontmatter_inject: true

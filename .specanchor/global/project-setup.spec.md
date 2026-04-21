@@ -3,10 +3,10 @@ specanchor:
   level: global
   type: project-setup
   version: "1.2.0"
-  author: "@fanghu"
+  author: "maintainers"
   reviewers: []
-  last_synced: "2026-04-20"
-  last_change: "更新环境要求与常用命令，反映 public tests 和 10 脚本架构"
+  last_synced: "2026-04-21"
+  last_change: "更新公开仓库的 smoke 验证命令，并将作者字段泛化"
   applies_to: "**/*"
 ---
 
@@ -29,6 +29,7 @@ specanchor:
 - 启动检查：`bash scripts/specanchor-boot.sh`
 - 状态报告：`bash scripts/specanchor-status.sh`
 - 健康检查：`bash scripts/specanchor-doctor.sh`
+- 严格健康检查：`bash scripts/specanchor-doctor.sh --strict`
 - 锚点解析：`bash scripts/specanchor-resolve.sh --files=... --intent=...`
 - 基础校验：`bash scripts/specanchor-validate.sh`
 - 索引生成：`bash scripts/specanchor-index.sh`

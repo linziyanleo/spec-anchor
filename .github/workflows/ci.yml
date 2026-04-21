@@ -1,0 +1,89 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shell-tests:
+    name: shell tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show environment
+        run: |
+          bash --version
+          git --version
+          python3 --version
+
+      - name: Ensure scripts are executable enough
+        run: |
+          find scripts -maxdepth 1 -name "*.sh" -print
+          chmod +x scripts/*.sh tests/run.sh || true
+
+      - name: Run tests
+        run: bash tests/run.sh
+
+  fresh-clone-smoke:
+    name: fresh clone smoke
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tracked checkout from a fresh clone
+        run: |
+          set -euo pipefail
+
+          tmpdir="$(mktemp -d)"
+          git clone --no-local . "${tmpdir}"
+          cd "${tmpdir}"
+
+          boot_output="$(SPECANCHOR_SKILL_DIR="${tmpdir}" bash scripts/specanchor-boot.sh --format=summary)"
+          printf '%s\n' "${boot_output}"
+          if printf '%s\n' "${boot_output}" | grep -q '✗'; then
+            echo "fresh clone boot still reports missing sources" >&2
+            exit 1
+          fi
+
+          bash scripts/specanchor-doctor.sh --strict
+          bash tests/run.sh
+
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "fresh clone validation dirtied the worktree" >&2
+            git status --short
+            exit 1
+          fi
+
+  consumer-install-smoke:
+    name: consumer install smoke
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify rsync install path
+        run: |
+          set -euo pipefail
+
+          tmpdir="$(mktemp -d)"
+          project_dir="${tmpdir}/consumer-project"
+          skill_dir="${project_dir}/.cursor/skills/specanchor"
+
+          mkdir -p "${skill_dir}"
+          rsync -a --exclude-from=.skillexclude ./ "${skill_dir}/"
+
+          cd "${project_dir}"
+          SPECANCHOR_SKILL_DIR="${skill_dir}" bash "${skill_dir}/scripts/specanchor-init.sh" --project=demo --mode=full
+          boot_output="$(SPECANCHOR_SKILL_DIR="${skill_dir}" bash "${skill_dir}/scripts/specanchor-boot.sh" --format=summary)"
+          printf '%s\n' "${boot_output}"
+          if printf '%s\n' "${boot_output}" | grep -q '✗'; then
+            echo "consumer install boot still reports missing sources" >&2
+            exit 1
+          fi

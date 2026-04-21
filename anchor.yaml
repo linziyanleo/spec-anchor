@@ -17,34 +17,8 @@ specanchor:
     project_codemap: ".specanchor/project-codemap.md"
 
   # === 外部来源 ===
-  # mydocs/specs/ 包含历史开发 spec（SDD-RIPER-ONE 格式），纳入治理但不注入 frontmatter
-  sources:
-    - path: "mydocs/specs/"
-      type: "mydocs"
-      maps_to: task_specs
-      file_pattern: "**/*.md"
-      governance:
-        stale_check: true
-        frontmatter_inject: false
-        scan_on_init: true
-
-    - path: "docs/superpowers/specs/"
-      type: "custom"
-      maps_to: task_specs
-      file_pattern: "**/*.md"
-      governance:
-        stale_check: true
-        frontmatter_inject: true
-        scan_on_init: true
-
-    - path: "docs/superpowers/plans/"
-      type: "custom"
-      maps_to: task_specs
-      file_pattern: "**/*.md"
-      governance:
-        stale_check: true
-        frontmatter_inject: true
-        scan_on_init: true
+  # 公开仓库默认不声明 maintainer-local sources；
+  # consumer 项目可按需在自己的 anchor.yaml 中追加 sources。
 
   # === 写作协议 ===
   writing_protocol:
@@ -60,10 +34,8 @@ specanchor:
       - "FLOWCHART.md"
       - "scripts/**"
       - "references/**"
-      - "extensions/**"
     ignore_paths:
       - "references/schemas/**/template.md"
-      - "mydocs/**"
 
   check:
     stale_days: 14

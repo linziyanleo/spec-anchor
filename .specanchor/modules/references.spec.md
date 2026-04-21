@@ -5,13 +5,13 @@ specanchor:
   module_path: "references/"
   summary: "协议声明层：命令定义、Spec 模板、Schema 系统、核心协议"
   version: "1.2.0"
-  owner: "@fanghu"
-  author: "@fanghu"
+  owner: "maintainers"
+  author: "maintainers"
   reviewers: []
   created: "2026-04-02"
-  updated: "2026-04-20"
-  last_synced: "2026-04-20"
-  last_change: "命令语义统一为自然语言优先，并拆出 script-contract/workflow-gates 等协议文件"
+  updated: "2026-04-21"
+  last_synced: "2026-04-21"
+  last_change: "将公开样本的作者字段泛化，并保留可公开的协议层基线"
   status: active
   depends_on: []
 ---

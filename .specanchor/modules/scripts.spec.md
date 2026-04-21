@@ -5,11 +5,11 @@ specanchor:
   module_path: "scripts/"
   summary: "Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验"
   version: "2.1.0"
-  owner: "@fanghu"
+  owner: "maintainers"
   created: "2026-04-02"
   status: active
-  last_synced: "2026-04-20"
-  last_change: "新增 doctor/resolve/validate 只读入口，并对齐 public shell tests"
+  last_synced: "2026-04-21"
+  last_change: "补充公开 smoke gate，并将公开样本的 owner 字段泛化"
   depends_on: []
 ---
 
