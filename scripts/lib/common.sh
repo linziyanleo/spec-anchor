@@ -308,6 +308,36 @@ sa_date_to_epoch() {
   printf '%s\n' "$epoch"
 }
 
+sa_trim_spaces() {
+  local value="${1:-}"
+  printf '%s' "$value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//'
+}
+
+sa_join_by() {
+  local sep="$1"
+  shift
+
+  local out="" item
+  for item in "$@"; do
+    if [[ -n "$out" ]]; then
+      out="${out}${sep}${item}"
+    else
+      out="$item"
+    fi
+  done
+
+  printf '%s' "$out"
+}
+
+sa_file_line_count() {
+  local file="$1"
+  [[ -f "$file" ]] || {
+    printf '0\n'
+    return 0
+  }
+  wc -l < "$file" | tr -d ' '
+}
+
 sa_json_escape() {
   local value="${1:-}"
   value=${value//\\/\\\\}

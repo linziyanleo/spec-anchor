@@ -1,0 +1,78 @@
+{
+  "schema_version": "specanchor.resolve.v2",
+  "status": "ok",
+  "mode": "full",
+  "budget": {
+    "profile": "normal",
+    "max_files": 12,
+    "max_lines": 1200,
+    "estimated_files": 5,
+    "estimated_lines": 405,
+    "truncated": false
+  },
+  "inputs": {
+    "files": ["scripts/specanchor-boot.sh"],
+    "intent": "debug startup",
+    "diff_from": null
+  },
+  "anchors": [
+    {
+      "level": "global",
+      "path": ".specanchor/global/architecture.spec.md",
+      "load": "summary",
+      "match_type": "always_global",
+      "confidence": 1.00,
+      "reasons": ["Global specs are always considered in full mode."],
+      "freshness": "unknown"
+    },
+    {
+      "level": "global",
+      "path": ".specanchor/global/coding-standards.spec.md",
+      "load": "summary",
+      "match_type": "always_global",
+      "confidence": 1.00,
+      "reasons": ["Global specs are always considered in full mode."],
+      "freshness": "unknown"
+    },
+    {
+      "level": "global",
+      "path": ".specanchor/global/project-setup.spec.md",
+      "load": "summary",
+      "match_type": "always_global",
+      "confidence": 1.00,
+      "reasons": ["Global specs are always considered in full mode."],
+      "freshness": "unknown"
+    },
+    {
+      "level": "module",
+      "path": ".specanchor/modules/scripts.spec.md",
+      "load": "full",
+      "match_type": "path_prefix",
+      "confidence": 0.95,
+      "reasons": ["File path scripts/specanchor-boot.sh is inside module_path scripts/.","Module index maps scripts/specanchor-boot.sh to scripts/."],
+      "freshness": "drifted"
+    },
+    {
+      "level": "codemap",
+      "path": ".specanchor/project-codemap.md",
+      "load": "summary",
+      "match_type": "codemap_area",
+      "confidence": 0.70,
+      "reasons": ["Project codemap references area scripts/ for scripts/specanchor-boot.sh."],
+      "freshness": "unknown"
+    }
+  ],
+  "missing": [
+
+  ],
+  "warnings": [
+
+  ],
+  "trace": {
+    "config": "anchor.yaml",
+    "module_index": ".specanchor/module-index.md",
+    "codemap": ".specanchor/project-codemap.md",
+    "sources_checked": 0,
+    "resolver": "specanchor-resolve.sh"
+  }
+}

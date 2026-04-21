@@ -1,0 +1,28 @@
+{
+  "schema_version": "specanchor.assembly.v1",
+  "status": "ok",
+  "budget": {
+    "profile": "normal",
+    "max_files": 12,
+    "max_lines": 1200,
+    "estimated_files": 5,
+    "estimated_lines": 405,
+    "truncated": false
+  },
+  "files_to_read": [
+    {"path":".specanchor/global/architecture.spec.md","load":"summary","reason":"Global specs are always considered in full mode."},
+    {"path":".specanchor/global/coding-standards.spec.md","load":"summary","reason":"Global specs are always considered in full mode."},
+    {"path":".specanchor/global/project-setup.spec.md","load":"summary","reason":"Global specs are always considered in full mode."},
+    {"path":".specanchor/modules/scripts.spec.md","load":"full","reason":"File path scripts/specanchor-boot.sh is inside module_path scripts/."},
+    {"path":".specanchor/project-codemap.md","load":"summary","reason":"Project codemap references area scripts/ for scripts/specanchor-boot.sh."}
+  ],
+  "agent_instructions": ["Read files_to_read before editing code.","Report the anchors you used before proposing or applying changes."],
+  "assembly_trace": {
+    "global": "summary",
+    "module": "full",
+    "task": "none",
+    "sources": "none",
+    "missing": 0
+  },
+  "warnings": []
+}

@@ -1,0 +1,21 @@
+specanchor:
+  version: "0.4.0-beta.dev"
+  project_name: "diff-repo"
+  mode: "full"
+  paths:
+    global_specs: ".specanchor/global/"
+    module_specs: ".specanchor/modules/"
+    task_specs: ".specanchor/tasks/"
+    archive: ".specanchor/archive/"
+    module_index: ".specanchor/module-index.md"
+    project_codemap: ".specanchor/project-codemap.md"
+  coverage:
+    scan_paths:
+      - "SKILL.md"
+      - "scripts/**"
+      - "references/**"
+    ignore_paths:
+      - "references/schemas/**/template.md"
+  check:
+    stale_days: 14
+    outdated_days: 30

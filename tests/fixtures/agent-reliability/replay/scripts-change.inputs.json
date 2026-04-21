@@ -1,0 +1,5 @@
+{
+  "files": ["scripts/specanchor-boot.sh"],
+  "intent": "debug startup",
+  "budget": "normal"
+}

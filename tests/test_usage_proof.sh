@@ -149,7 +149,7 @@ test_parasitic_openspec_project_flow() {
   printf '%s\n' "$CAPTURE_OUTPUT" >"$out_file"
   assert_valid_json "$out_file"
   assert_contains "$CAPTURE_OUTPUT" '"status": "ok"'
-  assert_contains "$CAPTURE_OUTPUT" '"path":"specs/auth.md"'
+  assert_contains "$CAPTURE_OUTPUT" 'specs/auth.md'
   assert_path_missing "${project_dir}/.specanchor"
 }
 

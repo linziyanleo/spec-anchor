@@ -1,0 +1,4 @@
+# Project Codemap
+
+- scripts/
+- references/
