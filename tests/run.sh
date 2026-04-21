@@ -354,6 +354,16 @@ test_consumer_install_smoke() {
   assert_not_contains "$CAPTURE_OUTPUT" '✗'
 }
 
+test_usage_proof_suite() {
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/tests/test_usage_proof.sh"
+  if [[ "$CAPTURE_STATUS" != "0" ]]; then
+    printf '%s\n' "$CAPTURE_OUTPUT"
+  fi
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'SpecAnchor Usage Proof Tests'
+  assert_contains "$CAPTURE_OUTPUT" 'Summary: 4 passed, 0 failed'
+}
+
 echo "=== SpecAnchor Public Shell Tests ==="
 
 run_test test_repo_boot_json
@@ -378,6 +388,7 @@ run_test test_skill_entrypoint_checks
 run_test test_repo_docs_entrypoints_are_consistent
 run_test test_release_metadata_is_aligned
 run_test test_consumer_install_smoke
+run_test test_usage_proof_suite
 
 echo ""
 echo "Summary: ${PASS_COUNT} passed, ${FAIL_COUNT} failed"

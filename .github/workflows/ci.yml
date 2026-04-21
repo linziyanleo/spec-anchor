@@ -30,6 +30,30 @@ jobs:
       - name: Run tests
         run: bash tests/run.sh
 
+  usage-proof-examples:
+    name: usage proof examples (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show environment
+        run: |
+          bash --version
+          git --version
+          python3 --version
+
+      - name: Ensure scripts are executable enough
+        run: |
+          chmod +x scripts/*.sh tests/run.sh tests/test_usage_proof.sh || true
+
+      - name: Run usage proof examples
+        run: bash tests/test_usage_proof.sh
+
   fresh-clone-smoke:
     name: fresh clone smoke
     runs-on: ubuntu-latest
