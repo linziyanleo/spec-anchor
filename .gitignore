@@ -2,6 +2,7 @@
 
 # Local SDD output / historical working docs
 /mydocs/*
+/anchor.local.yaml
 
 # Maintainer-only local docs / integration fixtures.
 /docs/superpowers/

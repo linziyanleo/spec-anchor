@@ -1,0 +1,12 @@
+specanchor:
+  project_name: "local-project"
+
+  check:
+    stale_days: 3
+    warn_recent_commits_days: 1
+
+  sources:
+    - path: "local-specs"
+      type: "local"
+      stale_check: false
+      frontmatter_inject: true

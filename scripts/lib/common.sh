@@ -106,6 +106,191 @@ sa_find_config() {
   return 1
 }
 
+sa_find_overlay_config() {
+  local config="$1"
+  [[ -n "$config" ]] || return 1
+
+  local config_name config_dir overlay_path
+  config_name=$(basename "$config")
+  [[ "$config_name" == "anchor.yaml" ]] || return 1
+
+  config_dir=$(cd "$(dirname "$config")" 2>/dev/null && pwd) || return 1
+  overlay_path="${config_dir}/anchor.local.yaml"
+  [[ -f "$overlay_path" ]] || return 1
+
+  if [[ "$config_dir" == "$PWD" ]]; then
+    printf 'anchor.local.yaml\n'
+  else
+    printf '%s\n' "$overlay_path"
+  fi
+}
+
+sa_config_label() {
+  local config="$1"
+  local overlay=""
+  overlay=$(sa_find_overlay_config "$config" 2>/dev/null || true)
+  if [[ -n "$overlay" ]]; then
+    printf '%s + %s\n' "$config" "$overlay"
+  else
+    printf '%s\n' "$config"
+  fi
+}
+
+sa_parse_config_field() {
+  local config="$1"
+  local field="$2"
+  local default="${3:-}"
+  local overlay=""
+  local missing="__SPECANCHOR_FIELD_MISSING__"
+
+  overlay=$(sa_find_overlay_config "$config" 2>/dev/null || true)
+  if [[ -n "$overlay" ]]; then
+    local overlay_value
+    overlay_value=$(sa_parse_yaml_field "$overlay" "$field" "$missing")
+    if [[ "$overlay_value" != "$missing" ]]; then
+      printf '%s\n' "$overlay_value"
+      return 0
+    fi
+  fi
+
+  sa_parse_yaml_field "$config" "$field" "$default"
+}
+
+sa_iter_yaml_sources() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  grep -q "^  sources:" "$file" 2>/dev/null || return 0
+
+  local in_sources=0
+  local current_path="" current_type="" stale_check="" frontmatter_inject=""
+
+  _sa_emit_source() {
+    if [[ -n "$current_path" ]]; then
+      printf '%s\t%s\t%s\t%s\n' \
+        "$current_path" \
+        "$current_type" \
+        "$stale_check" \
+        "$frontmatter_inject"
+    fi
+  }
+
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^[[:space:]]{2}sources: ]]; then
+      in_sources=1
+      continue
+    fi
+
+    if [[ $in_sources -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{2}[A-Za-z0-9_-]+: ]] && [[ ! "$line" =~ ^[[:space:]]{4} ]]; then
+      _sa_emit_source
+      in_sources=0
+      continue
+    fi
+
+    if [[ $in_sources -eq 0 ]]; then
+      continue
+    fi
+
+    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*path:[[:space:]]*\"?([^\"]+)\"? ]]; then
+      _sa_emit_source
+      current_path="${BASH_REMATCH[1]}"
+      current_type=""
+      stale_check=""
+      frontmatter_inject=""
+      continue
+    fi
+
+    if [[ "$line" =~ type:[[:space:]]*\"?([^\"]+)\"? ]]; then
+      current_type="${BASH_REMATCH[1]}"
+    fi
+    if [[ "$line" =~ stale_check:[[:space:]]*(true|false) ]]; then
+      stale_check="${BASH_REMATCH[1]}"
+    fi
+    if [[ "$line" =~ frontmatter_inject:[[:space:]]*(true|false) ]]; then
+      frontmatter_inject="${BASH_REMATCH[1]}"
+    fi
+  done < "$file"
+
+  if [[ $in_sources -eq 1 ]]; then
+    _sa_emit_source
+  fi
+
+  unset -f _sa_emit_source
+}
+
+sa_iter_config_sources() {
+  local config="$1"
+  local overlay=""
+
+  sa_iter_yaml_sources "$config"
+  overlay=$(sa_find_overlay_config "$config" 2>/dev/null || true)
+  if [[ -n "$overlay" ]]; then
+    sa_iter_yaml_sources "$overlay"
+  fi
+}
+
+sa_yaml_list_contains() {
+  local file="$1"
+  local parent_field="$2"
+  local list_field="$3"
+  local needle="$4"
+  [[ -f "$file" ]] || return 1
+
+  local in_parent=0
+  local in_list=0
+
+  while IFS= read -r line; do
+    if [[ $in_parent -eq 0 ]] && [[ "$line" =~ ^[[:space:]]{2}${parent_field}: ]]; then
+      in_parent=1
+      in_list=0
+      continue
+    fi
+
+    if [[ $in_parent -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{2}[A-Za-z0-9_-]+: ]] && [[ ! "$line" =~ ^[[:space:]]{4} ]]; then
+      in_parent=0
+      in_list=0
+      continue
+    fi
+
+    if [[ $in_parent -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{4}${list_field}: ]]; then
+      in_list=1
+      continue
+    fi
+
+    if [[ $in_list -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{4}[A-Za-z0-9_-]+: ]] && [[ ! "$line" =~ ^[[:space:]]{6} ]]; then
+      break
+    fi
+
+    if [[ $in_list -eq 1 ]] && [[ "$line" =~ ^[[:space:]]*-[[:space:]]*\"?([^\"]+)\"? ]]; then
+      local item="${BASH_REMATCH[1]}"
+      item=$(sa_normalize_scalar "$item")
+      if [[ "$item" == "$needle" ]]; then
+        return 0
+      fi
+    fi
+  done < "$file"
+
+  return 1
+}
+
+sa_config_list_contains() {
+  local config="$1"
+  local parent_field="$2"
+  local list_field="$3"
+  local needle="$4"
+  local overlay=""
+
+  if sa_yaml_list_contains "$config" "$parent_field" "$list_field" "$needle"; then
+    return 0
+  fi
+
+  overlay=$(sa_find_overlay_config "$config" 2>/dev/null || true)
+  if [[ -n "$overlay" ]] && sa_yaml_list_contains "$overlay" "$parent_field" "$list_field" "$needle"; then
+    return 0
+  fi
+
+  return 1
+}
+
 sa_date_to_epoch() {
   local value="$1"
   local epoch
@@ -122,4 +307,3 @@ sa_json_escape() {
   value=${value//$'\t'/\\t}
   printf '%s' "$value"
 }
-

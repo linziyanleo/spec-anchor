@@ -63,7 +63,17 @@ checksum_file() {
 
 run_test() {
   local test_name="$1"
-  if "$test_name"; then
+  local status=0
+
+  set +e
+  (
+    set -e
+    "$test_name"
+  )
+  status=$?
+  set -e
+
+  if [[ $status -eq 0 ]]; then
     echo "ok - ${test_name}"
     PASS_COUNT=$((PASS_COUNT + 1))
   else
@@ -124,6 +134,52 @@ test_parasitic_mode_without_specanchor_passes() {
   assert_eq "$CAPTURE_STATUS" "0"
   assert_contains "$CAPTURE_OUTPUT" 'SpecAnchor Boot [parasitic]'
   assert_contains "$CAPTURE_OUTPUT" 'Sources:'
+}
+
+test_overlay_boot_merges_sources_and_fields() {
+  local workdir
+  workdir=$(make_temp_dir)
+  copy_fixture "overlay-local-config" "$workdir"
+  capture_cmd "$workdir" env SPECANCHOR_SKILL_DIR="$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-boot.sh" --format=summary
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'SpecAnchor Boot [parasitic]'
+  assert_contains "$CAPTURE_OUTPUT" 'anchor.yaml + anchor.local.yaml'
+  assert_contains "$CAPTURE_OUTPUT" 'project: local-project'
+  assert_contains "$CAPTURE_OUTPUT" 'base-specs [base]'
+  assert_contains "$CAPTURE_OUTPUT" 'local-specs [local]'
+  assert_not_contains "$CAPTURE_OUTPUT" '✗'
+}
+
+test_overlay_status_and_check_use_local_thresholds() {
+  local workdir out_file
+  workdir=$(make_temp_dir)
+  out_file="${workdir}/status.json"
+  copy_fixture "overlay-local-config" "$workdir"
+
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-status.sh" --format=json
+  assert_eq "$CAPTURE_STATUS" "0"
+  printf '%s\n' "$CAPTURE_OUTPUT" >"$out_file"
+  assert_valid_json "$out_file"
+  assert_contains "$CAPTURE_OUTPUT" '"stale_days": 3'
+  assert_contains "$CAPTURE_OUTPUT" '"outdated_days": 30'
+
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-check.sh" global
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'stale_days=3'
+  assert_contains "$CAPTURE_OUTPUT" 'warn_recent_days=1'
+}
+
+test_overlay_resolve_uses_local_sources() {
+  local workdir out_file
+  workdir=$(make_temp_dir)
+  out_file="${workdir}/resolve-overlay.json"
+  copy_fixture "overlay-local-config" "$workdir"
+
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-resolve.sh" --files "local-specs/example.md" --intent "inspect overlay source" --format=json
+  assert_eq "$CAPTURE_STATUS" "0"
+  printf '%s\n' "$CAPTURE_OUTPUT" >"$out_file"
+  assert_valid_json "$out_file"
+  assert_contains "$CAPTURE_OUTPUT" '"path":"local-specs"'
 }
 
 test_legacy_config_fallback() {
@@ -271,6 +327,9 @@ run_test test_repo_doctor_strict_ok
 run_test test_fixture_boot_full_summary
 run_test test_full_mode_missing_specanchor_fails
 run_test test_parasitic_mode_without_specanchor_passes
+run_test test_overlay_boot_merges_sources_and_fields
+run_test test_overlay_status_and_check_use_local_thresholds
+run_test test_overlay_resolve_uses_local_sources
 run_test test_legacy_config_fallback
 run_test test_frontmatter_injection_is_idempotent
 run_test test_status_json_root

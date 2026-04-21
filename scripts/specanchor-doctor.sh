@@ -25,6 +25,7 @@ CHECK_COVERAGE=false
 CHECK_SCRIPTS=false
 
 CONFIG_PATH=""
+CONFIG_DISPLAY="missing"
 MODE="unknown"
 GLOBAL_SPECS_DIR=".specanchor/global"
 MODULE_INDEX_PATH=".specanchor/module-index.md"
@@ -49,32 +50,6 @@ add_warning() {
   fi
 }
 
-parse_sources() {
-  local config="$1"
-  local in_sources=0
-  local current_path=""
-
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]{2}sources: ]]; then
-      in_sources=1
-      continue
-    fi
-
-    if [[ $in_sources -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{2}[A-Za-z0-9_-]+: ]] && [[ ! "$line" =~ ^[[:space:]]{4} ]]; then
-      break
-    fi
-
-    if [[ $in_sources -eq 0 ]]; then
-      continue
-    fi
-
-    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*path:[[:space:]]*\"?([^\"]+)\"? ]]; then
-      current_path="${BASH_REMATCH[1]}"
-      printf '%s\n' "$current_path"
-    fi
-  done < "$config"
-}
-
 check_frontmatter_file() {
   local file="$1"
   if ! grep -q '^specanchor:' "$file" 2>/dev/null; then
@@ -90,6 +65,7 @@ run_checks() {
       "创建 anchor.yaml，或恢复 legacy .specanchor/config.yaml。"
     return
   fi
+  CONFIG_DISPLAY=$(sa_config_label "$CONFIG_PATH")
 
   if [[ "$CONFIG_PATH" == ".specanchor/config.yaml" ]]; then
     add_warning "CONFIG_LEGACY" "检测到 legacy 配置 .specanchor/config.yaml" \
@@ -102,7 +78,15 @@ run_checks() {
     return
   fi
 
-  MODE=$(sa_parse_yaml_field "$CONFIG_PATH" "mode" "full")
+  local overlay_config=""
+  overlay_config=$(sa_find_overlay_config "$CONFIG_PATH" 2>/dev/null || true)
+  if [[ -n "$overlay_config" ]] && ! grep -q '^specanchor:' "$overlay_config" 2>/dev/null; then
+    add_blocking "CONFIG_OVERLAY_INVALID" "${overlay_config} 缺少 specanchor 根节点" \
+      "补齐 ${overlay_config} 中的 specanchor: 根节点。"
+    return
+  fi
+
+  MODE=$(sa_parse_config_field "$CONFIG_PATH" "mode" "full")
   if [[ -z "$MODE" ]]; then
     MODE="full"
   fi
@@ -111,8 +95,8 @@ run_checks() {
       "将 anchor.yaml 中的 mode 修正为 full 或 parasitic。"
   fi
 
-  GLOBAL_SPECS_DIR=$(sa_parse_yaml_field "$CONFIG_PATH" "global_specs" ".specanchor/global/")
-  MODULE_INDEX_PATH=$(sa_parse_yaml_field "$CONFIG_PATH" "module_index" ".specanchor/module-index.md")
+  GLOBAL_SPECS_DIR=$(sa_parse_config_field "$CONFIG_PATH" "global_specs" ".specanchor/global/")
+  MODULE_INDEX_PATH=$(sa_parse_config_field "$CONFIG_PATH" "module_index" ".specanchor/module-index.md")
 
   CHECK_SPECANCHOR_DIR=true
   if [[ "$MODE" == "full" ]]; then
@@ -155,13 +139,13 @@ run_checks() {
 
   CHECK_SOURCES=true
   local source_path=""
-  while IFS= read -r source_path; do
+  while IFS=$'\t' read -r source_path _rest; do
     [[ -n "$source_path" ]] || continue
     if [[ ! -d "$source_path" ]]; then
       add_warning "SOURCE_MISSING" "source 路径不存在: ${source_path}" \
         "创建 ${source_path}，或从 anchor.yaml 中移除该 source。"
     fi
-  done < <(parse_sources "$CONFIG_PATH")
+  done < <(sa_iter_config_sources "$CONFIG_PATH")
 
   CHECK_FRONTMATTER=true
   local module_file=""
@@ -173,7 +157,7 @@ run_checks() {
   fi
 
   CHECK_COVERAGE=true
-  if grep -Eq '^[[:space:]]*-[[:space:]]*["'"'"']?\*\.md["'"'"']?[[:space:]]*$' "$CONFIG_PATH"; then
+  if sa_config_list_contains "$CONFIG_PATH" "coverage" "ignore_paths" "*.md"; then
     add_warning "COVERAGE_MARKDOWN_IGNORED" "coverage.ignore_paths 全局忽略了 *.md" \
       "移除全局 *.md 忽略，改为精确忽略 template 或历史文档。"
   fi
@@ -217,7 +201,7 @@ print_text() {
 
   echo -e "${BOLD}SpecAnchor Doctor [${status}]${RESET}"
   echo "  Mode: ${MODE}"
-  echo "  Config: ${CONFIG_PATH:-missing}"
+  echo "  Config: ${CONFIG_DISPLAY}"
 
   if [[ ${#BLOCKING_ISSUES[@]} -gt 0 ]]; then
     echo ""

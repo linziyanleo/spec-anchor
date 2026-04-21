@@ -50,6 +50,21 @@ validate_anchor_yaml() {
   fi
 }
 
+validate_overlay_yaml() {
+  local file="$1"
+  VALIDATED_FILES+=("$file")
+  if ! grep -q '^specanchor:' "$file" 2>/dev/null; then
+    add_error "${file}: CONFIG_INVALID missing specanchor root"
+    return
+  fi
+
+  local mode
+  mode=$(sa_parse_yaml_field "$file" "mode" "")
+  if [[ -n "$mode" ]] && [[ "$mode" != "full" ]] && [[ "$mode" != "parasitic" ]]; then
+    add_error "${file}: CONFIG_INVALID unsupported mode ${mode}"
+  fi
+}
+
 validate_spec_file() {
   local file="$1"
   VALIDATED_FILES+=("$file")
@@ -107,6 +122,8 @@ collect_targets() {
     fi
     if [[ "$TARGET_PATH" == "anchor.yaml" ]] || [[ "$TARGET_PATH" == ".specanchor/config.yaml" ]]; then
       validate_anchor_yaml "$TARGET_PATH"
+    elif [[ "$TARGET_PATH" == "anchor.local.yaml" ]]; then
+      validate_overlay_yaml "$TARGET_PATH"
     else
       validate_spec_file "$TARGET_PATH"
     fi
@@ -116,6 +133,11 @@ collect_targets() {
   local config=""
   if config=$(sa_find_config 2>/dev/null); then
     validate_anchor_yaml "$config"
+    local overlay=""
+    overlay=$(sa_find_overlay_config "$config" 2>/dev/null || true)
+    if [[ -n "$overlay" ]]; then
+      validate_overlay_yaml "$overlay"
+    fi
   else
     add_error "anchor.yaml: CONFIG_MISSING"
   fi

@@ -10,9 +10,10 @@
 #   specanchor-boot.sh --format=full      # 含 Global Spec 内容
 #   specanchor-boot.sh --format=json      # JSON 机器可读
 #
-# 配置文件查找顺序（双路径 fallback）：
+# 配置文件查找顺序（root-first，支持 local overlay）：
 #   1. 项目根目录 anchor.yaml
-#   2. .specanchor/config.yaml（向后兼容）
+#   2. anchor.local.yaml（若存在，则叠加到 anchor.yaml）
+#   3. .specanchor/config.yaml（向后兼容，仅在缺少 anchor.yaml 时使用）
 #
 # 脚本定位逻辑：
 #   此脚本位于 Skill 安装目录的 scripts/ 下。运行时需要 cd 到用户项目根目录，
@@ -25,6 +26,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="${SPECANCHOR_SKILL_DIR:-$(dirname "$SCRIPT_DIR")}"
+# shellcheck source=scripts/lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
 
 # ─── 颜色定义 ───
 
@@ -45,6 +48,7 @@ fi
 # Config
 B_CONFIG_STATUS=""    # ok | missing
 B_CONFIG_PATH=""
+B_CONFIG_DISPLAY=""
 B_CONFIG_WARN=""      # legacy | ""
 B_MODE=""
 B_PROJECT_NAME=""
@@ -193,21 +197,21 @@ emit_assembly_trace() {
 # ─── 核心检查函数（直接写全局变量）───
 
 boot_config() {
-  if [[ -f "anchor.yaml" ]]; then
-    B_CONFIG_PATH="anchor.yaml"
-  elif [[ -f ".specanchor/config.yaml" ]]; then
-    B_CONFIG_PATH=".specanchor/config.yaml"
-    B_CONFIG_WARN="legacy"
-  else
+  if ! B_CONFIG_PATH=$(sa_find_config); then
     B_CONFIG_STATUS="missing"
     return
   fi
 
+  B_CONFIG_DISPLAY=$(sa_config_label "$B_CONFIG_PATH")
+  if [[ "$B_CONFIG_PATH" == ".specanchor/config.yaml" ]]; then
+    B_CONFIG_WARN="legacy"
+  fi
+
   B_CONFIG_STATUS="ok"
-  B_MODE=$(parse_yaml_field "$B_CONFIG_PATH" "mode" "full")
-  B_PROJECT_NAME=$(parse_yaml_field "$B_CONFIG_PATH" "project_name" "unknown")
-  B_VERSION=$(parse_yaml_field "$B_CONFIG_PATH" "version" "unknown")
-  B_DEFAULT_SCHEMA=$(parse_yaml_field "$B_CONFIG_PATH" "schema" "sdd-riper-one")
+  B_MODE=$(sa_parse_config_field "$B_CONFIG_PATH" "mode" "full")
+  B_PROJECT_NAME=$(sa_parse_config_field "$B_CONFIG_PATH" "project_name" "unknown")
+  B_VERSION=$(sa_parse_config_field "$B_CONFIG_PATH" "version" "unknown")
+  B_DEFAULT_SCHEMA=$(sa_parse_config_field "$B_CONFIG_PATH" "schema" "sdd-riper-one")
 }
 
 boot_specanchor_dir() {
@@ -274,64 +278,19 @@ boot_global_specs() {
 
 boot_sources() {
   local config="$1"
-  if ! grep -q "^  sources:" "$config" 2>/dev/null; then
-    return
-  fi
+  local source_path="" source_type="" stale_check="" frontmatter_inject=""
 
-  local in_sources=0
-  local current_path="" current_type="" stale_check="" frontmatter_inject=""
-
-  _save_source() {
-    if [[ -n "$current_path" ]]; then
-      local dir_exists="no"
-      [[ -d "$current_path" ]] && dir_exists="yes"
-      B_SRC_PATHS+=("$current_path")
-      B_SRC_TYPES+=("$current_type")
-      B_SRC_STALE+=("$stale_check")
-      B_SRC_FRONTMATTER+=("$frontmatter_inject")
-      B_SRC_EXISTS+=("$dir_exists")
-      B_SOURCES_COUNT=$((B_SOURCES_COUNT + 1))
-    fi
-  }
-
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]{2}sources: ]]; then
-      in_sources=1
-      continue
-    fi
-
-    if [[ $in_sources -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{2}[a-z] ]] && [[ ! "$line" =~ ^[[:space:]]{4} ]]; then
-      _save_source
-      in_sources=0
-      continue
-    fi
-
-    if [[ $in_sources -eq 0 ]]; then continue; fi
-
-    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*path:[[:space:]]*\"?([^\"]+)\"? ]]; then
-      _save_source
-      current_path="${BASH_REMATCH[1]}"
-      current_type="" stale_check="" frontmatter_inject=""
-      continue
-    fi
-
-    if [[ "$line" =~ type:[[:space:]]*\"?([^\"]+)\"? ]]; then
-      current_type="${BASH_REMATCH[1]}"
-    fi
-    if [[ "$line" =~ stale_check:[[:space:]]*(true|false) ]]; then
-      stale_check="${BASH_REMATCH[1]}"
-    fi
-    if [[ "$line" =~ frontmatter_inject:[[:space:]]*(true|false) ]]; then
-      frontmatter_inject="${BASH_REMATCH[1]}"
-    fi
-  done < "$config"
-
-  # 文件末尾保存最后一个 source
-  if [[ $in_sources -eq 1 ]]; then
-    _save_source
-  fi
-
-  unset -f _save_source
+  while IFS=$'\t' read -r source_path source_type stale_check frontmatter_inject; do
+    [[ -n "$source_path" ]] || continue
+    local dir_exists="no"
+    [[ -d "$source_path" ]] && dir_exists="yes"
+    B_SRC_PATHS+=("$source_path")
+    B_SRC_TYPES+=("$source_type")
+    B_SRC_STALE+=("$stale_check")
+    B_SRC_FRONTMATTER+=("$frontmatter_inject")
+    B_SRC_EXISTS+=("$dir_exists")
+    B_SOURCES_COUNT=$((B_SOURCES_COUNT + 1))
+  done < <(sa_iter_config_sources "$config")
 }
 
 boot_schemas() {
@@ -434,7 +393,7 @@ output_summary() {
   fi
 
   echo -e "${BOLD}SpecAnchor Boot [${B_MODE}]${RESET}"
-  echo -e "  Config: ${CYAN}${B_CONFIG_PATH}${RESET} (v${B_VERSION}, project: ${B_PROJECT_NAME})"
+  echo -e "  Config: ${CYAN}${B_CONFIG_DISPLAY}${RESET} (v${B_VERSION}, project: ${B_PROJECT_NAME})"
   emit_assembly_trace "$global_mode"
 
   if [[ "$B_MODE" == "full" ]]; then
@@ -531,6 +490,7 @@ output_json() {
   printf '{\n'
   printf '  "status": "ok",\n'
   printf '  "config": "%s",\n' "$B_CONFIG_PATH"
+  printf '  "config_display": "%s",\n' "$(sa_json_escape "$B_CONFIG_DISPLAY")"
   printf '  "version": "%s",\n' "$B_VERSION"
   printf '  "project_name": "%s",\n' "$B_PROJECT_NAME"
   printf '  "mode": "%s",\n' "$B_MODE"

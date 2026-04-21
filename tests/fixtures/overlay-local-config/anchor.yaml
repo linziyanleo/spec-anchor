@@ -1,0 +1,15 @@
+specanchor:
+  version: "0.4.0"
+  project_name: "base-project"
+  mode: "parasitic"
+
+  check:
+    stale_days: 14
+    outdated_days: 30
+    warn_recent_commits_days: 14
+
+  sources:
+    - path: "base-specs"
+      type: "base"
+      stale_check: true
+      frontmatter_inject: false

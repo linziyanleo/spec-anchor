@@ -125,9 +125,9 @@
   现状：README badge 写 `v0.4.0`、`anchor.yaml` 写 `0.4.0`、但 `CHANGELOG.md` 只有 346 字节，且仓库没有 `v0.4.0` tag。  
   怎么改：开源那天之前——`CHANGELOG.md` 补一段 0.4.0 release note；`git tag v0.4.0` 并推送；后续版本走 `CHANGELOG.md` + tag 双轨。
 
-- [ ] **B⑦ `anchor.local.yaml` overlay 支持（可选实现项）**  
+- [x] **B⑦ `anchor.local.yaml` overlay 支持（已完成，2026-04-21）**
   现状：上面 A② 建议把 maintainer-local sources 移出 Git，但现有脚本不支持 overlay 合并——maintainer 每次本地开发都得手动 uncommitted 修改 `anchor.yaml`，体验差且易误提交。  
-  怎么改：在 `boot` / `status` / `check` 的 config 加载层增加一步——若存在 `anchor.local.yaml` 则合并进 resolved config（`sources` 列表追加，其他 key 以 local 覆盖 base）；加 `.gitignore` 守护；在 `references/specanchor-protocol.md` 的 config 加载章节记录合并语义。  
+  怎么改：在公共 config helper 中引入 root-first overlay 语义——若存在 `anchor.local.yaml` 则与 `anchor.yaml` 组成 resolved config；`sources` 列表追加，public scripts 读取的标量字段 local 优先；`boot` / `status` / `check` / `index` / `doctor` / `resolve` / `validate` 已接入；`.gitignore` 已忽略 `anchor.local.yaml`；`references/specanchor-protocol.md` 已记录合并语义，并补了 shell 回归测试。
   优先级：不是开源硬 blocker，属于 maintainer DX 改善；若不实现，就按 A② 的保守说法（本地不入库、不自动合并）执行。
 
 - [x] **B⑧ "consumer install smoke" 回归保护**  
@@ -151,4 +151,4 @@
    原 P0 ③（`CONTRIBUTING.md` 最小版，固定 B① 的验证命令）+ 原 P1 全部 + 补充 B④（威胁模型一行字）+ 补充 B⑤（双语策略：English-first）。
    完成记录：`README.md` 改成 English-first overview，补 60-second Quick Start 与风险提示；长安装说明下沉到 `docs/INSTALL.md`；中文版本收敛为 `README_ZH.md`，并明确英文 contributor-facing 文档为权威版本。
 4. **Contributor / Polish PR**  
-   原 P2 剩余项（`examples/`、maintainer-specific 信息清理、`CODE_OF_CONDUCT.md` / `SECURITY.md`）+ 补充 B②（稳定性边界）+ 补充 B⑥（release 纪律 + `v0.4.0` tag）+ 补充 B⑦（overlay 支持，若决定实现）。
+   原 P2 剩余项（`examples/`、maintainer-specific 信息清理、`CODE_OF_CONDUCT.md` / `SECURITY.md`）+ 补充 B②（稳定性边界）+ 补充 B⑥（release 纪律 + `v0.4.0` tag）。

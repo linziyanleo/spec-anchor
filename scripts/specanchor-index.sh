@@ -9,6 +9,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
+
 if [[ -t 1 ]]; then
   RED='\033[0;31m'
   GREEN='\033[0;32m'
@@ -89,16 +93,6 @@ parse_frontmatter_field() {
   normalize_scalar "$raw"
 }
 
-find_config() {
-  if [[ -f "anchor.yaml" ]]; then
-    echo "anchor.yaml"
-  elif [[ -f ".specanchor/config.yaml" ]]; then
-    echo ".specanchor/config.yaml"
-  else
-    die "未找到配置文件（anchor.yaml 或 .specanchor/config.yaml）"
-  fi
-}
-
 compute_health() {
   local module_path="$1" last_synced="$2" stale_days="$3" outdated_days="$4"
 
@@ -151,8 +145,8 @@ generate_index() {
   local modules_dir=".specanchor/modules"
 
   local stale_days outdated_days
-  stale_days=$(parse_yaml_field "$config_file" "stale_days" "14")
-  outdated_days=$(parse_yaml_field "$config_file" "outdated_days" "30")
+  stale_days=$(sa_parse_config_field "$config_file" "stale_days" "14")
+  outdated_days=$(sa_parse_config_field "$config_file" "outdated_days" "30")
 
   [[ -d "$modules_dir" ]] || die "Module Spec 目录不存在: $modules_dir"
 
@@ -295,13 +289,15 @@ main() {
         echo "Usage: specanchor-index.sh [--config=anchor.yaml] [--output=.specanchor/module-index.md]"
         echo ""
         echo "扫描 .specanchor/modules/ 下的 Module Spec，生成 v2 格式的 module-index.md。"
-        echo "健康度阈值从 anchor.yaml 的 check 配置读取。"
+        echo "健康度阈值从 resolved config 的 check 配置读取（anchor.local.yaml 可选叠加）。"
         exit 0
         ;;
     esac
   done
 
-  [[ -z "$config_file" ]] && config_file=$(find_config)
+  if [[ -z "$config_file" ]]; then
+    config_file=$(sa_find_config) || die "未找到配置文件（anchor.yaml 或 .specanchor/config.yaml）"
+  fi
   generate_index "$config_file" "$output_file"
 }
 

@@ -6,16 +6,21 @@
 #   specanchor-check.sh module <spec-file|--all>             # 阈值从 anchor.yaml 读取
 #   specanchor-check.sh global [--config=anchor.yaml]
 #
-# 配置文件查找顺序（双路径 fallback）：
+# 配置文件查找顺序（root-first，支持 local overlay）：
 #   1. 项目根目录 anchor.yaml
-#   2. .specanchor/config.yaml（向后兼容）
+#   2. anchor.local.yaml（若存在，则叠加到 anchor.yaml）
+#   3. .specanchor/config.yaml（向后兼容，仅在缺少 anchor.yaml 时使用）
 #
-# 阈值配置在 anchor.yaml 的 check 节点下：
+# 阈值配置从 resolved config 的 check 节点读取：
 #   stale_days (同步后超过N天且有新提交→STALE)
 #   outdated_days (同步后超过N天且有新提交→OUTDATED)
 #   warn_recent_commits_days, task_base_branch
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
 
 # ─── 颜色定义 ───
 
@@ -126,23 +131,24 @@ parse_yaml_field() {
 }
 
 find_config() {
-  # 双路径查找：anchor.yaml → .specanchor/config.yaml
-  if [[ -f "anchor.yaml" ]]; then
-    echo "anchor.yaml"
-  elif [[ -f ".specanchor/config.yaml" ]]; then
-    echo -e "${YELLOW}warning:${RESET} 使用旧版配置 .specanchor/config.yaml，建议迁移到根目录 anchor.yaml" >&2
-    echo ".specanchor/config.yaml"
-  else
+  local config=""
+  if ! config=$(sa_find_config); then
     die "未找到配置文件（anchor.yaml 或 .specanchor/config.yaml）"
   fi
+
+  if [[ "$config" == ".specanchor/config.yaml" ]]; then
+    echo -e "${YELLOW}warning:${RESET} 使用旧版配置 .specanchor/config.yaml，建议迁移到根目录 anchor.yaml" >&2
+  fi
+
+  printf '%s\n' "$config"
 }
 
 load_check_config() {
   local config="${1:-$(find_config)}"
-  CFG_STALE_DAYS=$(parse_yaml_field "$config" "stale_days" "14")
-  CFG_OUTDATED_DAYS=$(parse_yaml_field "$config" "outdated_days" "30")
-  CFG_WARN_RECENT_DAYS=$(parse_yaml_field "$config" "warn_recent_commits_days" "14")
-  CFG_TASK_BASE_BRANCH=$(parse_yaml_field "$config" "task_base_branch" "main")
+  CFG_STALE_DAYS=$(sa_parse_config_field "$config" "stale_days" "14")
+  CFG_OUTDATED_DAYS=$(sa_parse_config_field "$config" "outdated_days" "30")
+  CFG_WARN_RECENT_DAYS=$(sa_parse_config_field "$config" "warn_recent_commits_days" "14")
+  CFG_TASK_BASE_BRANCH=$(sa_parse_config_field "$config" "task_base_branch" "main")
 }
 
 run_scan_if_available() {
@@ -156,9 +162,13 @@ run_scan_if_available() {
 
 refresh_module_index() {
   local config="$1"
-  local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local index_script="${script_dir}/specanchor-index.sh"
+  local mode
+  mode=$(sa_parse_config_field "$config" "mode" "full")
+  if [[ "$mode" != "full" ]] || [[ ! -d ".specanchor/modules" ]]; then
+    return 0
+  fi
+
+  local index_script="${SCRIPT_DIR}/specanchor-index.sh"
   if [[ -f "$index_script" ]]; then
     echo ""
     bash "$index_script" --config="$config"
@@ -591,7 +601,7 @@ usage() {
   echo "Module Spec 存放位置: .specanchor/modules/<module-id>.spec.md"
   echo "Module ID 生成规则: 路径中的 / 替换为 - (如 src/modules/auth → src-modules-auth)"
   echo ""
-  echo "阈值配置: anchor.yaml → check 节点（fallback: .specanchor/config.yaml）"
+  echo "阈值配置: anchor.yaml (+ anchor.local.yaml if present) → check 节点（legacy fallback: .specanchor/config.yaml）"
   echo "  stale_days (${CFG_STALE_DAYS}), outdated_days (${CFG_OUTDATED_DAYS}),"
   echo "  warn_recent_commits_days (${CFG_WARN_RECENT_DAYS}), task_base_branch (${CFG_TASK_BASE_BRANCH})"
   echo ""

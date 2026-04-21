@@ -8,6 +8,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
+
 if [[ -t 1 ]]; then
   RED='\033[0;31m'
   GREEN='\033[0;32m'
@@ -21,10 +25,8 @@ else
 fi
 
 die() { echo -e "${RED}error:${RESET} $*" >&2; exit 1; }
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 declare -a S_GLOBAL_FILES=()
+S_CONFIG_DISPLAY=""
 
 normalize_scalar() {
   local value="${1:-}"
@@ -108,27 +110,18 @@ parse_frontmatter_field() {
   normalize_scalar "$raw"
 }
 
-find_config() {
-  if [[ -f "anchor.yaml" ]]; then
-    echo "anchor.yaml"
-  elif [[ -f ".specanchor/config.yaml" ]]; then
-    echo ".specanchor/config.yaml"
-  else
-    die "未找到配置文件（anchor.yaml 或 .specanchor/config.yaml）"
-  fi
-}
-
 collect_stats() {
   local config="$1"
 
   S_GLOBAL_FILES=()
+  S_CONFIG_DISPLAY=$(sa_config_label "$config")
 
   local mode
-  mode=$(parse_yaml_field "$config" "mode" "full")
+  mode=$(sa_parse_config_field "$config" "mode" "full")
 
   local stale_days outdated_days
-  stale_days=$(parse_yaml_field "$config" "stale_days" "14")
-  outdated_days=$(parse_yaml_field "$config" "outdated_days" "30")
+  stale_days=$(sa_parse_config_field "$config" "stale_days" "14")
+  outdated_days=$(sa_parse_config_field "$config" "outdated_days" "30")
 
   local global_count=0 global_lines=0
   if [[ -d ".specanchor/global" ]]; then
@@ -166,7 +159,7 @@ collect_stats() {
         ((fresh++))
       else
         local synced_epoch now_epoch days_since
-        synced_epoch=$(date_to_epoch "$ls")
+        synced_epoch=$(sa_date_to_epoch "$ls")
         if [[ -z "$synced_epoch" ]]; then
           ((stale++))
           continue
@@ -224,7 +217,7 @@ output_summary() {
   local config="$1"
 
   echo -e "${BOLD}SpecAnchor Status [${S_MODE}]${RESET}"
-  echo -e "  Config: ${CYAN}${config}${RESET}"
+  echo -e "  Config: ${CYAN}${S_CONFIG_DISPLAY}${RESET}"
   echo ""
 
   echo -e "  Assembly Trace:"
@@ -320,7 +313,9 @@ main() {
     esac
   done
 
-  [[ -z "$config_file" ]] && config_file=$(find_config)
+  if [[ -z "$config_file" ]]; then
+    config_file=$(sa_find_config) || die "未找到配置文件（anchor.yaml 或 .specanchor/config.yaml）"
+  fi
   collect_stats "$config_file"
 
   case "$format" in

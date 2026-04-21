@@ -154,29 +154,16 @@ ${target_file}"
 }
 
 resolve_parasitic_mode() {
-  local in_sources=0
   local source_path="" target_file=""
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]{2}sources: ]]; then
-      in_sources=1
-      continue
-    fi
-    if [[ $in_sources -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{2}[A-Za-z0-9_-]+: ]] && [[ ! "$line" =~ ^[[:space:]]{4} ]]; then
-      break
-    fi
-    if [[ $in_sources -eq 0 ]]; then
-      continue
-    fi
-    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*path:[[:space:]]*\"?([^\"]+)\"? ]]; then
-      source_path="${BASH_REMATCH[1]}"
-      for target_file in "${TARGET_FILES[@]}"; do
-        [[ -n "$target_file" ]] || continue
-        if [[ "$target_file" == "$source_path"* ]]; then
-          add_anchor "source" "$source_path" "summary" "file_path_matches_source_path:$(module_label_from_path "$source_path")" "0.7"
-        fi
-      done
-    fi
-  done < "$CONFIG_PATH"
+  while IFS=$'\t' read -r source_path _type _stale _inject; do
+    [[ -n "$source_path" ]] || continue
+    for target_file in "${TARGET_FILES[@]}"; do
+      [[ -n "$target_file" ]] || continue
+      if [[ "$target_file" == "$source_path"* ]]; then
+        add_anchor "source" "$source_path" "summary" "file_path_matches_source_path:$(module_label_from_path "$source_path")" "0.7"
+      fi
+    done
+  done < <(sa_iter_config_sources "$CONFIG_PATH")
 
   local target_file=""
   for target_file in "${TARGET_FILES[@]}"; do
@@ -310,7 +297,7 @@ main() {
     exit 2
   fi
 
-  MODE=$(sa_parse_yaml_field "$CONFIG_PATH" "mode" "full")
+  MODE=$(sa_parse_config_field "$CONFIG_PATH" "mode" "full")
   load_target_files
 
   if [[ "$MODE" == "full" ]]; then
