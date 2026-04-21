@@ -179,7 +179,7 @@ test_overlay_resolve_uses_local_sources() {
   assert_eq "$CAPTURE_STATUS" "0"
   printf '%s\n' "$CAPTURE_OUTPUT" >"$out_file"
   assert_valid_json "$out_file"
-  assert_contains "$CAPTURE_OUTPUT" '"path":"local-specs"'
+  assert_contains "$CAPTURE_OUTPUT" 'local-specs'
 }
 
 test_legacy_config_fallback() {
@@ -259,10 +259,11 @@ test_doctor_warns_on_global_markdown_ignore() {
 test_resolve_known_files() {
   local out_file
   out_file=$(make_temp_dir)/resolve-ok.json
-  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-resolve.sh" --files "scripts/specanchor-boot.sh,references/commands/check.md" --intent "make boot JSON stable and add tests" --format=json
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-resolve.sh" --files "scripts/specanchor-boot.sh,references/commands/check.md" --intent "make boot JSON stable and add tests" --budget=normal --format=json
   assert_eq "$CAPTURE_STATUS" "0"
   printf '%s\n' "$CAPTURE_OUTPUT" >"$out_file"
   assert_valid_json "$out_file"
+  assert_contains "$CAPTURE_OUTPUT" '"schema_version": "specanchor.resolve.v2"'
   assert_contains "$CAPTURE_OUTPUT" '.specanchor/modules/scripts.spec.md'
   assert_contains "$CAPTURE_OUTPUT" '.specanchor/modules/references.spec.md'
 }
@@ -270,12 +271,13 @@ test_resolve_known_files() {
 test_resolve_unknown_file_warns() {
   local out_file
   out_file=$(make_temp_dir)/resolve-warning.json
-  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-resolve.sh" --files "unknown/place.txt" --intent "mystery change" --format=json
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-resolve.sh" --files "unknown/place.txt" --intent "mystery change" --budget=compact --format=json
   assert_eq "$CAPTURE_STATUS" "0"
   printf '%s\n' "$CAPTURE_OUTPUT" >"$out_file"
   assert_valid_json "$out_file"
   assert_contains "$CAPTURE_OUTPUT" '"status": "warning"'
-  assert_contains "$CAPTURE_OUTPUT" '"missing": ["unknown/place.txt"]'
+  assert_contains "$CAPTURE_OUTPUT" '"type":"module_spec"'
+  assert_contains "$CAPTURE_OUTPUT" '"path":"unknown/place.txt"'
 }
 
 test_validate_json_root() {
@@ -292,8 +294,10 @@ test_skill_entrypoint_checks() {
   local skill_lines
   skill_lines=$(wc -l < "${REPO_ROOT}/SKILL.md" | tr -d ' ')
   grep -q "specanchor-boot.sh" "${REPO_ROOT}/SKILL.md"
+  grep -q "specanchor-assemble.sh" "${REPO_ROOT}/SKILL.md"
   grep -q "references/commands-quickref.md" "${REPO_ROOT}/SKILL.md"
   grep -q "Assembly Trace" "${REPO_ROOT}/SKILL.md"
+  grep -q "references/agents/agent-contract.md" "${REPO_ROOT}/SKILL.md"
   if [[ "$skill_lines" -gt 140 ]]; then
     echo "note: SKILL.md is ${skill_lines} lines; above target but allowed if behavior is preserved"
   fi
@@ -325,15 +329,25 @@ test_release_metadata_is_aligned() {
   changelog=$(cat "${REPO_ROOT}/CHANGELOG.md")
   settings=$(cat "${REPO_ROOT}/.github/settings.yml")
 
-  assert_contains "$anchor_contents" 'version: "0.4.0-alpha.2"'
+  assert_contains "$anchor_contents" 'version: "0.4.0-beta.dev"'
   assert_contains "$readme_en" 'badge/version-0.4.0--alpha.2-brightgreen.svg'
   assert_contains "$readme_en" 'actions/workflows/ci.yml/badge.svg'
   assert_contains "$readme_en" '[docs/USAGE_PROOF.md](docs/USAGE_PROOF.md)'
   assert_contains "$readme_en" '[examples/minimal-full-project/](examples/minimal-full-project/)'
+  assert_contains "$readme_en" '[docs/agent-reliability.md](docs/agent-reliability.md)'
+  assert_contains "$readme_en" '[references/agents/agent-contract.md](references/agents/agent-contract.md)'
   assert_contains "$readme_zh" '[`docs/USAGE_PROOF.md`](docs/USAGE_PROOF.md)'
+  assert_contains "$readme_zh" '[`docs/agent-reliability.md`](docs/agent-reliability.md)'
+  assert_contains "$changelog" '## v0.4.0-beta.dev — Agent Reliability (Unreleased)'
   assert_contains "$changelog" '## v0.4.0-alpha.2 — Usage Proof'
   assert_file_exists "${REPO_ROOT}/docs/USAGE_PROOF.md"
+  assert_file_exists "${REPO_ROOT}/docs/agent-reliability.md"
+  assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-alpha.2.md"
+  assert_file_exists "${REPO_ROOT}/references/agents/agent-contract.md"
+  assert_file_exists "${REPO_ROOT}/references/agents/claude-code.md"
+  assert_file_exists "${REPO_ROOT}/references/agents/codex.md"
+  assert_file_exists "${REPO_ROOT}/references/agents/cursor.md"
   assert_contains "$settings" 'Spec governance and anti-decay layer for AI coding agents.'
   assert_contains "$settings" 'ai-coding'
   assert_contains "$settings" 'spec-driven-development'
@@ -369,6 +383,15 @@ test_usage_proof_suite() {
   assert_contains "$CAPTURE_OUTPUT" 'Summary: 4 passed, 0 failed'
 }
 
+test_agent_reliability_suite() {
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/tests/test_agent_reliability.sh"
+  if [[ "$CAPTURE_STATUS" != "0" ]]; then
+    printf '%s\n' "$CAPTURE_OUTPUT"
+  fi
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'SpecAnchor Agent Reliability Tests'
+}
+
 echo "=== SpecAnchor Public Shell Tests ==="
 
 run_test test_repo_boot_json
@@ -394,6 +417,7 @@ run_test test_repo_docs_entrypoints_are_consistent
 run_test test_release_metadata_is_aligned
 run_test test_consumer_install_smoke
 run_test test_usage_proof_suite
+run_test test_agent_reliability_suite
 
 echo ""
 echo "Summary: ${PASS_COUNT} passed, ${FAIL_COUNT} failed"

@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.4.0-beta.dev — Agent Reliability (Unreleased)
+
+### Highlights
+
+- Upgrades anchor resolution to `specanchor.resolve.v2` with explicit budget, missing coverage, and trace data.
+- Adds `specanchor-assemble.sh` so agents can turn resolver output into a bounded read plan.
+- Adds agent-facing contracts, walkthrough docs, and release checks for reliability-focused workflows.
+- Adds `specanchor-hygiene.sh` plus stronger doctor / validate checks for drift and dead-link prevention.
+
+### Validation
+
+```bash
+SPECANCHOR_SKILL_DIR="$PWD" bash scripts/specanchor-boot.sh --format=summary
+bash scripts/specanchor-doctor.sh --strict --profile=agent
+bash scripts/specanchor-validate.sh --format=json | python3 -m json.tool >/dev/null
+bash tests/run.sh
+git diff --check
+```
+
+### Known Limitations
+
+- `v0.4.0-beta.dev` is an unreleased development milestone, not a published tag.
+- Resolve remains deterministic-first; it does not attempt semantic retrieval.
+- `--diff-from` depends on local git history and only inspects checked-out repository state.
+
 ## v0.4.0-alpha.2 — Usage Proof
 
 ### Highlights

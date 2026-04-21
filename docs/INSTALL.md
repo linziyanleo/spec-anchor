@@ -69,6 +69,7 @@ rsync -a --exclude-from=/absolute/path/to/spec-anchor/.skillexclude \
 - Full mode example: [`examples/minimal-full-project/`](../examples/minimal-full-project/)
 - Parasitic mode example: [`examples/parasitic-openspec-project/`](../examples/parasitic-openspec-project/)
 - Agent walkthroughs: [`examples/agent-walkthrough/`](../examples/agent-walkthrough/)
+- Agent reliability: [`docs/agent-reliability.md`](agent-reliability.md)
 
 ## First-Success Check
 
@@ -94,6 +95,16 @@ The install is healthy when:
 - the boot summary prints the resolved config and mode
 - the boot summary does not show missing-source `✗` lines
 - doctor does not report blocking or strict warnings
+
+For multi-file or structural work, the next successful step is:
+
+```bash
+SPECANCHOR_SKILL_DIR=/absolute/path/to/installed/specanchor \
+  bash /absolute/path/to/installed/specanchor/scripts/specanchor-assemble.sh \
+  --files="path/to/file.ext" \
+  --intent="describe the change" \
+  --format=markdown
+```
 
 ## Why `rsync` Instead of `cp -r`
 

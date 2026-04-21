@@ -49,6 +49,7 @@ Assembly Trace:
 - `full`：始终加载 `anchor.yaml` + 全部 Global Spec；Module Spec 按需加载；`project-codemap.md` 按需加载。
 - `parasitic`：只加载 `anchor.yaml` 与外部 `sources`；不创建 full-only Spec。
 - 需要判断该读哪些模块时，优先看 `references/commands-quickref.md`、`.specanchor/module-index.md`，或运行 `bash scripts/specanchor-resolve.sh --files=... --intent=...`。
+- 当文件路径和任务意图已经明确时，复杂编码任务应在 boot 之后运行 `bash scripts/specanchor-assemble.sh --files=... --intent=...`，先拿到 bounded read plan，再进入编辑。
 
 ## Command Routing
 
@@ -86,6 +87,8 @@ Assembly Trace:
 - `references/specanchor-protocol.md`：核心协议总览
 - `references/script-contract.md`：脚本清单、调用契约、输出边界
 - `references/assembly-trace.md`：Assembly Trace 格式与刷新时机
+- `references/agents/agent-contract.md`：AI 代理启动、装载、验证的统一 contract
+- `references/agents/claude-code.md` / `codex.md` / `cursor.md`：常见代理入口的使用说明
 - `references/workflow-gates.md`：`⚡ lightweight` / `standard Task Spec workflow` 选择与严格门禁规则
 - `references/external-sources-protocol.md`：外部 sources 治理与 frontmatter 注入
 - `references/integrations/sdd-riper-one.md`：默认写作协议的接入方式

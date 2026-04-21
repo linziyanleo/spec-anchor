@@ -64,6 +64,13 @@ SPECANCHOR_SKILL_DIR="$PWD/.cursor/skills/specanchor" \
 - Parasitic mode 示例：[`examples/parasitic-openspec-project/`](examples/parasitic-openspec-project/)
 - Agent 提示词：[`examples/agent-walkthrough/`](examples/agent-walkthrough/)
 
+## Agent Reliability
+
+- 总览：[`docs/agent-reliability.md`](docs/agent-reliability.md)
+- 统一 contract：[`references/agents/agent-contract.md`](references/agents/agent-contract.md)
+- Agent 指南：[`Claude Code`](references/agents/claude-code.md)、[`Codex`](references/agents/codex.md)、[`Cursor`](references/agents/cursor.md)、[`Gemini`](references/agents/gemini.md)
+- Walkthrough：[`docs/examples/minimal-agent-loop.md`](docs/examples/minimal-agent-loop.md)、[`docs/examples/missing-module-coverage.md`](docs/examples/missing-module-coverage.md)、[`docs/examples/parasitic-source-resolution.md`](docs/examples/parasitic-source-resolution.md)
+
 ## 定位
 
 - SpecAnchor 负责治理和防腐，不负责规定唯一的写作流程。
@@ -76,7 +83,11 @@ SPECANCHOR_SKILL_DIR="$PWD/.cursor/skills/specanchor" \
 
 ## 当前发布状态
 
-当前准备对外使用的预发布版本是 `v0.4.0-alpha.2`。
+当前已经发布的预发布版本是 `v0.4.0-alpha.2`。
 
 - Release note：[`docs/release/v0.4.0-alpha.2.md`](docs/release/v0.4.0-alpha.2.md)
 - 变更记录：[`CHANGELOG.md`](CHANGELOG.md)
+
+当前未发布的开发里程碑是 `v0.4.0-beta.dev`。
+
+- Beta 草案说明：[`docs/release/v0.4.0-beta.md`](docs/release/v0.4.0-beta.md)

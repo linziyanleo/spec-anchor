@@ -77,6 +77,13 @@ For Claude Code, symlink-based development installs, and other tool layouts, see
 - Parasitic mode example: [examples/parasitic-openspec-project/](examples/parasitic-openspec-project/)
 - Agent prompts: [examples/agent-walkthrough/](examples/agent-walkthrough/)
 
+## Agent Reliability
+
+- Overview: [docs/agent-reliability.md](docs/agent-reliability.md)
+- Contract: [references/agents/agent-contract.md](references/agents/agent-contract.md)
+- Agent guides: [Claude Code](references/agents/claude-code.md), [Codex](references/agents/codex.md), [Cursor](references/agents/cursor.md), [Gemini](references/agents/gemini.md)
+- Walkthroughs: [docs/examples/minimal-agent-loop.md](docs/examples/minimal-agent-loop.md), [docs/examples/missing-module-coverage.md](docs/examples/missing-module-coverage.md), [docs/examples/parasitic-source-resolution.md](docs/examples/parasitic-source-resolution.md)
+
 ## What SpecAnchor Does
 
 - Loads Global, Module, and Task specs before code generation.
@@ -122,11 +129,15 @@ git diff --check
 
 ## Release Status
 
-Current public prerelease target: `v0.4.0-alpha.2`.
+Current published prerelease: `v0.4.0-alpha.2`.
 
 - Release notes: [`docs/release/v0.4.0-alpha.2.md`](docs/release/v0.4.0-alpha.2.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 - Install verification stays the same as the Validation block above.
+
+Current unreleased milestone: `v0.4.0-beta.dev`.
+
+- Beta draft note: [`docs/release/v0.4.0-beta.md`](docs/release/v0.4.0-beta.md)
 
 ## Contributing
 
