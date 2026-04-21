@@ -4,10 +4,6 @@
 /mydocs/*
 /anchor.local.yaml
 
-# Maintainer-only local docs / integration fixtures.
-/docs/superpowers/
-/tests/test_github_mirror_sync.bats
-
 # Inside .specanchor, keep the curated public sample only.
 /.specanchor/archive/**
 /.specanchor/devtools/
