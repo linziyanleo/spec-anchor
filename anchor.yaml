@@ -29,8 +29,11 @@ specanchor:
     scan_paths:
       - "SKILL.md"
       - "README.md"
-      - "README_CN.md"
+      - "README_ZH.md"
+      - "CONTRIBUTING.md"
       - "WHY.md"
+      - "WHY_EN.md"
+      - "docs/INSTALL.md"
       - "FLOWCHART.md"
       - "scripts/**"
       - "references/**"
