@@ -9,7 +9,7 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-04-21"
-  last_change: "补充公开 smoke gate，并将公开样本的 owner 字段泛化"
+  last_change: "full-mode init 现在会种下 starter Global Specs，validate 支持 summary，resolve 支持 parasitic source-file fallback"
   depends_on: []
 ---
 
@@ -40,7 +40,8 @@ specanchor:
 | `--scan-sources` | 扫描检测已有 spec 体系 |
 
 **脚本处理**: 目录创建、anchor.yaml 生成、module-index.md 初始化、来源检测
-**Agent 处理**: 来源策略确认、Global Spec 生成（需代码分析）
+**脚本处理**: 目录创建、anchor.yaml 生成、starter Global Specs、module-index.md 初始化、来源检测
+**Agent 处理**: 来源策略确认、细化 starter Global Specs（需代码分析）
 
 ### specanchor-status.sh
 
@@ -132,7 +133,7 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 | `--intent=<text>` | 自然语言任务摘要 |
 | `--format=text\|json` | 输出格式 |
 
-返回应加载的 Global/Module/Sources 锚点，以及 missing 覆盖建议。
+返回应加载的 Global/Module/Sources 锚点，以及 missing 覆盖建议。`parasitic` 模式按 source path、已知 source file、简单 token 匹配顺序做 deterministic-first 解析。
 
 ### specanchor-validate.sh
 
@@ -140,7 +141,7 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 
 | 参数 | 说明 |
 |------|------|
-| `--format=text\|json` | 输出格式 |
+| `--format=text\|summary\|json` | 输出格式（`summary` 是 `text` 的别名） |
 | `--path <file>` | 只校验单个文件 |
 
 当前最小校验：`specanchor.level`、`module_path`、`status`、日期字段、`anchor.yaml` 版本字段。

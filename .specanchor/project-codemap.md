@@ -32,8 +32,10 @@ spec-anchor/
 │   └── lib/common.sh
 ├── .specanchor/                      # curated public Global/Module sample + local task notes
 ├── tests/                            # public shell tests + fixtures
+├── examples/                         # committed usage-proof examples
+├── docs/USAGE_PROOF.md               # usage-proof overview and validation guide
 ├── .github/workflows/ci.yml          # Ubuntu/macOS shell CI
-└── docs/release/v0.4.0-alpha.md      # alpha release prep note
+└── docs/release/v0.4.0-alpha.2.md    # current alpha release note
 ```
 
 ## 核心数据流
@@ -58,3 +60,5 @@ anchor.yaml
 | `scripts/specanchor-resolve.sh` | 最小 Anchor Resolution |
 | `scripts/specanchor-validate.sh` | 基础 schema/frontmatter 校验 |
 | `tests/run.sh` | 公共 shell 回归入口 |
+| `tests/test_usage_proof.sh` | usage-proof examples smoke runner |
+| `docs/USAGE_PROOF.md` | 对外说明 alpha.2 证明了什么 / 没证明什么 |

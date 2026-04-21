@@ -23,6 +23,12 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/<script-name>.s
 | `specanchor-resolve.sh` | 解析本轮应加载的锚点 | no |
 | `specanchor-validate.sh` | 基础 schema/frontmatter 校验 | no |
 
+## Behavior Notes
+
+- `specanchor-init.sh` 在 `full` 模式下会创建 `.specanchor/` 基线，并种下 3 份 starter Global Specs；在 `parasitic` 模式下只写配置，不接管外部 spec 目录。
+- `specanchor-resolve.sh` 保持 deterministic-first：先走路径和已知 spec 命中，再做窄范围 source-file token fallback；它不是 semantic RAG。
+- `specanchor-validate.sh` 支持 `--format=text|summary|json`，其中 `summary` 是 `text` 的兼容别名。
+
 ## Output Rules
 
 - `boot/status/doctor/resolve/validate` 支持人类可读文本；其中 `boot/status/doctor/resolve/validate` 的 `--format=json` 必须输出合法 JSON。
