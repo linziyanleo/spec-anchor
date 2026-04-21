@@ -299,6 +299,24 @@ test_skill_entrypoint_checks() {
   fi
 }
 
+test_repo_docs_entrypoints_are_consistent() {
+  local anchor_contents readme_en readme_zh why_en why_zh
+  anchor_contents=$(cat "${REPO_ROOT}/anchor.yaml")
+  readme_en=$(cat "${REPO_ROOT}/README.md")
+  readme_zh=$(cat "${REPO_ROOT}/README_ZH.md")
+  why_en=$(cat "${REPO_ROOT}/WHY.md")
+  why_zh=$(cat "${REPO_ROOT}/WHY_ZH.md")
+
+  assert_contains "$anchor_contents" '"WHY.md"'
+  assert_contains "$anchor_contents" '"WHY_ZH.md"'
+  assert_not_contains "$anchor_contents" '"WHY_EN.md"'
+
+  assert_contains "$readme_en" '<a href="WHY.md">WHY</a>'
+  assert_contains "$readme_zh" '<a href="WHY_ZH.md">为什么需要</a>'
+  assert_contains "$why_en" '[中文](WHY_ZH.md)'
+  assert_contains "$why_zh" '[English](WHY.md)'
+}
+
 test_consumer_install_smoke() {
   local workdir project_dir skill_dir
   workdir=$(make_temp_dir)
@@ -340,6 +358,7 @@ run_test test_resolve_known_files
 run_test test_resolve_unknown_file_warns
 run_test test_validate_json_root
 run_test test_skill_entrypoint_checks
+run_test test_repo_docs_entrypoints_are_consistent
 run_test test_consumer_install_smoke
 
 echo ""

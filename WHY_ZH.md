@@ -1,6 +1,6 @@
 # 为什么需要 SpecAnchor
 
-[English](WHY_EN.md)
+[English](WHY.md)
 
 > Spec 是锚，代码是船。锚定住了，船才不会漂。
 

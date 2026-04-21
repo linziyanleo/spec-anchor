@@ -1,6 +1,6 @@
 # Why SpecAnchor
 
-[中文](WHY.md)
+[中文](WHY_ZH.md)
 
 > Spec is the anchor, code is the ship. With the anchor set, the ship won't drift.
 

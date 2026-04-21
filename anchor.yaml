@@ -32,7 +32,7 @@ specanchor:
       - "README_ZH.md"
       - "CONTRIBUTING.md"
       - "WHY.md"
-      - "WHY_EN.md"
+      - "WHY_ZH.md"
       - "docs/INSTALL.md"
       - "FLOWCHART.md"
       - "scripts/**"
