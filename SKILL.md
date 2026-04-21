@@ -75,8 +75,8 @@ Assembly Trace:
 
 ## Workflow Selection
 
-- `⚡ 轻量流程`：单文件或小范围修复，直接执行，无需 Task Spec。
-- `📋 <schema>`：多文件、多模块、数据流或结构性变更；先创建 Task Spec，再推进实现。
+- `⚡ lightweight`：单文件或小范围修复，直接执行，无需 Task Spec。
+- `standard Task Spec workflow`：多文件、多模块、数据流或结构性变更；先创建 Task Spec，再推进实现。
 - 严格门禁规则见 `references/workflow-gates.md`；不要在 gate 通过前进入 Execute。
 - `docs/superpowers/` 存在时，Task Spec 创建门禁降级为建议；见 `references/integrations/superpowers.md`。
 
@@ -86,7 +86,7 @@ Assembly Trace:
 - `references/specanchor-protocol.md`：核心协议总览
 - `references/script-contract.md`：脚本清单、调用契约、输出边界
 - `references/assembly-trace.md`：Assembly Trace 格式与刷新时机
-- `references/workflow-gates.md`：`⚡/📋` 选择与严格门禁规则
+- `references/workflow-gates.md`：`⚡ lightweight` / `standard Task Spec workflow` 选择与严格门禁规则
 - `references/external-sources-protocol.md`：外部 sources 治理与 frontmatter 注入
 - `references/integrations/sdd-riper-one.md`：默认写作协议的接入方式
 - `references/integrations/superpowers.md`：与 superpowers 的协作和降级规则

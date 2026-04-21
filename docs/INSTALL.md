@@ -40,17 +40,19 @@ rsync -a --exclude-from=/absolute/path/to/spec-anchor/.skillexclude \
 
 ## Claude Code
 
-Project-local install:
+Project-local auto-discovery install:
 
 ```bash
 SKILL_DIR=/absolute/path/to/spec-anchor
 PROJECT_DIR=/absolute/path/to/your-project
 
 rsync -a --exclude-from="$SKILL_DIR/.skillexclude" \
-  "$SKILL_DIR/" "$PROJECT_DIR/.agents/skills/specanchor/"
+  "$SKILL_DIR/" "$PROJECT_DIR/.claude/skills/specanchor/"
 ```
 
-Then reference the skill from `CLAUDE.md` or `AGENTS.md`.
+Then reference the skill from `CLAUDE.md` or `AGENTS.md` if your prompt flow wants to pin the skill explicitly.
+
+If you are using a generic tool-specific layout instead of Claude Code's default auto-discovery path, you can also install the skill under `.agents/skills/specanchor/` and point your tooling there manually.
 
 ## Other AI Tools
 

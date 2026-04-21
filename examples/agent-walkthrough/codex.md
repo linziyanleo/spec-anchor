@@ -12,8 +12,8 @@ Before making changes:
 1. Run SpecAnchor boot.
 2. Resolve anchors for the files you plan to edit.
 3. Read the relevant Global / Module / Task specs or external sources.
-4. Report the anchors used and choose the workflow: `⚡` for a small single-file change, `📋` for multi-file or structural work.
-5. If the work is `📋`, create or update the Task Spec before implementation and honor any gates such as `Plan Approved`.
+4. Report the anchors used and choose the workflow: `⚡ lightweight` for a small single-file change, `standard Task Spec workflow` for multi-file or structural work.
+5. If the work needs the `standard Task Spec workflow`, create or update the Task Spec before implementation and honor any gates such as `Plan Approved`.
 6. Only propose or apply code changes after the workflow step is clear.
 
 Do not invent business rules if no anchor exists.
@@ -22,7 +22,7 @@ Do not invent business rules if no anchor exists.
 
 - Codex reports `SpecAnchor Boot [...]` with mode and Assembly Trace.
 - Codex lists the anchors it will use before editing.
-- Codex states whether the work stays in `⚡` or needs `📋`.
+- Codex states whether the work stays in `⚡ lightweight` or needs the `standard Task Spec workflow`.
 - If anchors are missing, Codex stops and asks for direction.
 
 ## Resolve Before Editing

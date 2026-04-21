@@ -2,6 +2,8 @@
 
 This example proves that SpecAnchor can govern an existing external spec directory without moving those files into `.specanchor/`.
 
+It is an OpenSpec-style external spec fixture for parasitic governance, not a full OpenSpec compatibility suite.
+
 ## Initial Files
 
 - `anchor.yaml`
