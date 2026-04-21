@@ -11,7 +11,7 @@ Use the SpecAnchor skill installed at `.agents/skills/specanchor`.
 Before writing code:
 1. Read `SKILL.md`.
 2. Run the boot script.
-3. Use `specanchor-resolve` for the target files and intent.
+3. Run `specanchor-resolve.sh` for the target files and intent.
 4. Load the selected specs.
 5. Decide whether the work stays in `⚡` or needs `📋`.
 6. If the work is `📋`, create or update the Task Spec and honor required gates before Execute.
