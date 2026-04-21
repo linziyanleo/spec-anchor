@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.0-beta.dev — Agent Reliability (Unreleased)
+## v0.4.0-beta — Agent Reliability
 
 ### Highlights
 
@@ -21,7 +21,7 @@ git diff --check
 
 ### Known Limitations
 
-- `v0.4.0-beta.dev` is an unreleased development milestone, not a published tag.
+- This is a beta prerelease; public interfaces may still change before `v0.4.0`.
 - Resolve remains deterministic-first; it does not attempt semantic retrieval.
 - `--diff-from` depends on local git history and only inspects checked-out repository state.
 
