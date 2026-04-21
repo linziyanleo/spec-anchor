@@ -7,7 +7,7 @@
 <p align="center">
   <a href="README.md">English</a> ·
   <a href="README_ZH.md">中文</a> ·
-  <a href="WHY.md">为什么需要</a> ·
+  <a href="WHY_ZH.md">为什么需要</a> ·
   <a href="docs/INSTALL.md">安装</a> ·
   <a href="CONTRIBUTING.md">贡献</a>
 </p>
@@ -15,8 +15,6 @@
 ---
 
 SpecAnchor 是面向 AI 编码的 spec governance / anti-decay layer。它会在 AI 写代码前加载 Global / Module / Task 三层规范，但不绑定具体的 Spec 写作流程。
-
-本仓库对开源贡献者采用 English-first。`README_ZH.md` 仅提供中文导读；若中英文文档不一致，以 [README.md](README.md)、[CONTRIBUTING.md](CONTRIBUTING.md) 和其他英文开源文档为准。
 
 > 提示
 > SpecAnchor 会写入 `.specanchor/`，可能创建或更新 `anchor.yaml`，也可能修改 Markdown frontmatter。首次使用建议在干净分支上试。
@@ -33,7 +31,7 @@ rsync -a --exclude-from="$SKILL_DIR/.skillexclude" \
   "$SKILL_DIR/" "$PROJECT_DIR/.cursor/skills/specanchor/"
 ```
 
-2. 在目标项目根目录初始化并启动检查。
+1. 在目标项目根目录初始化并启动检查。
 
 ```bash
 cd "$PROJECT_DIR"

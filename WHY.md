@@ -1,170 +1,170 @@
-# 为什么需要 SpecAnchor
+# Why SpecAnchor
 
-[English](WHY_EN.md)
+[中文](WHY.md)
 
-> Spec 是锚，代码是船。锚定住了，船才不会漂。
-
----
-
-## 更深层的愿景
-
-Spec 规范本身会随着模型能力的增强而逐渐消退——上下文窗口越来越大，模型直接读代码逻辑比读文档更精准。但人不会变。
-
-人始终需要一个可视化的东西来理解模型的产出——代码是模型写的，但决策是人做的。当 AI 产出的代码越来越多、越来越快，人对"这段代码为什么这样写、它和哪些模块有关、改了会影响什么"的认知需求反而更强烈。
-
-**SpecAnchor 锚定的不只是上下文知识和代码规范，更深层次是锚定人对代码内部实现的认知。**
-
-所以 SpecAnchor 会随着模型能力的进步而进步：
-
-- 当前阶段：锚定 AI 上下文（Global + Module Spec 约束生成质量）
-- 下一阶段：锚定人的认知（Spec 成为人理解 AI 产出的界面）
-- 远期：Spec 可能从"写给 AI 读的约束"演变为"写给人读的认知地图"
+> Spec is the anchor, code is the ship. With the anchor set, the ship won't drift.
 
 ---
 
-## 编译式知识 vs 检索式知识
+## The Deeper Vision
 
-SpecAnchor 的方法论可以用一组对比来理解：
+Spec norms themselves will gradually fade as model capabilities grow — context windows keep expanding, and models reading code logic directly becomes more precise than reading documents. But people don't change.
 
-| 模式 | 做法 | 代价 |
-|------|------|------|
-| **检索式**（RAG 范式） | 每次提问时从原始代码中临时检索相关片段，让 AI 现场推导 | 每次都从零开始，跨模块洞察靠运气，知识不积累 |
-| **编译式**（SpecAnchor 范式） | 把代码洞察提前编译为持久化的 Spec 文件，AI 编码前直接加载已编译的上下文 | 需要维护 Spec，但一次编写、反复使用，知识持续复利 |
+People will always need something visual to understand what models produce — code is written by AI, but decisions are made by humans. As AI produces more code, faster, the human need to understand "why this code is written this way, what modules it relates to, and what breaks if I change it" only grows stronger.
 
-这个对比并非 SpecAnchor 的发明。Karpathy 在 [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) 中为个人知识管理提出了相同的模式：不要在每次提问时让 LLM 从原始文档重新推导，而是让 LLM 把知识**编译**为持久化的 Wiki，此后 LLM 在已编译的知识上工作。
+**SpecAnchor anchors not just context knowledge and coding standards, but more fundamentally, it anchors people's cognitive understanding of code internals.**
 
-SpecAnchor 是这个模式在**AI 辅助开发**领域的实例：
-- LLM Wiki 的 Raw Sources = 项目源代码
-- LLM Wiki 的 Wiki = `.specanchor/` 下的三级 Spec 体系
-- LLM Wiki 的 Schema = `SKILL.md` + 声明式写作协议
+So SpecAnchor will evolve alongside model capabilities:
 
-区别在于：LLM Wiki 追求知识的广度（越来越丰富），SpecAnchor 追求规范的精度（越来越准确）。但底层洞察一致——**维护的真正成本不在于阅读和思考，而在于 bookkeeping（交叉引用、一致性维护、过期检测）**。SpecAnchor 把这些 bookkeeping 交给 AI 和自动化脚本。
+- Current phase: Anchoring AI context (Global + Module Spec constrain generation quality)
+- Next phase: Anchoring human cognition (Spec becomes the interface for people to understand AI output)
+- Long-term: Spec may evolve from "constraints written for AI to read" into "cognitive maps written for humans to read"
 
 ---
 
-## 它解决什么问题
+## Compiled Knowledge vs Retrieved Knowledge
 
-| 问题                           | SpecAnchor 的回答                            |
-| ------------------------------ | -------------------------------------------- |
-| AI 生成的代码不符合团队规范    | Global Spec 提供"宪法级"约束，AI 必须遵守    |
-| 不同开发者改同一模块风格不统一 | Module Spec 定义模块的接口契约和设计约定      |
-| 代码改了但"为什么改"丢失了     | Task Spec 记录每次变更的意图和决策            |
-| Spec 和代码不一致（腐化）      | 对齐检测功能检测 Spec-代码对齐度              |
+SpecAnchor's approach can be understood through a simple contrast:
 
-## 设计原则
+| Mode | Approach | Cost |
+|------|----------|------|
+| **Retrieved** (RAG paradigm) | Retrieve relevant code fragments on every query, let AI deduce from scratch | Starts from zero every time, cross-module insights depend on luck, knowledge doesn't accumulate |
+| **Compiled** (SpecAnchor paradigm) | Pre-compile code insights into persistent Spec files, AI loads compiled context before coding | Requires maintaining Specs, but write once, reuse repeatedly — knowledge compounds over time |
 
-1. **Spec 是因，代码是果**——先写 Spec 再写代码（正向流）；代码变了检查 Spec 是否过期（逆向流）
-2. **不追求 100% 覆盖**——让最重要的模块先有 Spec，渐进式覆盖
-3. **不绑定写作工具**——SpecAnchor 只管"组织"（放哪、格式、状态），不管"写作"（默认 SDD-RIPER-ONE，可替换为 OpenSpec 等任何格式）
-4. **Global Spec ≤ 200 行**——这是 AI 上下文的物理约束，强制精简
-5. **Module Spec 集中管理**——存放在 `.specanchor/modules/`，通过 `module-index.md` 索引到真实模块路径
-6. **全量更新 + git 管理版本**——Module Spec 更新时全文重写，通过 `git diff` 和 Code Review 管理变更
-7. **平台无关**——纯文本 Skill，支持 Cursor、Claude Code、Cline 及任何可读取文件的 AI 工具
-8. **单一职责**——非 Spec 治理能力应由独立 skill 负责，不塞进主 Skill 的 token 预算
+This contrast is not SpecAnchor's invention. Karpathy articulated the same pattern for personal knowledge management in [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f): don't let the LLM re-derive from raw documents on every query — let it **compile** knowledge into a persistent wiki, then work on already-compiled knowledge.
 
-## 不同角色的使用建议
+SpecAnchor is this pattern instantiated for **AI-assisted development**:
+- LLM Wiki's Raw Sources = project source code
+- LLM Wiki's Wiki = the three-level Spec system under `.specanchor/`
+- LLM Wiki's Schema = `SKILL.md` + declarative writing protocols
 
-### 团队工程师
+The difference: LLM Wiki pursues breadth of knowledge (richer over time), SpecAnchor pursues precision of standards (more accurate over time). But the underlying insight is the same — **the real cost of maintenance is not reading and thinking, it's bookkeeping** (cross-references, consistency checks, staleness detection). SpecAnchor delegates this bookkeeping to AI and automation scripts.
 
-工程师是 SpecAnchor 体系的**全权参与者**。
+---
 
-**日常工作流**：
+## Problems It Solves
 
-```
-1. 拿到需求
-   ↓
-2. "创建任务：<任务名>"                     创建 Task Spec
-   ↓
-3. （AI 自动加载 Global + Module Spec）
-   ↓
-4. 按 Task Spec 开发（默认走 SDD-RIPER-ONE 的 RIPER 流程）
-   ↓
-5. 开发完成，检查 Module Spec 是否需要更新
-   ↓
-6. "检查 Spec 和代码对齐"                   确认 Spec-代码对齐
-   ↓
-7. 收到 Review 反馈 → 修改 → 重复 5-6
-```
+| Problem | SpecAnchor's Answer |
+|---------|-------------------|
+| AI-generated code doesn't follow team standards | Global Spec provides "constitutional" constraints that AI must follow |
+| Different developers have inconsistent styles on the same module | Module Spec defines interface contracts and design conventions |
+| The "why" behind code changes gets lost | Task Spec records the intent and decisions behind every change |
+| Spec and code go out of sync (decay) | Alignment detection checks Spec-code consistency |
 
-**推荐频率**：
+## Design Principles
 
-| 操作                | 频率                         |
-| ------------------- | ---------------------------- |
-| 创建任务 Spec       | 每个任务                     |
-| 创建/更新模块规范   | 触碰新模块时 / Sprint 结束同步 |
-| 更新全局规范        | 季度级                       |
-| 全局覆盖率报告      | 每个 Sprint 结束             |
+1. **Spec is cause, code is effect** — write Spec before code (forward flow); when code changes, check if Spec is stale (reverse flow)
+2. **Don't aim for 100% coverage** — let the most critical modules have Specs first, progressively expand
+3. **Don't lock in a writing tool** — SpecAnchor only handles "organization" (where, format, status), not "writing" (defaults to SDD-RIPER-ONE, replaceable with OpenSpec or any format)
+4. **Global Spec ≤ 200 lines** — this is a physical constraint of AI context windows, enforcing conciseness
+5. **Centralized Module Spec management** — stored in `.specanchor/modules/`, indexed to real module paths via `module-index.md`
+6. **Full rewrite + git versioning** — Module Spec updates are full rewrites, with changes managed through `git diff` and Code Review
+7. **Platform agnostic** — plain-text Skill, works with Cursor, Claude Code, Cline, and any AI tool that can read files
+8. **Single responsibility** — non-Spec governance capabilities should live in separate skills, not inside the core Skill token budget
 
-### 外部协作者
+## Usage Recommendations by Role
 
-协作者是 SpecAnchor 体系的**最大受益者**——Global Spec + Module Spec 已经定义好了"怎么写代码"，AI 在这些约束下生成的代码天然符合团队规范。
+### Team Engineers
 
-**权限边界**：
+Engineers are **full participants** in the SpecAnchor system.
 
-| 操作                  | 允许？          |
-| --------------------- | --------------- |
-| 读取 Global Spec      | ✅              |
-| 修改 Global Spec      | ❌              |
-| 创建/修改 Module Spec | 需工程师 Review |
-| 创建/执行 Task Spec   | ✅              |
-| 运行对齐检测          | ✅              |
-
-## 存量项目冷启动方案
-
-### Phase 0：初始化 + Global Spec（Day 1-2）
+**Daily workflow**:
 
 ```
-1. 安装 Skill
-2. "帮我初始化 SpecAnchor"（自动扫描项目并生成 Global Spec）
-3. 人工 Review → 调整 → 提交
+1. Receive requirements
+   ↓
+2. "Create task: <task name>"                 Create Task Spec
+   ↓
+3. (AI auto-loads Global + Module Spec)
+   ↓
+4. Develop following Task Spec (defaults to SDD-RIPER-ONE's RIPER flow)
+   ↓
+5. Development done, check if Module Spec needs updating
+   ↓
+6. "Check Spec alignment"                     Confirm Spec-code alignment
+   ↓
+7. Receive review feedback → fix → repeat 5-6
 ```
 
-### Phase 1：渐进式 Module Spec（持续进行）
+**Recommended frequency**:
 
-**"触碰即文档化"原则**——不主动为所有模块生成 Spec，在以下时机自然触发：
+| Action | Frequency |
+|--------|-----------|
+| Create Task Spec | Every task |
+| Create/update Module Spec | When touching a new module / end of Sprint sync |
+| Update Global Spec | Quarterly |
+| Global coverage report | End of each Sprint |
 
-| 触发条件         | 动作                                     |
-| ---------------- | ---------------------------------------- |
-| 新建模块         | 创建 Module Spec 作为模块的第一个文件    |
-| 首次修改现有模块 | "从代码推断模块规范" 生成草稿 → 人工确认 |
-| 重大重构         | 强制先更新/创建 Module Spec              |
-| 新人接手模块     | 创建 Module Spec 作为知识传递            |
+### External Collaborators
 
-### 冷启动里程碑
+Collaborators are the **biggest beneficiaries** of the SpecAnchor system — Global Spec + Module Spec already define "how to write code", so AI-generated code naturally follows team standards under these constraints.
 
-| 时间      | 预期覆盖率                       | 重点                   |
-| --------- | -------------------------------- | ---------------------- |
-| 第 1 周   | Global Spec 100%, Module Spec 0% | 建立基线               |
-| 第 1 个月 | Module Spec 10-20%               | 覆盖高频修改的核心模块 |
-| 第 3 个月 | Module Spec 40-60%               | 高频改动模块自然覆盖   |
-| 第 6 个月 | Module Spec 70%+                 | 接近"健康水位"         |
+**Permission boundaries**:
 
-## 演进路线图
+| Action | Allowed? |
+|--------|----------|
+| Read Global Spec | ✅ |
+| Modify Global Spec | ❌ |
+| Create/modify Module Spec | Requires engineer Review |
+| Create/execute Task Spec | ✅ |
+| Run alignment detection | ✅ |
 
-SpecAnchor 会随着 AI 能力和开发范式的变化而演进：
+## Cold Start Guide for Existing Projects
 
-### 当前（v0.x）— 锚定 AI 上下文
+### Phase 0: Initialize + Global Spec (Day 1-2)
 
-- 三级 Spec 体系（Global → Module → Task）
-- 覆盖率检测 + 腐化检测
-- 声明式 Schema 系统（兼容 SDD-RIPER-ONE / OpenSpec / 自定义）
-- External Sources 目录别名映射
-- 纯文本 Skill，平台无关
+```
+1. Install Skill
+2. "Help me initialize SpecAnchor" (auto-scans project and generates Global Spec)
+3. Manual Review → adjust → commit
+```
 
-### 近期 — 锚定人的认知
+### Phase 1: Progressive Module Spec (ongoing)
 
-- [ ] Spec 可视化仪表盘（覆盖率热力图、模块依赖图、变更时间线）
-- [ ] Spec Diff 可视化（Module Spec 变更前后对比，联动代码 diff）
-- [ ] 交互式 Module Map（点击模块查看 Spec、关联代码、变更历史）
-- [ ] CLI 工具（`specanchor check` / `specanchor status` 命令行化）
+**"Document on touch" principle** — don't proactively generate Specs for all modules; trigger naturally at these moments:
 
-### 远期 — Spec 作为认知地图
+| Trigger | Action |
+|---------|--------|
+| New module created | Create Module Spec as the module's first file |
+| First modification of existing module | "Infer module spec from code" to generate draft → manual review |
+| Major refactoring | Require updating/creating Module Spec first |
+| New team member takes over module | Create Module Spec for knowledge transfer |
 
-- [ ] Spec 从"约束文档"演变为"认知界面"——人通过 Spec 理解系统全貌，而非通过读代码
-- [ ] 实时 Spec 同步（代码变更自动触发 Spec 更新建议）
-- [ ] 多人协作感知（谁在改哪个模块的 Spec、冲突预警）
-- [ ] IDE 深度集成（Spec 覆盖率 gutter 标注、inline Spec 引用）
+### Cold Start Milestones
 
-## 流程图
+| Timeline | Expected Coverage | Focus |
+|----------|------------------|-------|
+| Week 1 | Global Spec 100%, Module Spec 0% | Establish baseline |
+| Month 1 | Module Spec 10-20% | Cover frequently modified core modules |
+| Month 3 | Module Spec 40-60% | High-change modules naturally covered |
+| Month 6 | Module Spec 70%+ | Approaching "healthy" level |
 
-Skill 调用全链路流程图见 [FLOWCHART.md](FLOWCHART.md)。
+## Evolution Roadmap
+
+SpecAnchor will evolve alongside changes in AI capabilities and development paradigms:
+
+### Current (v0.x) — Anchoring AI Context
+
+- Three-level Spec system (Global → Module → Task)
+- Coverage detection + staleness detection
+- Declarative Schema system (SDD-RIPER-ONE / OpenSpec / custom compatible)
+- External Sources directory alias mapping
+- Plain-text Skill, platform agnostic
+
+### Near-term — Anchoring Human Cognition
+
+- [ ] Spec visualization dashboard (coverage heatmap, module dependency graph, change timeline)
+- [ ] Spec Diff visualization (Module Spec before/after comparison, linked to code diff)
+- [ ] Interactive Module Map (click a module to view Spec, related code, change history)
+- [ ] CLI tool (`specanchor check` / `specanchor status` as command-line commands)
+
+### Long-term — Spec as Cognitive Map
+
+- [ ] Spec evolves from "constraint document" to "cognitive interface" — people understand the system through Spec, not by reading code
+- [ ] Real-time Spec sync (code changes automatically trigger Spec update suggestions)
+- [ ] Multi-user collaboration awareness (who's editing which module's Spec, conflict warnings)
+- [ ] Deep IDE integration (Spec coverage gutter annotations, inline Spec references)
+
+## Flowchart
+
+Full Skill invocation flow diagram: [FLOWCHART.md](FLOWCHART.md).

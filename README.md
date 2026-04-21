@@ -20,7 +20,7 @@
 <p align="center">
   <a href="README.md">English</a> ·
   <a href="README_ZH.md">中文</a> ·
-  <a href="WHY_EN.md">WHY</a> ·
+  <a href="WHY.md">WHY</a> ·
   <a href="docs/INSTALL.md">Install</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="SKILL.md">Skill</a>
@@ -29,8 +29,6 @@
 ---
 
 SpecAnchor is a spec governance / anti-decay layer for AI coding. It loads persistent Global / Module / Task specs before an agent writes code; it does not prescribe the authoring workflow itself.
-
-Contributor-facing documentation in this repository is English-first. [`README_ZH.md`](README_ZH.md) is a convenience translation. If the English and Chinese docs drift, the English version is authoritative for open-source contributors.
 
 > Warning
 > SpecAnchor writes `.specanchor/`, may create or update `anchor.yaml`, and may inject or update Markdown frontmatter. Test it on a clean branch first.
@@ -47,7 +45,7 @@ rsync -a --exclude-from="$SKILL_DIR/.skillexclude" \
   "$SKILL_DIR/" "$PROJECT_DIR/.cursor/skills/specanchor/"
 ```
 
-2. Initialize SpecAnchor from the target project root.
+1. Initialize SpecAnchor from the target project root.
 
 ```bash
 cd "$PROJECT_DIR"
@@ -57,7 +55,7 @@ SPECANCHOR_SKILL_DIR="$PWD/.cursor/skills/specanchor" \
   --project="$(basename "$PWD")" --mode=full
 ```
 
-3. Verify the install.
+1. Verify the install.
 
 ```bash
 SPECANCHOR_SKILL_DIR="$PWD/.cursor/skills/specanchor" \
