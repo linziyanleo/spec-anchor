@@ -317,6 +317,23 @@ test_repo_docs_entrypoints_are_consistent() {
   assert_contains "$why_zh" '[English](WHY.md)'
 }
 
+test_release_metadata_is_aligned() {
+  local anchor_contents readme_en changelog settings
+  anchor_contents=$(cat "${REPO_ROOT}/anchor.yaml")
+  readme_en=$(cat "${REPO_ROOT}/README.md")
+  changelog=$(cat "${REPO_ROOT}/CHANGELOG.md")
+  settings=$(cat "${REPO_ROOT}/.github/settings.yml")
+
+  assert_contains "$anchor_contents" 'version: "0.4.0-alpha.1"'
+  assert_contains "$readme_en" 'badge/version-0.4.0--alpha.1-brightgreen.svg'
+  assert_contains "$readme_en" 'actions/workflows/ci.yml/badge.svg'
+  assert_contains "$changelog" '## v0.4.0-alpha.1 — Public Prerelease'
+  assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-alpha.1.md"
+  assert_contains "$settings" 'Spec governance and anti-decay layer for AI coding agents.'
+  assert_contains "$settings" 'ai-coding'
+  assert_contains "$settings" 'spec-driven-development'
+}
+
 test_consumer_install_smoke() {
   local workdir project_dir skill_dir
   workdir=$(make_temp_dir)
@@ -359,6 +376,7 @@ run_test test_resolve_unknown_file_warns
 run_test test_validate_json_root
 run_test test_skill_entrypoint_checks
 run_test test_repo_docs_entrypoints_are_consistent
+run_test test_release_metadata_is_aligned
 run_test test_consumer_install_smoke
 
 echo ""

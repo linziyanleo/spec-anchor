@@ -5,6 +5,14 @@
 <h1 align="center">SpecAnchor</h1>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
+  <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
+    <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+  <img src="https://img.shields.io/badge/version-0.4.0--alpha.1-brightgreen.svg" alt="Version 0.4.0-alpha.1" />
+</p>
+
+<p align="center">
   <a href="README.md">English</a> ·
   <a href="README_ZH.md">中文</a> ·
   <a href="WHY_ZH.md">为什么需要</a> ·
@@ -58,3 +66,10 @@ SPECANCHOR_SKILL_DIR="$PWD/.cursor/skills/specanchor" \
 ## 许可
 
 代码采用 [MIT](LICENSE)；仓库图片来源与授权说明见 [assets/README.md](assets/README.md)。
+
+## 当前发布状态
+
+当前准备对外使用的预发布版本是 `v0.4.0-alpha.1`。
+
+- Release note：[`docs/release/v0.4.0-alpha.1.md`](docs/release/v0.4.0-alpha.1.md)
+- 变更记录：[`CHANGELOG.md`](CHANGELOG.md)

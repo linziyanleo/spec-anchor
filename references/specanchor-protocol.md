@@ -95,7 +95,7 @@ full 模式：
 
 ```
 SpecAnchor Boot [full]
-  Config: anchor.yaml (v0.4.0, project: my-project)
+  Config: anchor.yaml (v0.4.0-alpha.1, project: my-project)
   Global Specs: 3 files, 134 lines total
     - architecture.spec.md (51 lines)
     - coding-standards.spec.md (47 lines)
@@ -115,7 +115,7 @@ parasitic 模式：
 
 ```
 SpecAnchor Boot [parasitic]
-  Config: anchor.yaml (v0.4.0, project: my-project)
+  Config: anchor.yaml (v0.4.0-alpha.1, project: my-project)
   Sources:
     ✓ specs/ [spec-kit]: stale_check=true, frontmatter_inject=false
     ✓ .qoder/specs/ [qoder]: stale_check=true, frontmatter_inject=true
@@ -367,7 +367,7 @@ Markdown 正文是 frontmatter 的人类可读渲染，由 `specanchor_index` �
 
 ```yaml
 specanchor:
-  version: "0.4.0"
+  version: "0.4.0-alpha.1"
   project_name: "<project_name>"
 
   # === 运行模式 ===

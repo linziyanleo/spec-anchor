@@ -37,7 +37,7 @@ create_sandbox() {
   # 创建默认 anchor.yaml
   cat > "${SANDBOX}/anchor.yaml" <<'YAML'
 specanchor:
-  version: "0.4.0"
+  version: "0.4.0-alpha.1"
   project_name: "test-project"
   mode: "full"
   paths:

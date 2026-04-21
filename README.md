@@ -10,7 +10,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
-  <img src="https://img.shields.io/badge/version-0.4.0-brightgreen.svg" alt="Version 0.4.0" />
+  <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
+    <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+  <img src="https://img.shields.io/badge/version-0.4.0--alpha.1-brightgreen.svg" alt="Version 0.4.0-alpha.1" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -109,6 +112,14 @@ bash scripts/specanchor-doctor.sh --strict
 bash tests/run.sh
 git diff --check
 ```
+
+## Release Status
+
+Current public prerelease target: `v0.4.0-alpha.1`.
+
+- Release notes: [`docs/release/v0.4.0-alpha.1.md`](docs/release/v0.4.0-alpha.1.md)
+- Changelog: [`CHANGELOG.md`](CHANGELOG.md)
+- Install verification stays the same as the Validation block above.
 
 ## Contributing
 
