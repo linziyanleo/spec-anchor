@@ -85,6 +85,66 @@ YAML
   echo -e "  ${GREEN}✓${RESET} anchor.yaml"
 }
 
+generate_starter_global_specs() {
+  local architecture_file=".specanchor/global/architecture.spec.md"
+  local standards_file=".specanchor/global/coding-standards.spec.md"
+  local setup_file=".specanchor/global/project-setup.spec.md"
+
+  cat > "$architecture_file" <<'EOF'
+---
+specanchor:
+  level: global
+  type: architecture
+  status: draft
+---
+
+# Architecture Spec
+
+Capture the system boundary, major modules, and runtime assumptions for this project.
+
+- System purpose:
+- Major modules:
+- External dependencies:
+EOF
+  echo -e "  ${GREEN}✓${RESET} ${architecture_file} (starter)"
+
+  cat > "$standards_file" <<'EOF'
+---
+specanchor:
+  level: global
+  type: coding-standards
+  status: draft
+---
+
+# Coding Standards
+
+Capture the coding rules an agent should load before editing files.
+
+- Naming and structure:
+- Testing expectations:
+- Review constraints:
+EOF
+  echo -e "  ${GREEN}✓${RESET} ${standards_file} (starter)"
+
+  cat > "$setup_file" <<'EOF'
+---
+specanchor:
+  level: global
+  type: project-setup
+  status: draft
+---
+
+# Project Setup
+
+Capture the environment, validation commands, and local setup assumptions for this project.
+
+- Runtime requirements:
+- Install steps:
+- Verification commands:
+EOF
+  echo -e "  ${GREEN}✓${RESET} ${setup_file} (starter)"
+}
+
 generate_empty_module_index() {
   local index_file=".specanchor/module-index.md"
 
@@ -200,6 +260,7 @@ main() {
 
   if [[ "$mode" == "full" ]]; then
     create_directory_structure
+    generate_starter_global_specs
     generate_empty_module_index
     generate_empty_codemap
   fi
@@ -213,7 +274,11 @@ main() {
   echo -e "  配置: anchor.yaml"
   [[ "$mode" == "full" ]] && echo -e "  目录: .specanchor/"
   echo ""
-  echo -e "${DIM}下一步：让 Agent 扫描项目代码生成 Global Spec（运行 specanchor_global）${RESET}"
+  if [[ "$mode" == "full" ]]; then
+    echo -e "${DIM}下一步：让 Agent 细化 starter Global Specs，并按需补充 Module / Task Specs${RESET}"
+  else
+    echo -e "${DIM}下一步：配置 sources 并让 Agent 解析已有外部 Specs${RESET}"
+  fi
 }
 
 main "$@"

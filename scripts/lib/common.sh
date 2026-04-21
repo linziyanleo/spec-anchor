@@ -174,6 +174,22 @@ sa_iter_yaml_sources() {
     fi
   }
 
+  _sa_capture_source_field() {
+    local raw_line="$1"
+    if [[ "$raw_line" =~ path:[[:space:]]*\"?([^\"]+)\"? ]]; then
+      current_path="${BASH_REMATCH[1]}"
+    fi
+    if [[ "$raw_line" =~ type:[[:space:]]*\"?([^\"]+)\"? ]]; then
+      current_type="${BASH_REMATCH[1]}"
+    fi
+    if [[ "$raw_line" =~ stale_check:[[:space:]]*(true|false) ]]; then
+      stale_check="${BASH_REMATCH[1]}"
+    fi
+    if [[ "$raw_line" =~ frontmatter_inject:[[:space:]]*(true|false) ]]; then
+      frontmatter_inject="${BASH_REMATCH[1]}"
+    fi
+  }
+
   while IFS= read -r line; do
     if [[ "$line" =~ ^[[:space:]]{2}sources: ]]; then
       in_sources=1
@@ -190,30 +206,24 @@ sa_iter_yaml_sources() {
       continue
     fi
 
-    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*path:[[:space:]]*\"?([^\"]+)\"? ]]; then
+    if [[ "$line" =~ ^[[:space:]]*-[[:space:]]*(.*)$ ]]; then
       _sa_emit_source
-      current_path="${BASH_REMATCH[1]}"
+      current_path=""
       current_type=""
       stale_check=""
       frontmatter_inject=""
+      _sa_capture_source_field "${BASH_REMATCH[1]}"
       continue
     fi
 
-    if [[ "$line" =~ type:[[:space:]]*\"?([^\"]+)\"? ]]; then
-      current_type="${BASH_REMATCH[1]}"
-    fi
-    if [[ "$line" =~ stale_check:[[:space:]]*(true|false) ]]; then
-      stale_check="${BASH_REMATCH[1]}"
-    fi
-    if [[ "$line" =~ frontmatter_inject:[[:space:]]*(true|false) ]]; then
-      frontmatter_inject="${BASH_REMATCH[1]}"
-    fi
+    _sa_capture_source_field "$line"
   done < "$file"
 
   if [[ $in_sources -eq 1 ]]; then
     _sa_emit_source
   fi
 
+  unset -f _sa_capture_source_field
   unset -f _sa_emit_source
 }
 

@@ -1,0 +1,33 @@
+specanchor:
+  version: "0.4.0-alpha.2"
+  project_name: "parasitic-openspec-project"
+  mode: "parasitic"
+
+  paths:
+    global_specs: ".specanchor/global/"
+    module_specs: ".specanchor/modules/"
+    task_specs: ".specanchor/tasks/"
+    archive: ".specanchor/archive/"
+    module_index: ".specanchor/module-index.md"
+    project_codemap: ".specanchor/project-codemap.md"
+
+  sources:
+    - name: "openspec-fixture"
+      type: "openspec"
+      path: "specs/"
+      description: "Existing external specs used by the parasitic example."
+
+  writing_protocol:
+    schema: "openspec-compat"
+    schema_recommend: true
+
+  coverage:
+    scan_paths:
+      - "src/**"
+      - "specs/**"
+    ignore_paths: []
+
+  check:
+    stale_days: 14
+    outdated_days: 30
+    warn_recent_commits_days: 14

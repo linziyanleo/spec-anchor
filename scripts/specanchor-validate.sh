@@ -217,6 +217,7 @@ usage() {
 Usage:
   bash scripts/specanchor-validate.sh
   bash scripts/specanchor-validate.sh --format=json
+  bash scripts/specanchor-validate.sh --format=summary
   bash scripts/specanchor-validate.sh --path .specanchor/modules/scripts.spec.md
 EOF
   exit 0
@@ -226,11 +227,14 @@ main() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --format=json) FORMAT="json" ;;
-      --format=text) FORMAT="text" ;;
+      --format=text|--format=summary) FORMAT="text" ;;
       --format)
         shift
         [[ $# -gt 0 ]] || sa_die "--format requires a value" 64
         FORMAT="$1"
+        if [[ "$FORMAT" == "summary" ]]; then
+          FORMAT="text"
+        fi
         ;;
       --path)
         shift

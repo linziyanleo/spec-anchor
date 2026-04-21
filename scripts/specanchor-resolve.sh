@@ -25,6 +25,17 @@ trim_spaces() {
   printf '%s' "$1" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//'
 }
 
+normalize_token_text() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^[:alnum:]]+/ /g'
+}
+
+text_contains_token() {
+  local haystack token
+  haystack=" $(normalize_token_text "$1") "
+  token=" $(normalize_token_text "$2") "
+  [[ "$haystack" == *"$token"* ]]
+}
+
 add_anchor() {
   local level="$1"
   local path="$2"
@@ -154,28 +165,44 @@ ${target_file}"
 }
 
 resolve_parasitic_mode() {
-  local source_path="" target_file=""
-  while IFS=$'\t' read -r source_path _type _stale _inject; do
-    [[ -n "$source_path" ]] || continue
-    for target_file in "${TARGET_FILES[@]}"; do
-      [[ -n "$target_file" ]] || continue
-      if [[ "$target_file" == "$source_path"* ]]; then
-        add_anchor "source" "$source_path" "summary" "file_path_matches_source_path:$(module_label_from_path "$source_path")" "0.7"
-      fi
-    done
-  done < <(sa_iter_config_sources "$CONFIG_PATH")
-
   local target_file=""
   for target_file in "${TARGET_FILES[@]}"; do
     [[ -n "$target_file" ]] || continue
     local matched=false
-    local anchor_path=""
-    for anchor_path in "${ANCH_PATHS[@]}"; do
-      if [[ "$target_file" == "$anchor_path"* ]]; then
+    local target_context=""
+    target_context="${target_file} ${INTENT}"
+
+    local source_path=""
+    while IFS=$'\t' read -r source_path _type _stale _inject; do
+      [[ -n "$source_path" ]] || continue
+
+      if [[ "$target_file" == "$source_path"* ]]; then
+        add_anchor "source" "$source_path" "summary" "file_path_matches_source_path:$(module_label_from_path "$source_path")" "0.7"
         matched=true
-        break
+        continue
       fi
-    done
+
+      local candidate_file=""
+      while IFS= read -r candidate_file; do
+        [[ -n "$candidate_file" ]] || continue
+        local candidate_name=""
+        candidate_name=$(basename "$candidate_file")
+        candidate_name="${candidate_name%.*}"
+        [[ -n "$candidate_name" ]] || continue
+
+        if text_contains_token "$target_context" "$candidate_name"; then
+          add_anchor "source" "$candidate_file" "summary" "target_matches_source_file:${candidate_name}" "0.8"
+          matched=true
+          break
+        fi
+      done < <(find "$source_path" -type f \( -name "*.md" -o -name "*.yaml" -o -name "*.yml" \) 2>/dev/null | sort)
+
+      if [[ "$matched" == "false" ]] && text_contains_token "$target_context" "$(module_label_from_path "$source_path")"; then
+        add_anchor "source" "$source_path" "summary" "target_mentions_source:$(module_label_from_path "$source_path")" "0.5"
+        matched=true
+      fi
+    done < <(sa_iter_config_sources "$CONFIG_PATH")
+
     if [[ "$matched" == "false" ]]; then
       MISSING_PATHS+=("$target_file")
     fi
