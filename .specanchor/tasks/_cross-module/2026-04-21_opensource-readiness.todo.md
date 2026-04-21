@@ -11,7 +11,7 @@
   现状：`.github/`、`docs/`、`tests/` 等公开资产被 ignore，clone 后缺文件。  
   怎么改：`.gitignore` 只排除真正的本地垃圾；`.skillexclude` 负责安装裁剪，不要混用。
 
-- [ ] **补 `LICENSE` 文件**  
+- [x] **补 `LICENSE` 文件**
   现状：README 已挂 MIT badge，但仓库里没有 LICENSE 文件，是假信号。  
   怎么改：补正式 `LICENSE`（MIT）；若许可证未定，先撤 badge。
 
@@ -109,7 +109,7 @@
   现状：开源后外部会依赖 `anchor.yaml` schema、`scripts/*.sh` 参数、`specanchor_*` 命令 ID——但仓库内没有任何地方区分 public surface 和 internal。一改就是 breaking change。  
   怎么改：在 `CONTRIBUTING.md` 或 `references/stability-contract.md` 里明确：0.x 版本不承诺稳定；或列出哪些接口稳定（boot/status/check 的 flags）、哪些内部（`scripts/lib/`、命令 ID 命名）。
 
-- [ ] **声明 `assets/` 的来源与授权**  
+- [x] **声明 `assets/` 的来源与授权**
   现状：`assets/SpecAnchor_logo.png`、`assets/SpecAnchorHero.jpg` 没有来源声明。MIT 只覆盖代码，图像资产许可需要单独说明。  
   怎么改：在 `assets/README.md`（或根 `LICENSE` 的附加条款里）注明：原创 / CC-BY / 第三方授权，附署名要求。若 Hero 图是 AI 生成，也要注明模型与 prompt 责任归属。
 
@@ -145,7 +145,7 @@
    包含：原 P0 ①（收窄 `.gitignore`）+ 原 P0 ④（清理公开版 `anchor.yaml`）+ 原 P0 ⑤（整理 `.specanchor/`）+ **原 P2 "tests / CI / public scripts 入库"（从 P2 提上来）** + 补充 A①②③ + 补充 B①（fresh-clone smoke 守门员）+ 补充 B⑧（consumer install smoke）。  
    目标：fresh clone 后达到 B① 四条验收（无 `✗`、`doctor --strict` 通过、工作树 clean、`tests/run.sh` 通过）；且 `rsync` 安装到外部项目后也能 boot 成功。**这是所有其他工作的前提。**  
    完成记录：仓库根验证 `boot + doctor --strict + tests/run.sh + git diff --check` 已通过；基于当前工作树内容导出的 staged-state checkout 验证通过；consumer install 显式 smoke 通过。
-2. **Legal / Assets PR**  
+2. [x] **Legal / Assets PR**（已完成，2026-04-21）
    原 P0 ②（`LICENSE` 文件）+ 补充 B③（assets 许可声明）。
 3. **DX / README PR**  
    原 P0 ③（`CONTRIBUTING.md` 最小版，固定 B① 的验证命令）+ 原 P1 全部 + 补充 B④（威胁模型一行字）+ 补充 B⑤（双语策略：Chinese-first）。
