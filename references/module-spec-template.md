@@ -2,6 +2,7 @@
 
 > 文件名格式为 `<module-id>.spec.md`，集中存放在 `.specanchor/modules/` 目录下。
 > `module-id` 由模块路径生成，规则：路径分隔符替换为 `-`，例如 `src/modules/auth` → `src-modules-auth.spec.md`。
+> `module_path` 可为目录或单文件路径。
 
 ```markdown
 ---
@@ -66,7 +67,7 @@ specanchor:
 - [x] 已完成项 @owner (日期)
 
 ## 7. 代码结构
-- **入口**: `<path>/index.ts`
+- **入口**: `<path>/index.ts`（目录级）或 `<path>`（单文件级）
 - **核心链路**: `A → B → C → D`
 - **数据流**: `输入 → 处理 → 输出`
 - **关键文件**:
@@ -83,7 +84,7 @@ specanchor:
 |------|------|------|
 | `level` | 是 | 固定为 `module` |
 | `module_name` | 是 | 模块中文名 |
-| `module_path` | 是 | 模块相对路径（从项目根开始） |
+| `module_path` | 是 | 模块相对路径边界（目录或单文件，从项目根开始） |
 | `version` | 是 | 语义化版本，更新时 minor +1 |
 | `owner` | 是 | 当前负责人（@ + git 用户名） |
 | `author` | 是 | 创建者 |
@@ -102,6 +103,7 @@ specanchor:
 ```
 src/modules/auth       → src-modules-auth       → src-modules-auth.spec.md
 src/components/LoginForm → src-components-LoginForm → src-components-LoginForm.spec.md
+src/pages/home.tsx     → src-pages-home.tsx     → src-pages-home.tsx.spec.md
 packages/shared/utils  → packages-shared-utils  → packages-shared-utils.spec.md
 ```
 
