@@ -314,8 +314,16 @@ run_release_profile_checks() {
   check_local_markdown_links "$SKILL_ROOT/README.md"
   check_local_markdown_links "$SKILL_ROOT/README_ZH.md"
 
-  grep -q 'v0.4.0-beta.dev' "$SKILL_ROOT/CHANGELOG.md" 2>/dev/null || add_blocking "CHANGELOG_BETA_MISSING" "CHANGELOG 缺少未发布 beta section。" "补充 v0.4.0-beta.dev section。"
-  [[ -f "$SKILL_ROOT/docs/release/v0.4.0-beta.md" ]] || add_blocking "RELEASE_NOTE_MISSING" "缺少 docs/release/v0.4.0-beta.md" "补充 beta release note。"
+  local current_version release_tag release_note_path
+  current_version=$(sa_parse_config_field "$CONFIG_PATH" "version" "")
+  if [[ -z "$current_version" ]]; then
+    add_blocking "CONFIG_VERSION_MISSING" "anchor.yaml 缺少 version。" "补充当前发布版本号。"
+  else
+    release_tag="v${current_version}"
+    release_note_path="$SKILL_ROOT/docs/release/${release_tag}.md"
+    grep -Fq "## ${release_tag}" "$SKILL_ROOT/CHANGELOG.md" 2>/dev/null || add_blocking "CHANGELOG_RELEASE_MISSING" "CHANGELOG 缺少当前发布 section: ${release_tag}" "补充 ${release_tag} 的 changelog section。"
+    [[ -f "$release_note_path" ]] || add_blocking "RELEASE_NOTE_MISSING" "缺少 ${release_note_path#$SKILL_ROOT/}" "补充 ${release_tag} release note。"
+  fi
   [[ -f "$SKILL_ROOT/.github/workflows/ci.yml" ]] || add_blocking "CI_MISSING" "缺少 .github/workflows/ci.yml" "恢复 CI workflow。"
   [[ -f "$SKILL_ROOT/.github/settings.yml" ]] || add_warning "ABOUT_METADATA_MISSING" "缺少 .github/settings.yml" "补充 About metadata 文件。"
   [[ -f "$SKILL_ROOT/.skillexclude" ]] || add_blocking "SKILLEXCLUDE_MISSING" "缺少 .skillexclude" "恢复 .skillexclude。"

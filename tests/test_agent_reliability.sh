@@ -222,12 +222,13 @@ test_doctor_agent_profile_json() {
 }
 
 test_doctor_release_profile_missing_note() {
-  local workdir repo_dir out_file
+  local workdir repo_dir out_file current_version
   workdir=$(make_temp_dir)
   repo_dir="${workdir}/repo"
   mkdir -p "$repo_dir"
   rsync -a --exclude .git "${REPO_ROOT}/" "$repo_dir/"
-  rm -f "${repo_dir}/docs/release/v0.4.0-beta.md"
+  current_version=$(awk -F'"' '/version:/ {print $2; exit}' "${repo_dir}/anchor.yaml")
+  rm -f "${repo_dir}/docs/release/v${current_version}.md"
 
   out_file="${workdir}/doctor-release.json"
   capture_cmd "$repo_dir" bash "${repo_dir}/scripts/specanchor-doctor.sh" --format=json --profile=release

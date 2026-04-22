@@ -355,6 +355,13 @@ test_release_metadata_is_aligned() {
   assert_contains "$settings" 'spec-driven-development'
 }
 
+test_doctor_release_profile_markdown() {
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-doctor.sh" --format=markdown --profile=release
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" '# SpecAnchor Doctor'
+  assert_contains "$CAPTURE_OUTPUT" 'Profile: release'
+}
+
 test_consumer_install_smoke() {
   local workdir project_dir skill_dir
   workdir=$(make_temp_dir)
@@ -417,6 +424,7 @@ run_test test_validate_json_root
 run_test test_skill_entrypoint_checks
 run_test test_repo_docs_entrypoints_are_consistent
 run_test test_release_metadata_is_aligned
+run_test test_doctor_release_profile_markdown
 run_test test_consumer_install_smoke
 run_test test_usage_proof_suite
 run_test test_agent_reliability_suite
