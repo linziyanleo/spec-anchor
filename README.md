@@ -13,7 +13,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.4.0--beta-brightgreen.svg" alt="Version 0.4.0-beta" />
+  <img src="https://img.shields.io/badge/version-0.4.0--beta.1-brightgreen.svg" alt="Version 0.4.0-beta.1" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -129,9 +129,9 @@ git diff --check
 
 ## Release Status
 
-Current published prerelease: `v0.4.0-beta`.
+Current published prerelease: `v0.4.0-beta.1`.
 
-- Release notes: [`docs/release/v0.4.0-beta.md`](docs/release/v0.4.0-beta.md)
+- Release notes: [`docs/release/v0.4.0-beta.1.md`](docs/release/v0.4.0-beta.1.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 - Install verification stays the same as the Validation block above.
 

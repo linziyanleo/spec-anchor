@@ -9,7 +9,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.4.0--beta-brightgreen.svg" alt="Version 0.4.0-beta" />
+  <img src="https://img.shields.io/badge/version-0.4.0--beta.1-brightgreen.svg" alt="Version 0.4.0-beta.1" />
 </p>
 
 <p align="center">
@@ -83,7 +83,7 @@ SPECANCHOR_SKILL_DIR="$PWD/.cursor/skills/specanchor" \
 
 ## 当前发布状态
 
-当前已经发布的预发布版本是 `v0.4.0-beta`。
+当前已经发布的预发布版本是 `v0.4.0-beta.1`。
 
-- Release note：[`docs/release/v0.4.0-beta.md`](docs/release/v0.4.0-beta.md)
+- Release note：[`docs/release/v0.4.0-beta.1.md`](docs/release/v0.4.0-beta.1.md)
 - 变更记录：[`CHANGELOG.md`](CHANGELOG.md)

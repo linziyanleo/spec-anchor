@@ -329,8 +329,8 @@ test_release_metadata_is_aligned() {
   changelog=$(cat "${REPO_ROOT}/CHANGELOG.md")
   settings=$(cat "${REPO_ROOT}/.github/settings.yml")
 
-  assert_contains "$anchor_contents" 'version: "0.4.0-beta"'
-  assert_contains "$readme_en" 'badge/version-0.4.0--beta-brightgreen.svg'
+  assert_contains "$anchor_contents" 'version: "0.4.0-beta.1"'
+  assert_contains "$readme_en" 'badge/version-0.4.0--beta.1-brightgreen.svg'
   assert_contains "$readme_en" 'actions/workflows/ci.yml/badge.svg'
   assert_contains "$readme_en" '[docs/USAGE_PROOF.md](docs/USAGE_PROOF.md)'
   assert_contains "$readme_en" '[examples/minimal-full-project/](examples/minimal-full-project/)'
@@ -338,10 +338,12 @@ test_release_metadata_is_aligned() {
   assert_contains "$readme_en" '[references/agents/agent-contract.md](references/agents/agent-contract.md)'
   assert_contains "$readme_zh" '[`docs/USAGE_PROOF.md`](docs/USAGE_PROOF.md)'
   assert_contains "$readme_zh" '[`docs/agent-reliability.md`](docs/agent-reliability.md)'
+  assert_contains "$changelog" '## v0.4.0-beta.1 — Walkthrough Corrections'
   assert_contains "$changelog" '## v0.4.0-beta — Agent Reliability'
   assert_contains "$changelog" '## v0.4.0-alpha.2 — Usage Proof'
   assert_file_exists "${REPO_ROOT}/docs/USAGE_PROOF.md"
   assert_file_exists "${REPO_ROOT}/docs/agent-reliability.md"
+  assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.1.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-alpha.2.md"
   assert_file_exists "${REPO_ROOT}/references/agents/agent-contract.md"

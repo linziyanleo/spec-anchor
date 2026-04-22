@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.4.0-beta.1 — Walkthrough Corrections
+
+### Highlights
+
+- Corrects the Codex walkthrough so it no longer reads like a Cursor install guide.
+- Adds a Qoder walkthrough aligned with Qoder's project-level Skill path.
+- Updates usage-proof example indexes so the new walkthrough appears in public documentation.
+
+### Validation
+
+```bash
+bash tests/test_usage_proof.sh
+bash tests/run.sh
+git diff --check
+```
+
+### Known Limitations
+
+- This is still a beta prerelease; public interfaces may still change before `v0.4.0`.
+- The change is documentation-only; it does not alter resolver or workflow script behavior.
+
 ## v0.4.0-beta — Agent Reliability
 
 ### Highlights
