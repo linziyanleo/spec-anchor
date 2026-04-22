@@ -96,7 +96,7 @@ parse_frontmatter_field() {
 compute_health() {
   local module_path="$1" last_synced="$2" stale_days="$3" outdated_days="$4"
 
-  if [[ -z "$last_synced" ]] || [[ ! -d "$module_path" ]]; then
+  if [[ -z "$last_synced" ]] || [[ ! -e "$module_path" ]]; then
     echo "STALE"
     return
   fi

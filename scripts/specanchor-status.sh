@@ -145,7 +145,7 @@ collect_stats() {
       mp=$(parse_frontmatter_field "$f" "module_path")
       ls=$(parse_frontmatter_field "$f" "last_synced")
 
-      if [[ -z "$mp" ]] || [[ -z "$ls" ]] || [[ ! -d "$mp" ]]; then
+      if [[ -z "$mp" ]] || [[ -z "$ls" ]] || [[ ! -e "$mp" ]]; then
         stale=$((stale + 1))
         continue
       fi
