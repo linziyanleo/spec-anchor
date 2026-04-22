@@ -58,7 +58,7 @@ Parasitic mode reads external specs without migrating them.
 
 Path: [`examples/agent-walkthrough/`](../examples/agent-walkthrough/)
 
-The walkthroughs for Cursor, Claude Code, and Codex show how to:
+The walkthroughs for Cursor, Claude Code, Codex, and Qoder show how to:
 
 - point the agent at the installed skill
 - run boot before editing

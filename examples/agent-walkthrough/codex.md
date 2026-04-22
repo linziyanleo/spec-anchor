@@ -2,11 +2,11 @@
 
 ## Install Path
 
-Install the skill at `.cursor/skills/specanchor/` or another project-local skill directory that your Codex setup can read.
+Install the skill at `.codex/skills/specanchor/` for a project-local Codex workflow, or at `~/.codex/skills/specanchor/` for a user-level install.
 
 ## First Prompt
 
-Use the SpecAnchor skill installed at `.cursor/skills/specanchor`.
+Use the SpecAnchor skill installed at `.codex/skills/specanchor`.
 
 Before making changes:
 1. Run SpecAnchor boot.

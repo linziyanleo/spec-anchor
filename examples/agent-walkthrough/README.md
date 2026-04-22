@@ -5,6 +5,7 @@ These prompts show how to ask different coding agents to use SpecAnchor before e
 - [Cursor](cursor.md)
 - [Claude Code](claude-code.md)
 - [Codex](codex.md)
+- [Qoder](qoder.md)
 
 Each walkthrough covers:
 
