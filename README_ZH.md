@@ -5,6 +5,14 @@
 <h1 align="center">SpecAnchor</h1>
 
 <p align="center">
+  <em>规范为锚，代码为舟。</em>
+</p>
+
+<p align="center">
+  <img src="assets/SpecAnchorHero_ZH.png" alt="SpecAnchor Hero — 规范为锚·真相为据" width="860" />
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />

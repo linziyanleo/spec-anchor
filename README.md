@@ -9,6 +9,10 @@
 </p>
 
 <p align="center">
+  <img src="assets/SpecAnchorHero_EN.png" alt="SpecAnchor Hero — Your Single Source of Truth for Specs" width="860" />
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />

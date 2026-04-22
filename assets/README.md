@@ -5,7 +5,9 @@ This directory contains repository presentation assets for SpecAnchor.
 ## Files
 
 - `SpecAnchor_logo.png`
-- `SpecAnchorHero.jpg`
+- `SpecAnchorHero_EN.png` — English README hero
+- `SpecAnchorHero_ZH.png` — Chinese README hero
+- `SpecAnchorHero.jpg` — legacy hero, retained as fallback
 
 ## Provenance
 
