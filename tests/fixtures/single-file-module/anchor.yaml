@@ -1,0 +1,24 @@
+specanchor:
+  version: "0.4.0-alpha.1"
+  project_name: "single-file-module"
+  mode: "full"
+  paths:
+    global_specs: ".specanchor/global/"
+    module_specs: ".specanchor/modules/"
+    task_specs: ".specanchor/tasks/"
+    archive: ".specanchor/archive/"
+    module_index: ".specanchor/module-index.md"
+    project_codemap: ".specanchor/project-codemap.md"
+  writing_protocol:
+    schema: "sdd-riper-one"
+    schema_recommend: true
+  coverage:
+    scan_paths:
+      - "src/**"
+    ignore_paths:
+      - "*.md"
+  check:
+    stale_days: 14
+    outdated_days: 30
+    warn_recent_commits_days: 14
+    task_base_branch: "main"

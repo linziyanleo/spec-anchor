@@ -142,6 +142,18 @@ EOF
   [[ "$output" == *"home (src/home)"* ]]
 }
 
+@test "status treats existing single-file module_path as FRESH" {
+  create_global_spec
+  create_single_file_module_spec "src/pages/home.tsx" "2026-04-14"
+
+  cd "$SANDBOX"
+  run bash "${SCRIPTS_DIR}/specanchor-status.sh" --config=anchor.yaml
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"🟢1 FRESH"* ]]
+  [[ "$output" == *"src/pages/home.tsx"* ]]
+  [[ "$output" != *"🟠1 STALE"* ]]
+}
+
 @test "status fails without config" {
   local empty_dir
   empty_dir=$(mktemp -d)

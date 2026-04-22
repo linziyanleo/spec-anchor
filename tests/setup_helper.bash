@@ -30,9 +30,11 @@ create_sandbox() {
 
   # 复制脚本到 sandbox
   mkdir -p "$SANDBOX_SCRIPTS"
+  mkdir -p "${SANDBOX_SCRIPTS}/lib"
   cp "${SCRIPTS_DIR}/specanchor-check.sh" "${SANDBOX_SCRIPTS}/"
   cp "${SCRIPTS_DIR}/frontmatter-inject.sh" "${SANDBOX_SCRIPTS}/"
   cp "${SCRIPTS_DIR}/frontmatter-inject-and-check.sh" "${SANDBOX_SCRIPTS}/"
+  cp "${SCRIPTS_DIR}/lib/common.sh" "${SANDBOX_SCRIPTS}/lib/"
 
   # 创建默认 anchor.yaml
   cat > "${SANDBOX}/anchor.yaml" <<'YAML'
@@ -126,6 +128,38 @@ EOF
 
   # 创建实际的模块目录
   mkdir -p "${SANDBOX}/${module_path}"
+  echo "$file"
+}
+
+# 创建一个单文件 Module Spec 文件
+# Usage: create_single_file_module_spec <module_path> [last_synced]
+create_single_file_module_spec() {
+  local module_path="$1"
+  local last_synced="${2:-2026-04-01}"
+  local module_id
+  module_id=$(echo "$module_path" | tr '/' '-')
+  local file="${SANDBOX_SPECANCHOR}/modules/${module_id}.spec.md"
+  cat > "$file" <<EOF
+---
+specanchor:
+  level: module
+  module_name: "${module_id}"
+  module_path: "${module_path}"
+  version: "1.0.0"
+  owner: "@test-user"
+  last_synced: "${last_synced}"
+  status: active
+---
+
+# Module: ${module_path}
+
+## 7. Code Structure
+Key files:
+- \`${module_path}\`
+EOF
+
+  mkdir -p "$(dirname "${SANDBOX}/${module_path}")"
+  : > "${SANDBOX}/${module_path}"
   echo "$file"
 }
 
