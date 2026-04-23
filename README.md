@@ -27,7 +27,7 @@
 <p align="center">
   <a href="README.md">English</a> ·
   <a href="README_ZH.md">中文</a> ·
-  <a href="WHY.md">Why</a> ·
+  <a href="WHY.md">WHY</a> ·
   <a href="docs/INSTALL.md">Install</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="SKILL.md">Skill</a>
@@ -168,7 +168,7 @@ anchor.yaml
 └── project-codemap.md               # high-level code map
 ```
 
-The starter Global Specs are intentionally generic; your first real use-case is refining them against your actual codebase. See [`examples/minimal-full-project/`](examples/minimal-full-project/) for the full expected layout.
+The starter Global Specs are intentionally generic; your first real use-case is refining them against your actual codebase. See [examples/minimal-full-project/](examples/minimal-full-project/) for the full expected layout.
 
 ---
 
@@ -200,8 +200,9 @@ The full intent-to-command mapping is in [`references/commands-quickref.md`](ref
 - **[WHY.md](WHY.md)** — design philosophy, roadmap, compiled-vs-retrieved framing
 - [`docs/INSTALL.md`](docs/INSTALL.md) — all install paths (Cursor, Claude Code, symlinks, other tools)
 - [`SKILL.md`](SKILL.md) — runtime activation contract (what the AI reads at boot)
-- [`docs/USAGE_PROOF.md`](docs/USAGE_PROOF.md) — end-to-end install verification
-- [`docs/agent-reliability.md`](docs/agent-reliability.md) — how SpecAnchor behaves across Claude Code / Cursor / Codex / Gemini
+- [docs/USAGE_PROOF.md](docs/USAGE_PROOF.md) — end-to-end install verification
+- [docs/agent-reliability.md](docs/agent-reliability.md) — how SpecAnchor behaves across Claude Code / Cursor / Codex / Gemini
+- [references/agents/agent-contract.md](references/agents/agent-contract.md) — the shared contract for agent boot, loading, and verification
 - [`examples/agent-walkthrough/`](examples/agent-walkthrough/) — per-agent prompt templates
 - [`FLOWCHART.md`](FLOWCHART.md) — full Skill invocation flow diagram
 

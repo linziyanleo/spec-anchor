@@ -2,11 +2,11 @@
 specanchor:
   level: global
   type: coding-standards
-  version: "2.1.0"
+  version: "2.1.1"
   author: "maintainers"
   reviewers: []
-  last_synced: "2026-04-21"
-  last_change: "补充 public smoke test 边界，并将公开样本的作者字段泛化"
+  last_synced: "2026-04-23"
+  last_change: "补充 public release surface 文档契约，要求 README 类改动先跑仓库回归"
   applies_to: "scripts/**/*.sh, **/*.md"
 ---
 
@@ -44,6 +44,7 @@ specanchor:
 ## 测试约定
 - 公共回归入口：`bash tests/run.sh`
 - Step 1 smoke gate：仓库根 `specanchor-boot.sh --format=summary` 不应再打印缺失 source 的 `✗`
+- 发布面文档契约：`README.md` / `README_ZH.md` / `CHANGELOG.md` / `docs/release/*` 属于公开 release surface；改动这些文件后，必须先本地跑通 `bash tests/run.sh`
 - consumer 安装链路：按 `.skillexclude` 安装到临时项目后，`specanchor-init.sh` + `specanchor-boot.sh` 必须通过
 - 夹具目录：`tests/fixtures/*`
 - 断言工具：`tests/helpers/assert.sh`
