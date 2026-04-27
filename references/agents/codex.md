@@ -38,3 +38,7 @@ For a multi-file change:
 2. Assemble with file paths and intent.
 3. If assemble reports missing coverage, stop and create a Task Spec.
 4. Otherwise read the listed specs, edit code, and run verification.
+
+## Full Agent Loop
+
+For the complete seven-step loop including Alignment Check and Spec Sediment, see `agent-contract.md`.

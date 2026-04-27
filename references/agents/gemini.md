@@ -21,3 +21,7 @@ Then call `specanchor-assemble.sh`.
 - Treat shell scripts as implementation helpers.
 - Use assemble before editing code so the read plan is explicit and replayable.
 - Surface missing anchors instead of guessing.
+
+## Full Agent Loop
+
+For the complete seven-step loop including Alignment Check and Spec Sediment, see `agent-contract.md`.

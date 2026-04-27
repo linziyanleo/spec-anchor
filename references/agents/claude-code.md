@@ -45,3 +45,7 @@ For a focused shell-script fix:
 3. Read the listed Global / Module docs.
 4. Apply the code change.
 5. Run tests, then doctor / validate if specs changed.
+
+## Full Agent Loop
+
+For the complete seven-step loop including Alignment Check and Spec Sediment, see `agent-contract.md`.

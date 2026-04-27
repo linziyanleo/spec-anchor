@@ -30,3 +30,7 @@ For a known module path:
 2. Assemble with the concrete file path.
 3. Read the listed specs.
 4. Apply the edit and report drift or missing anchors.
+
+## Full Agent Loop
+
+For the complete seven-step loop including Alignment Check and Spec Sediment, see `agent-contract.md`.

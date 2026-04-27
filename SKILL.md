@@ -1,11 +1,11 @@
 ---
 name: spec-anchor
-description: 三级 Spec 体系（Global/Module/Task），在 AI 生成代码前自动加载编码规范与模块契约，保障团队一致性。只要项目中有 anchor.yaml 或 .specanchor/ 目录，或者正在生成 Spec 文档，就应该使用此 Skill。自然语言是主入口，`SA:` 仅是高级 shorthand；中英文关键词触发：规范、约定、对齐、覆盖率、spec。
+description: 规格控制平面——三级 Spec 体系（Global/Module/Task），在 AI 生成代码前自动组装 Spec Landscape，用 Schema Gate 控盘、Alignment Surface 检测漂移、Spec Sediment 回收经验。只要项目中有 anchor.yaml 或 .specanchor/ 目录，或者正在生成 Spec 文档，就应该使用此 Skill。自然语言是主入口，`SA:` 仅是高级 shorthand；中英文关键词触发：规范、约定、对齐、覆盖率、spec。
 ---
 
 # SpecAnchor
 
-Spec 是锚，代码是船。SpecAnchor 管理 Global → Module → Task 三层 Spec，在 AI 动手前先加载团队规范。主 `SKILL.md` 只负责入口、路由、工作流选择和门禁；详细协议统一下沉到 `references/`。
+Spec 是锚，代码是船。SpecAnchor 是面向 Agent 化工程交付的规格控制平面（Spec Control Plane）——管理 Global → Module → Task 三层 Spec，在 AI 动手前组装 Spec Landscape，动手后检测对齐。主 `SKILL.md` 只负责入口、路由、工作流选择和门禁；详细协议统一下沉到 `references/`；完整 Agent 循环见 `references/agents/agent-contract.md`。
 
 ## Script Invocation
 
@@ -46,6 +46,8 @@ Assembly Trace:
 
 ## Loading Strategy
 
+Spec Landscape 的组装策略——决定 Agent 进入项目时看到的规格地形。
+
 - `full`：始终加载 `anchor.yaml` + 全部 Global Spec；Module Spec 按需加载；`project-codemap.md` 按需加载。
 - `parasitic`：只加载 `anchor.yaml` 与外部 `sources`；不创建 full-only Spec。
 - 需要判断该读哪些模块时，优先看 boot 输出的 `Available Commands:` / `Available Modules:` 段；boot 不可用时 fallback 到 `references/commands-quickref.md` / `.specanchor/spec-index.md`。
@@ -78,8 +80,9 @@ boot 输出已嵌入紧凑意图映射；命中后直接读对应命令定义文
 
 - `⚡ lightweight`：单文件或小范围修复，直接执行，无需 Task Spec。
 - `standard Task Spec workflow`：多文件、多模块、数据流或结构性变更；先创建 Task Spec，再推进实现。
-- 严格门禁规则见 `references/workflow-gates.md`；不要在 gate 通过前进入 Execute。
+- 严格门禁（Schema Gate）规则见 `references/workflow-gates.md`；不要在 gate 通过前进入 Execute。
 - `docs/superpowers/` 存在时，Task Spec 创建门禁降级为建议；见 `references/integrations/superpowers.md`。
+- 无论哪种工作流，编辑完成后都应执行 Alignment Check 和 Spec Sediment——具体步骤见 `references/agents/agent-contract.md` §6-§7。
 
 ## Reference Index
 
