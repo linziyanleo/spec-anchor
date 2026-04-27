@@ -178,6 +178,79 @@ join_by() {
   printf '%s' "$out"
 }
 
+B_READINESS_STATUS=""
+declare -a B_READINESS_REASONS=()
+
+compute_landscape_readiness() {
+  [[ -n "$B_READINESS_STATUS" ]] && return 0
+  if [[ "$B_MODE" != "full" ]]; then
+    B_READINESS_STATUS="N/A"
+    B_READINESS_REASONS+=("parasitic mode (sources-only governance)")
+    return
+  fi
+
+  local not_ready=0 attention=0
+
+  if [[ "$B_GLOBAL_COUNT" -eq 0 ]]; then
+    B_READINESS_REASONS+=("no global specs")
+    not_ready=1
+  fi
+
+  if [[ "$B_SPEC_INDEX" != "ok" ]]; then
+    B_READINESS_REASONS+=("spec-index missing")
+    not_ready=1
+  elif [[ "$B_SPEC_INDEX_FORMAT" != "v3" ]]; then
+    B_READINESS_REASONS+=("spec-index is ${B_SPEC_INDEX_FORMAT} format")
+    attention=1
+  fi
+
+  if [[ "$B_INDEX_HEALTH_OUTDATED" -gt 0 ]]; then
+    B_READINESS_REASONS+=("${B_INDEX_HEALTH_OUTDATED} OUTDATED module(s)")
+    not_ready=1
+  fi
+  if [[ "$B_INDEX_HEALTH_STALE" -gt 0 ]]; then
+    B_READINESS_REASONS+=("${B_INDEX_HEALTH_STALE} STALE module(s)")
+    attention=1
+  fi
+  if [[ "$B_INDEX_HEALTH_DRIFTED" -gt 0 ]]; then
+    B_READINESS_REASONS+=("${B_INDEX_HEALTH_DRIFTED} DRIFTED module(s)")
+    attention=1
+  fi
+
+  if [[ "$not_ready" -gt 0 ]]; then
+    B_READINESS_STATUS="NOT_READY"
+  elif [[ "$attention" -gt 0 ]]; then
+    B_READINESS_STATUS="ATTENTION"
+  else
+    B_READINESS_STATUS="READY"
+  fi
+}
+
+readiness_icon() {
+  case "$1" in
+    READY)     echo "🟢" ;;
+    ATTENTION) echo "🟡" ;;
+    NOT_READY) echo "🔴" ;;
+    N/A)       echo "⚪" ;;
+    *)         echo "⚪" ;;
+  esac
+}
+
+readiness_detail() {
+  local icon
+  icon=$(readiness_icon "$B_READINESS_STATUS")
+
+  if [[ "$B_READINESS_STATUS" == "READY" ]]; then
+    printf '%s READY (%d globals, %d/%d modules fresh)' \
+      "$icon" "$B_GLOBAL_COUNT" "$B_INDEX_HEALTH_FRESH" \
+      "$((B_INDEX_HEALTH_FRESH + B_INDEX_HEALTH_DRIFTED + B_INDEX_HEALTH_STALE + B_INDEX_HEALTH_OUTDATED))"
+  elif [[ "$B_READINESS_STATUS" == "N/A" ]]; then
+    printf '%s N/A — %s' "$icon" "${B_READINESS_REASONS[0]:-parasitic mode}"
+  else
+    printf '%s %s — %s' "$icon" "$B_READINESS_STATUS" "$(join_by ", " "${B_READINESS_REASONS[@]}")"
+  fi
+}
+
 emit_assembly_trace() {
   local global_mode="$1"
   local i
@@ -199,6 +272,9 @@ emit_assembly_trace() {
     echo -e "    - Global: ${DIM}skipped${RESET} -> parasitic mode does not auto-load global specs"
     echo -e "    - Module: ${DIM}sources-only${RESET} -> none (external specs load on demand)"
   fi
+
+  compute_landscape_readiness
+  echo -e "    - Landscape Readiness: $(readiness_detail)"
 }
 
 emit_command_routing() {
@@ -620,11 +696,30 @@ output_json() {
       printf '"%s.spec.md"' "${B_GLOBAL_NAMES[$i]}"
     done
     printf ']},\n'
-    printf '    "module": {"mode":"deferred","files":[],"note":"boot does not preload module specs"}\n'
+    printf '    "module": {"mode":"deferred","files":[],"note":"boot does not preload module specs"},\n'
   else
     printf '    "global": {"mode":"skipped","files":[]},\n'
-    printf '    "module": {"mode":"sources-only","files":[],"note":"external specs load on demand"}\n'
+    printf '    "module": {"mode":"sources-only","files":[],"note":"external specs load on demand"},\n'
   fi
+  compute_landscape_readiness
+  printf '    "landscape_readiness": {\n'
+  printf '      "status": "%s",\n' "$B_READINESS_STATUS"
+  printf '      "global_count": %d,\n' "$B_GLOBAL_COUNT"
+  local module_total=$((B_INDEX_HEALTH_FRESH + B_INDEX_HEALTH_DRIFTED + B_INDEX_HEALTH_STALE + B_INDEX_HEALTH_OUTDATED))
+  printf '      "module_total": %d,\n' "$module_total"
+  printf '      "module_fresh": %d,\n' "$B_INDEX_HEALTH_FRESH"
+  printf '      "module_drifted": %d,\n' "$B_INDEX_HEALTH_DRIFTED"
+  printf '      "module_stale": %d,\n' "$B_INDEX_HEALTH_STALE"
+  printf '      "module_outdated": %d,\n' "$B_INDEX_HEALTH_OUTDATED"
+  printf '      "index_format": "%s",\n' "${B_SPEC_INDEX_FORMAT:-none}"
+  printf '      "reasons": ['
+  local r_i=0
+  for r_i in "${!B_READINESS_REASONS[@]}"; do
+    [[ $r_i -gt 0 ]] && printf ','
+    printf '"%s"' "$(sa_json_escape "${B_READINESS_REASONS[$r_i]}")"
+  done
+  printf ']\n'
+  printf '    }\n'
   printf '  },\n'
 
   printf '  "sources": ['

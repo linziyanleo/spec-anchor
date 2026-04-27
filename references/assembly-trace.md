@@ -8,6 +8,7 @@ Assembly Trace 用来明确本轮到底读了哪些 Spec，以及读取深度是
 Assembly Trace:
   - Global: summary|full|none|skipped -> <files or reason>
   - Module: full|summary|deferred|sources-only|none -> <files or reason>
+  - Landscape Readiness: 🟢 READY | 🟡 ATTENTION | 🔴 NOT_READY | ⚪ N/A  (boot only)
   - Task: full|summary|none -> <files or reason>
   - Sources: full|summary|none -> <files or reason>
   - Missing: <count>
@@ -22,9 +23,17 @@ Assembly Trace:
 - `sources-only`：parasitic 模式下只从外部 sources 按需读取。
 - `skipped`：该层在当前模式下不自动加载。
 
+Landscape Readiness 语义（仅 boot 产出，assemble 不产出）：
+
+- `READY (🟢)`：Global Spec ≥1 + spec-index v3 + 所有模块 FRESH。Agent 可放心编码。
+- `ATTENTION (🟡)`：存在 DRIFTED/STALE 模块或 legacy spec-index 格式，但无致命问题。Agent 可编码但建议先处理告警。
+- `NOT_READY (🔴)`：无 Global Spec、spec-index 缺失、或存在 OUTDATED 模块。Agent 应先补 Spec 再编码。
+- `N/A (⚪)`：parasitic mode，不适用 full-mode 的三维度判定。
+
 规则：
 
 1. 启动检查后先输出一次 Assembly Trace。
 2. 如果后续运行了 `specanchor-assemble.sh`，应输出带 `Task` / `Sources` / `Missing` / `Budget` 的 v2 Trace。
 3. 如果后续按需加载了新的 Module Spec，必须再输出一次更新后的 Trace。
 4. 不要把“读过文件名”伪装成“读过全文”；`summary` 和 `full` 必须分开写。
+5. `Landscape Readiness` 行仅由 `specanchor-boot.sh` 产出。`specanchor-assemble.sh` 的 v2 Trace 不包含此行。

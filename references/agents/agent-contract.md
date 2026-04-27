@@ -7,8 +7,9 @@ SpecAnchor expects agents to follow one deterministic loop — seven steps that 
 Assemble the spec context that every agent reads before acting.
 
 1. Run `specanchor-boot.sh`.
-2. Output the Assembly Trace (Global / Module / Task / Sources levels).
-3. Do not edit code if boot has blocking errors.
+2. Output the Assembly Trace (Global / Module / Landscape Readiness levels).
+3. Note the Landscape Readiness status. If `NOT_READY`, prioritize fixing spec coverage before implementation.
+4. Do not edit code if boot has blocking errors.
 
 ## 2. Resolve Anchors
 
