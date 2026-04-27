@@ -39,6 +39,8 @@
 
 **SpecAnchor is a three-tier spec system that loads itself.** It keeps your team's coding rules, module contracts, and task intents in `.specanchor/`, then automatically loads the relevant ones into your AI's context before any code is generated — and checks later whether the code still matches.
 
+Think of it as a **spec control plane** for delegated agentic engineering: it assembles a *Spec Landscape* that every agent reads before acting, gates progress through *Schema Gates*, detects drift through an *Alignment Surface*, and channels lessons back into specs through *Spec Sediment*. You delegate work to agents; SpecAnchor makes sure they stay anchored.
+
 It ships a complete **spec-driven development** (SDD) authoring toolkit out of the box — the default `sdd-riper-one` schema gives you Research → Plan → Execute → Review gates — so **you don't need Spec-Kit or OpenSpec to use SpecAnchor**. If you already have an OpenSpec or custom spec directory, `parasitic` mode wraps it without migration. Keep your existing authoring, add SpecAnchor as the loader and anti-decay layer.
 
 > **→ Curious about the design philosophy? Read [WHY.md](WHY.md).**

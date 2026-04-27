@@ -39,6 +39,8 @@
 
 **SpecAnchor 是一套会自己加载自己的三层 Spec 系统**。它把团队的编码规则、模块契约、任务意图都放在 `.specanchor/` 下，在 AI 写代码之前自动把相关的那些加载进上下文；等代码写完，再回头检查代码是否还跟 Spec 对得上。
 
+它更像是面向 Agent 化工程交付的**规格控制平面**（Spec Control Plane）：用 *Spec Landscape*（规格地形）组装每个 Agent 都要读取的规格上下文，用 *Schema Gate*（门禁）在关键节点控盘，用 *Alignment Surface*（对齐面）检测 Spec 与代码的漂移，并通过 *Spec Sediment*（规格沉淀）把任务经验回流到规格资产中。你把任务交给 Agent；SpecAnchor 确保它们始终锚定在正确的规格上。
+
 它**自带一整套 SDD（Spec-Driven Development，规范驱动开发）写作工具链**——默认 `sdd-riper-one` schema 提供 Research → Plan → Execute → Review 四段门禁——**所以你不需要先装 Spec-Kit 或 OpenSpec 才能用 SpecAnchor**。如果你的项目里已经有 OpenSpec 或自建的 spec 目录，`parasitic` 模式可以直接套上去不用迁移，让已有的写作流程保持原样，SpecAnchor 只补加载器和防腐层。
 
 > **→ 想看设计思路和演进路线？读 [WHY_ZH.md](WHY_ZH.md)**

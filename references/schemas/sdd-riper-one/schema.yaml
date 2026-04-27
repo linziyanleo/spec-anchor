@@ -42,7 +42,7 @@ artifacts:
 
   - id: review
     section: "## 6. Review Verdict"
-    description: "回顾校验——Spec 覆盖、行为检查、回归风险、Module Spec 是否需更新"
+    description: "回顾校验——Spec 覆盖、行为检查、回归风险、Module Spec 是否需更新、Spec Sediment（经验沉淀回 Global/Module Spec）"
     requires: [execute]
 
 apply:

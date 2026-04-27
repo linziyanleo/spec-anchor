@@ -110,6 +110,10 @@ specanchor:
 - Behavior check: PASS/FAIL
 - Regression risk: Low/Medium/High
 - Module Spec 需更新: Yes/No（如 Yes 列出原因）
+- Spec Sediment（经验沉淀）:
+  - Global Spec 需更新: Yes/No
+  - 新发现的项目规则: ...（如有，建议写入哪个 Global Spec）
+  - 值得记录的反模式: ...（如有）
 - Follow-ups: ...
 
 ## 7. Plan-Execution Diff
@@ -249,6 +253,10 @@ specanchor:
   - api-service: Low/Medium/High
 - Cross-project consistency: PASS/FAIL
 - Module Spec 需更新: Yes/No（如 Yes 列出原因）
+- Spec Sediment（经验沉淀）:
+  - Global Spec 需更新: Yes/No
+  - 新发现的项目规则: ...（如有，建议写入哪个 Global Spec）
+  - 值得记录的反模式: ...（如有）
 - Follow-ups: ...
 
 ## 6.1 Touched Projects
