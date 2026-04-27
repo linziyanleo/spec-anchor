@@ -317,12 +317,12 @@ test_hygiene_fix_generated_fixture() {
   workdir=$(make_temp_dir)
   out_file="${workdir}/hygiene-fix-generated.json"
   copy_fixture "hygiene/fix-generated" "$workdir"
-  rm -f "${workdir}/.specanchor/module-index.md"
+  rm -f "${workdir}/.specanchor/spec-index.md" "${workdir}/.specanchor/module-index.md"
   capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-hygiene.sh" --fix-generated --format=json
   assert_eq "$CAPTURE_STATUS" "0"
   printf '%s\n' "$CAPTURE_OUTPUT" >"$out_file"
   assert_valid_json "$out_file"
-  assert_file_exists "${workdir}/.specanchor/module-index.md"
+  assert_file_exists "${workdir}/.specanchor/spec-index.md"
 }
 
 test_golden_replay_outputs() {

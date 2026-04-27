@@ -28,10 +28,10 @@ teardown() {
   [ -d ".specanchor/scripts" ]
 }
 
-@test "init creates module-index.md" {
+@test "init creates spec-index.md" {
   cd "$INIT_SANDBOX"
   bash "${SCRIPTS_DIR}/specanchor-init.sh" --project=test-proj
-  [ -f ".specanchor/module-index.md" ]
+  [ -f ".specanchor/spec-index.md" ]
 }
 
 @test "init creates project-codemap.md" {

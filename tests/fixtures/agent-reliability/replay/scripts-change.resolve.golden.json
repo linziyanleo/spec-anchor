@@ -7,7 +7,7 @@
     "max_files": 12,
     "max_lines": 1200,
     "estimated_files": 5,
-    "estimated_lines": 405,
+    "estimated_lines": 430,
     "truncated": false
   },
   "inputs": {
@@ -49,8 +49,8 @@
       "load": "full",
       "match_type": "path_prefix",
       "confidence": 0.95,
-      "reasons": ["File path scripts/specanchor-boot.sh is inside module_path scripts/.","Module index maps scripts/specanchor-boot.sh to scripts/."],
-      "freshness": "drifted"
+      "reasons": ["File path scripts/specanchor-boot.sh is inside module_path scripts/.","Spec index maps scripts/specanchor-boot.sh to scripts/."],
+      "freshness": "fresh"
     },
     {
       "level": "codemap",
@@ -70,7 +70,7 @@
   ],
   "trace": {
     "config": "anchor.yaml",
-    "module_index": ".specanchor/module-index.md",
+    "spec_index": ".specanchor/spec-index.md",
     "codemap": ".specanchor/project-codemap.md",
     "sources_checked": 0,
     "resolver": "specanchor-resolve.sh"

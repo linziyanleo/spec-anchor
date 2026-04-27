@@ -65,7 +65,7 @@ teardown() {
   local before
   before=$(cat "$file")
 
-  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
+  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run --writing-protocol simple
   [ "$status" -eq 0 ]
   [[ "$output" == *"[dry-run]"* ]]
   [[ "$output" == *"specanchor:"* ]]
@@ -91,7 +91,7 @@ teardown() {
   local file
   file=$(create_plain_md ".specanchor/tasks/test.md")
 
-  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
+  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run --writing-protocol simple
   [ "$status" -eq 0 ]
   [[ "$output" == *"level: task"* ]]
 }
@@ -100,7 +100,7 @@ teardown() {
   local file
   file=$(create_plain_md ".specanchor/modules/test.md")
 
-  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
+  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run --writing-protocol simple
   [ "$status" -eq 0 ]
   [[ "$output" == *"level: module"* ]]
 }
@@ -109,7 +109,7 @@ teardown() {
   local file
   file=$(create_plain_md ".specanchor/global/test.md")
 
-  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
+  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run --writing-protocol simple
   [ "$status" -eq 0 ]
   [[ "$output" == *"level: global"* ]]
 }
@@ -118,7 +118,7 @@ teardown() {
   local file
   file=$(create_plain_md "test-author.md")
 
-  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
+  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run --writing-protocol simple
   [ "$status" -eq 0 ]
   [[ "$output" == *"@test-user"* ]]
 }
@@ -133,7 +133,7 @@ teardown() {
 - [x] Step 3
 EOF
 
-  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
+  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run --writing-protocol simple
   [ "$status" -eq 0 ]
   [[ "$output" == *'status: "done"'* ]]
 }
@@ -148,7 +148,7 @@ EOF
 - [ ] Step 3
 EOF
 
-  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
+  run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run --writing-protocol simple
   [ "$status" -eq 0 ]
   [[ "$output" == *'status: "in_progress"'* ]]
 }
@@ -223,7 +223,7 @@ EOF
   [[ "$output" == *'task_name: "Auth System"'* ]]
 }
 
-@test "superpowers: plan with no checked tasks → sdd_phase=PLAN" {
+@test "superpowers: plan with no checked tasks → status=in_progress" {
   local file="${SANDBOX}/plan-pending.md"
   cat > "$file" <<'EOF'
 # Feature Implementation Plan
@@ -240,10 +240,11 @@ EOF
 
   run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" == *'sdd_phase: "PLAN"'* ]]
+  [[ "$output" == *'status: "in_progress"'* ]]
+  [[ "$output" != *'sdd_phase:'* ]]
 }
 
-@test "superpowers: plan with some checked tasks → sdd_phase=EXECUTE" {
+@test "superpowers: plan with some checked tasks → status=in_progress" {
   local file="${SANDBOX}/plan-partial.md"
   cat > "$file" <<'EOF'
 # Feature Implementation Plan
@@ -260,10 +261,11 @@ EOF
 
   run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" == *'sdd_phase: "EXECUTE"'* ]]
+  [[ "$output" == *'status: "in_progress"'* ]]
+  [[ "$output" != *'sdd_phase:'* ]]
 }
 
-@test "superpowers: plan with all checked tasks → sdd_phase=DONE" {
+@test "superpowers: plan with all checked tasks → status=done" {
   local file="${SANDBOX}/plan-done.md"
   cat > "$file" <<'EOF'
 # Feature Implementation Plan
@@ -280,10 +282,11 @@ EOF
 
   run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" == *'sdd_phase: "DONE"'* ]]
+  [[ "$output" == *'status: "done"'* ]]
+  [[ "$output" != *'sdd_phase:'* ]]
 }
 
-@test "superpowers: design spec with Goal → sdd_phase=RESEARCH" {
+@test "superpowers: design spec with Goal → status=draft" {
   local file="${SANDBOX}/design-spec.md"
   cat > "$file" <<'EOF'
 # Auth System Design
@@ -298,7 +301,8 @@ EOF
 
   run bash "${SANDBOX_SCRIPTS}/frontmatter-inject.sh" "$file" --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" == *'sdd_phase: "RESEARCH"'* ]]
+  [[ "$output" == *'status: "draft"'* ]]
+  [[ "$output" != *'sdd_phase:'* ]]
 }
 
 # ════════════════════════════════════════

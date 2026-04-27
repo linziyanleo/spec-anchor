@@ -290,6 +290,61 @@ test_validate_json_root() {
   assert_contains "$CAPTURE_OUTPUT" '"status": "ok"'
 }
 
+test_spec_index_v3_smoke() {
+  local workdir
+  workdir=$(make_temp_dir)
+  copy_fixture "full-minimal" "$workdir"
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-index.sh"
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_file_exists "${workdir}/.specanchor/spec-index.md"
+  assert_contains "$(cat "${workdir}/.specanchor/spec-index.md")" 'type: spec-index'
+  assert_contains "$(cat "${workdir}/.specanchor/spec-index.md")" 'version: 3'
+}
+
+test_schema_template_phase_marker() {
+  local template deprecated_template
+  template=$(cat "${REPO_ROOT}/references/schemas/sdd-riper-one/template.md")
+  deprecated_template=$(cat "${REPO_ROOT}/references/task-spec-template.md")
+  assert_not_contains "$template" 'sdd_phase:'
+  assert_contains "$template" '> Current RIPER Phase: RESEARCH'
+  assert_not_contains "$deprecated_template" 'sdd_phase:'
+  assert_contains "$deprecated_template" '> Current RIPER Phase: RESEARCH'
+}
+
+test_boot_available_commands() {
+  capture_cmd "$REPO_ROOT" env SPECANCHOR_SKILL_DIR="$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-boot.sh" --format=summary
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'Available Commands:'
+  assert_contains "$CAPTURE_OUTPUT" 'Available Modules:'
+}
+
+test_migrate_sdd_phase_idempotent() {
+  local workdir file before after
+  workdir=$(make_temp_dir)
+  file="${workdir}/task.spec.md"
+  cat > "$file" <<'EOF'
+---
+specanchor:
+  level: task
+  task_name: "phase"
+  status: "draft"
+  writing_protocol: "sdd-riper-one"
+  sdd_phase: "PLAN"
+---
+
+# SDD Spec: phase
+EOF
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/frontmatter-inject.sh" --migrate-sdd-phase task.spec.md --no-config
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_not_contains "$(cat "$file")" 'sdd_phase:'
+  assert_contains "$(cat "$file")" '> Current RIPER Phase: PLAN'
+  before=$(checksum_file "$file")
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/frontmatter-inject.sh" --migrate-sdd-phase task.spec.md --no-config
+  assert_eq "$CAPTURE_STATUS" "0"
+  after=$(checksum_file "$file")
+  assert_eq "$after" "$before"
+}
+
 test_skill_entrypoint_checks() {
   local skill_lines
   skill_lines=$(wc -l < "${REPO_ROOT}/SKILL.md" | tr -d ' ')
@@ -329,8 +384,8 @@ test_release_metadata_is_aligned() {
   changelog=$(cat "${REPO_ROOT}/CHANGELOG.md")
   settings=$(cat "${REPO_ROOT}/.github/settings.yml")
 
-  assert_contains "$anchor_contents" 'version: "0.4.0-beta.1"'
-  assert_contains "$readme_en" 'badge/version-0.4.0--beta.1-brightgreen.svg'
+  assert_contains "$anchor_contents" 'version: "0.4.0-beta.2"'
+  assert_contains "$readme_en" 'badge/version-0.4.0--beta.2-brightgreen.svg'
   assert_contains "$readme_en" 'actions/workflows/ci.yml/badge.svg'
   assert_contains "$readme_en" '[docs/USAGE_PROOF.md](docs/USAGE_PROOF.md)'
   assert_contains "$readme_en" '[examples/minimal-full-project/](examples/minimal-full-project/)'
@@ -339,11 +394,13 @@ test_release_metadata_is_aligned() {
   assert_contains "$readme_zh" '[`docs/USAGE_PROOF.md`](docs/USAGE_PROOF.md)'
   assert_contains "$readme_zh" '[`docs/agent-reliability.md`](docs/agent-reliability.md)'
   assert_contains "$changelog" '## v0.4.0-beta.1 — Walkthrough Corrections'
+  assert_contains "$changelog" '## v0.4.0-beta.2 — Frontmatter and Spec Index Refactor'
   assert_contains "$changelog" '## v0.4.0-beta — Agent Reliability'
   assert_contains "$changelog" '## v0.4.0-alpha.2 — Usage Proof'
   assert_file_exists "${REPO_ROOT}/docs/USAGE_PROOF.md"
   assert_file_exists "${REPO_ROOT}/docs/agent-reliability.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.1.md"
+  assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.2.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-alpha.2.md"
   assert_file_exists "${REPO_ROOT}/references/agents/agent-contract.md"
@@ -374,7 +431,7 @@ test_consumer_install_smoke() {
   capture_cmd "$project_dir" env SPECANCHOR_SKILL_DIR="$skill_dir" bash "$skill_dir/scripts/specanchor-init.sh" --project=demo --mode=full
   assert_eq "$CAPTURE_STATUS" "0"
   assert_file_exists "${project_dir}/anchor.yaml"
-  assert_file_exists "${project_dir}/.specanchor/module-index.md"
+  assert_file_exists "${project_dir}/.specanchor/spec-index.md"
 
   capture_cmd "$project_dir" env SPECANCHOR_SKILL_DIR="$skill_dir" bash "$skill_dir/scripts/specanchor-boot.sh" --format=summary
   assert_eq "$CAPTURE_STATUS" "0"
@@ -421,6 +478,10 @@ run_test test_doctor_warns_on_global_markdown_ignore
 run_test test_resolve_known_files
 run_test test_resolve_unknown_file_warns
 run_test test_validate_json_root
+run_test test_spec_index_v3_smoke
+run_test test_schema_template_phase_marker
+run_test test_boot_available_commands
+run_test test_migrate_sdd_phase_idempotent
 run_test test_skill_entrypoint_checks
 run_test test_repo_docs_entrypoints_are_consistent
 run_test test_release_metadata_is_aligned

@@ -76,16 +76,16 @@ EOF
   [[ "$output" == *"Task Specs: 1 active"* ]]
 }
 
-@test "status shows module index format" {
+@test "status shows spec index format" {
   create_global_spec
-  create_module_index_v2_with_modules
+  create_spec_index_v3_with_modules
   cd "$SANDBOX"
   run bash "${SCRIPTS_DIR}/specanchor-status.sh" --config=anchor.yaml
   [ "$status" -eq 0 ]
-  [[ "$output" == *"v2 (structured)"* ]]
+  [[ "$output" == *"v3 (structured)"* ]]
 }
 
-@test "status warns when module-index is missing" {
+@test "status warns when spec-index is missing" {
   create_global_spec
   cd "$SANDBOX"
   run bash "${SCRIPTS_DIR}/specanchor-status.sh" --config=anchor.yaml

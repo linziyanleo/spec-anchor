@@ -108,7 +108,7 @@ test_minimal_full_project_flow() {
   assert_file_exists "${project_dir}/.specanchor/global/architecture.spec.md"
   assert_file_exists "${project_dir}/.specanchor/global/coding-standards.spec.md"
   assert_file_exists "${project_dir}/.specanchor/global/project-setup.spec.md"
-  assert_file_exists "${project_dir}/.specanchor/module-index.md"
+  assert_file_exists "${project_dir}/.specanchor/spec-index.md"
   assert_file_exists "${project_dir}/.specanchor/project-codemap.md"
 
   capture_cmd "$project_dir" env SPECANCHOR_SKILL_DIR="$skill_dir" bash "$skill_dir/scripts/specanchor-boot.sh" --format=summary

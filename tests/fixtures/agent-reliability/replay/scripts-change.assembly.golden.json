@@ -6,7 +6,7 @@
     "max_files": 12,
     "max_lines": 1200,
     "estimated_files": 5,
-    "estimated_lines": 405,
+    "estimated_lines": 430,
     "truncated": false
   },
   "files_to_read": [
