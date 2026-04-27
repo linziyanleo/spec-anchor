@@ -7,6 +7,7 @@
 # Usage:
 #   specanchor-boot.sh                    # 精简摘要（默认）
 #   specanchor-boot.sh --format=summary   # 同上
+#   specanchor-boot.sh --with-schemas      # 在摘要中附带 schema 列表
 #   specanchor-boot.sh --format=full      # 含 Global Spec 内容
 #   specanchor-boot.sh --format=json      # JSON 机器可读
 #
@@ -60,12 +61,17 @@ B_SA_DIR=""           # ok | missing
 B_MODULE_COUNT=0
 B_TASK_ACTIVE=0
 B_TASK_ARCHIVED=0
-B_MODULE_INDEX=""     # ok | missing
-B_MODULE_INDEX_FORMAT=""  # v2 | legacy | ""
+B_SPEC_INDEX=""       # ok | missing
+B_SPEC_INDEX_PATH=""
+B_SPEC_INDEX_FORMAT=""  # v3 | legacy-module-v2 | legacy | ""
 B_INDEX_HEALTH_FRESH=0
 B_INDEX_HEALTH_DRIFTED=0
 B_INDEX_HEALTH_STALE=0
 B_INDEX_HEALTH_OUTDATED=0
+declare -a B_MOD_PATHS=()
+declare -a B_MOD_SPECS=()
+declare -a B_MOD_SUMMARIES=()
+declare -a B_MOD_HEALTHS=()
 
 # Global Specs
 B_GLOBAL_STATUS=""    # ok | missing
@@ -88,6 +94,7 @@ declare -a B_SCH_NAMES=()
 declare -a B_SCH_SOURCES=()     # custom | builtin
 declare -a B_SCH_PHILOSOPHIES=()
 declare -a B_SCH_DESCS=()
+SHOW_SCHEMAS=false
 
 # ─── 工具函数 ───
 
@@ -194,6 +201,80 @@ emit_assembly_trace() {
   fi
 }
 
+emit_command_routing() {
+  cat <<'EOF'
+  Available Commands:
+    init     -> commands/init.md      | 初始化配置与目录
+    global   -> commands/global.md    | Global Spec CRUD
+    module   -> commands/module.md    | Module Spec CRUD
+    infer    -> commands/infer.md     | 从代码逆推 Module Spec
+    task     -> commands/task.md      | 创建 Task Spec
+    load     -> commands/load.md      | 手动加载 Spec
+    status   -> commands/status.md    | 状态/覆盖率
+    check    -> commands/check.md     | 对齐检测
+    index    -> commands/index.md     | 更新 spec-index
+    import   -> commands/import.md    | 导入外部 SDD
+EOF
+}
+
+truncate_summary() {
+  local value="$1"
+  if [[ ${#value} -gt 60 ]]; then
+    printf '%s…' "${value:0:59}"
+  else
+    printf '%s' "$value"
+  fi
+}
+
+health_icon() {
+  case "$1" in
+    FRESH) echo "🟢" ;;
+    DRIFTED) echo "🟡" ;;
+    STALE) echo "🟠" ;;
+    OUTDATED) echo "🔴" ;;
+    *) echo "⚪" ;;
+  esac
+}
+
+emit_available_modules() {
+  echo -e "  Available Modules:"
+  if [[ "$B_SPEC_INDEX" == "ok" ]] && [[ "$B_SPEC_INDEX_FORMAT" != "v3" ]]; then
+    echo -e "    ${YELLOW}⚠ legacy module-index.md (run specanchor_index to upgrade)${RESET}"
+  fi
+  if [[ ${#B_MOD_PATHS[@]} -eq 0 ]]; then
+    echo -e "    ${DIM}(no modules covered yet — run \`specanchor_module\` to start)${RESET}"
+    return
+  fi
+
+  local max=10 i shown=0 hidden=0
+  for i in "${!B_MOD_PATHS[@]}"; do
+    local should_show=1
+    if [[ ${#B_MOD_PATHS[@]} -gt $max ]]; then
+      should_show=0
+      if [[ "${B_MOD_HEALTHS[$i]}" != "FRESH" ]] || [[ "$shown" -lt 3 ]]; then
+        should_show=1
+      fi
+    fi
+    if [[ "$should_show" -eq 0 ]]; then
+      hidden=$((hidden + 1))
+      continue
+    fi
+    local icon summary
+    icon=$(health_icon "${B_MOD_HEALTHS[$i]}")
+    summary=$(truncate_summary "${B_MOD_SUMMARIES[$i]}")
+    printf '    %-13s -> %-22s | %s [%s %s]\n' \
+      "${B_MOD_PATHS[$i]}" \
+      "${B_MOD_SPECS[$i]}" \
+      "$summary" \
+      "$icon" \
+      "${B_MOD_HEALTHS[$i]:-UNKNOWN}"
+    shown=$((shown + 1))
+  done
+  if [[ "$hidden" -gt 0 ]]; then
+    echo -e "    … (+${hidden} more, see .specanchor/spec-index.md)"
+  fi
+}
+
 # ─── 核心检查函数（直接写全局变量）───
 
 boot_config() {
@@ -232,27 +313,33 @@ boot_specanchor_dir() {
     B_TASK_ARCHIVED=$(find ".specanchor/archive" -name "*.spec.md" 2>/dev/null | wc -l | tr -d ' ')
   fi
 
-  if [[ -f ".specanchor/module-index.md" ]]; then
-    B_MODULE_INDEX="ok"
-    local first_line
-    first_line=$(head -1 ".specanchor/module-index.md")
-    if [[ "$first_line" == "---" ]]; then
-      local idx_type
-      idx_type=$(parse_yaml_field ".specanchor/module-index.md" "type" "")
-      if [[ "$idx_type" == "module-index" ]]; then
-        B_MODULE_INDEX_FORMAT="v2"
-        B_INDEX_HEALTH_FRESH=$(parse_yaml_field ".specanchor/module-index.md" "fresh" "0")
-        B_INDEX_HEALTH_DRIFTED=$(parse_yaml_field ".specanchor/module-index.md" "drifted" "0")
-        B_INDEX_HEALTH_STALE=$(parse_yaml_field ".specanchor/module-index.md" "stale" "0")
-        B_INDEX_HEALTH_OUTDATED=$(parse_yaml_field ".specanchor/module-index.md" "outdated" "0")
-      else
-        B_MODULE_INDEX_FORMAT="legacy"
-      fi
-    else
-      B_MODULE_INDEX_FORMAT="legacy"
-    fi
+  if B_SPEC_INDEX_PATH=$(sa_load_spec_index_or_legacy "$B_CONFIG_PATH" 2>/dev/null); then
+    B_SPEC_INDEX="ok"
+    local idx_type
+    idx_type=$(sa_index_type "$B_SPEC_INDEX_PATH")
+    case "$idx_type" in
+      spec-index) B_SPEC_INDEX_FORMAT="v3" ;;
+      module-index) B_SPEC_INDEX_FORMAT="legacy-module-v2" ;;
+      *) B_SPEC_INDEX_FORMAT="legacy" ;;
+    esac
+
+    local module_path spec_file summary health
+    while IFS=$'\t' read -r module_path spec_file summary health; do
+      [[ -n "$module_path" ]] || continue
+      [[ -z "$health" ]] && health="UNKNOWN"
+      B_MOD_PATHS+=("$module_path")
+      B_MOD_SPECS+=("$spec_file")
+      B_MOD_SUMMARIES+=("$summary")
+      B_MOD_HEALTHS+=("$health")
+      case "$health" in
+        FRESH) B_INDEX_HEALTH_FRESH=$((B_INDEX_HEALTH_FRESH + 1)) ;;
+        DRIFTED) B_INDEX_HEALTH_DRIFTED=$((B_INDEX_HEALTH_DRIFTED + 1)) ;;
+        STALE) B_INDEX_HEALTH_STALE=$((B_INDEX_HEALTH_STALE + 1)) ;;
+        OUTDATED) B_INDEX_HEALTH_OUTDATED=$((B_INDEX_HEALTH_OUTDATED + 1)) ;;
+      esac
+    done < <(sa_iter_index_modules "$B_SPEC_INDEX_PATH")
   else
-    B_MODULE_INDEX="missing"
+    B_SPEC_INDEX="missing"
   fi
 }
 
@@ -364,7 +451,9 @@ collect_all() {
     if [[ "$B_SA_DIR" != "missing" ]]; then
       boot_global_specs
     fi
-    boot_schemas
+    if [[ "$SHOW_SCHEMAS" == "true" ]]; then
+      boot_schemas
+    fi
   fi
 
   boot_sources "$B_CONFIG_PATH"
@@ -409,14 +498,16 @@ output_summary() {
 
     # Module / Task
     echo -e "  Module Specs: ${B_MODULE_COUNT} module(s) (按需加载)"
-    if [[ "$B_MODULE_INDEX" == "ok" ]] && [[ "$B_MODULE_INDEX_FORMAT" == "v2" ]]; then
-      echo -e "  Module Index: ${GREEN}v2 (structured)${RESET} — 🟢${B_INDEX_HEALTH_FRESH} 🟡${B_INDEX_HEALTH_DRIFTED} 🟠${B_INDEX_HEALTH_STALE} 🔴${B_INDEX_HEALTH_OUTDATED}"
-    elif [[ "$B_MODULE_INDEX" == "ok" ]]; then
-      echo -e "  Module Index: ${YELLOW}legacy (Markdown table)${RESET} — 建议运行 specanchor_index 迁移到 v2 格式"
+    if [[ "$B_SPEC_INDEX" == "ok" ]] && [[ "$B_SPEC_INDEX_FORMAT" == "v3" ]]; then
+      echo -e "  Spec Index: ${GREEN}v3 (structured)${RESET} — 🟢${B_INDEX_HEALTH_FRESH} 🟡${B_INDEX_HEALTH_DRIFTED} 🟠${B_INDEX_HEALTH_STALE} 🔴${B_INDEX_HEALTH_OUTDATED}"
+    elif [[ "$B_SPEC_INDEX" == "ok" ]]; then
+      echo -e "  Spec Index: ${YELLOW}${B_SPEC_INDEX_FORMAT}${RESET} — 建议运行 specanchor_index 迁移到 v3 格式"
     else
-      echo -e "  ${YELLOW}⚠️ module-index.md 不存在，建议运行 specanchor_index${RESET}"
+      echo -e "  ${YELLOW}⚠️ spec-index.md 不存在，建议运行 specanchor_index${RESET}"
     fi
     echo -e "  Task Specs: ${B_TASK_ACTIVE} active, ${B_TASK_ARCHIVED} archived"
+    emit_command_routing
+    emit_available_modules
 
     # Sources
     if [[ $B_SOURCES_COUNT -gt 0 ]]; then
@@ -430,17 +521,18 @@ output_summary() {
       echo -e "  Sources: (无外部来源)"
     fi
 
-    # Schemas
-    echo -e "  Available Schemas:"
-    if [[ $B_SCHEMA_COUNT -gt 0 ]]; then
-      for i in "${!B_SCH_NAMES[@]}"; do
-        local tag=""
-        [[ "${B_SCH_SOURCES[$i]}" == "custom" ]] && tag=" ${CYAN}[custom]${RESET}"
-        [[ "${B_SCH_NAMES[$i]}" == "$B_DEFAULT_SCHEMA" ]] && tag="${tag} ${DIM}(default)${RESET}"
-        echo -e "    ${B_SCH_NAMES[$i]}${tag} [${B_SCH_PHILOSOPHIES[$i]}]: ${B_SCH_DESCS[$i]}"
-      done
-    else
-      echo -e "    ${DIM}(none — fallback to sdd-riper-one)${RESET}"
+    if [[ "$SHOW_SCHEMAS" == "true" ]]; then
+      echo -e "  Available Schemas:"
+      if [[ $B_SCHEMA_COUNT -gt 0 ]]; then
+        for i in "${!B_SCH_NAMES[@]}"; do
+          local tag=""
+          [[ "${B_SCH_SOURCES[$i]}" == "custom" ]] && tag=" ${CYAN}[custom]${RESET}"
+          [[ "${B_SCH_NAMES[$i]}" == "$B_DEFAULT_SCHEMA" ]] && tag="${tag} ${DIM}(default)${RESET}"
+          echo -e "    ${B_SCH_NAMES[$i]}${tag} [${B_SCH_PHILOSOPHIES[$i]}]: ${B_SCH_DESCS[$i]}"
+        done
+      else
+        echo -e "    ${DIM}(none — fallback to sdd-riper-one)${RESET}"
+      fi
     fi
 
   elif [[ "$B_MODE" == "parasitic" ]]; then
@@ -511,9 +603,10 @@ output_json() {
     printf '  "module_count": %d,\n' "$B_MODULE_COUNT"
     printf '  "task_active": %d,\n' "$B_TASK_ACTIVE"
     printf '  "task_archived": %d,\n' "$B_TASK_ARCHIVED"
-    printf '  "module_index": "%s",\n' "$B_MODULE_INDEX"
-    printf '  "module_index_format": "%s",\n' "$B_MODULE_INDEX_FORMAT"
-    if [[ "$B_MODULE_INDEX_FORMAT" == "v2" ]]; then
+    printf '  "spec_index": "%s",\n' "$B_SPEC_INDEX"
+    printf '  "spec_index_path": "%s",\n' "$(sa_json_escape "$B_SPEC_INDEX_PATH")"
+    printf '  "spec_index_format": "%s",\n' "$B_SPEC_INDEX_FORMAT"
+    if [[ "$B_SPEC_INDEX_FORMAT" == "v3" ]] || [[ "$B_SPEC_INDEX_FORMAT" == "legacy-module-v2" ]]; then
       printf '  "index_health": {"fresh":%d,"drifted":%d,"stale":%d,"outdated":%d},\n' \
         "$B_INDEX_HEALTH_FRESH" "$B_INDEX_HEALTH_DRIFTED" "$B_INDEX_HEALTH_STALE" "$B_INDEX_HEALTH_OUTDATED"
     fi
@@ -567,6 +660,7 @@ usage() {
   echo "Usage:"
   echo "  specanchor-boot.sh                      # 精简摘要（默认）"
   echo "  specanchor-boot.sh --format=summary      # 同上"
+  echo "  specanchor-boot.sh --with-schemas        # 摘要附带 schema 列表"
   echo "  specanchor-boot.sh --format=full         # 含 Global Spec 内容"
   echo "  specanchor-boot.sh --format=json         # JSON 机器可读"
   echo ""
@@ -586,6 +680,7 @@ main() {
   for arg in "$@"; do
     case "$arg" in
       --format=*) format="${arg#--format=}" ;;
+      --with-schemas) SHOW_SCHEMAS=true ;;
       --help|-h) usage ;;
       *) die "未知参数: $arg" ;;
     esac

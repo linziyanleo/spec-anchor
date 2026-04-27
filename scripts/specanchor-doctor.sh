@@ -20,7 +20,7 @@ declare -a SUGGESTED_FIXES=()
 CHECK_ANCHOR_YAML=false
 CHECK_SPECANCHOR_DIR=false
 CHECK_GLOBAL_SPECS=false
-CHECK_MODULE_INDEX=false
+CHECK_SPEC_INDEX=false
 CHECK_SOURCES=false
 CHECK_FRONTMATTER=false
 CHECK_COVERAGE=false
@@ -31,7 +31,7 @@ CONFIG_PATH=""
 CONFIG_DISPLAY="missing"
 MODE="unknown"
 GLOBAL_SPECS_DIR=".specanchor/global"
-MODULE_INDEX_PATH=".specanchor/module-index.md"
+SPEC_INDEX_PATH=".specanchor/spec-index.md"
 PROJECT_CODEMAP_PATH=".specanchor/project-codemap.md"
 
 add_blocking() {
@@ -118,14 +118,14 @@ check_json_smoke() {
   add_blocking "JSON_SMOKE_FAILED" "${label} 未输出合法 JSON" "修复 ${label} 的 JSON 输出。"
 }
 
-check_module_index_fresh() {
-  [[ -f "$MODULE_INDEX_PATH" ]] || {
-    add_blocking "MODULE_INDEX_MISSING" "maintainer profile requires module-index." "运行 bash scripts/specanchor-index.sh。"
+check_spec_index_fresh() {
+  [[ -f "$SPEC_INDEX_PATH" ]] || {
+    add_blocking "SPEC_INDEX_MISSING" "maintainer profile requires spec-index." "运行 bash scripts/specanchor-index.sh。"
     return 0
   }
 
   local generated_at generated_date latest_synced latest_epoch generated_epoch
-  generated_at=$(sa_parse_yaml_field "$MODULE_INDEX_PATH" "generated_at" "")
+  generated_at=$(sa_parse_yaml_field "$SPEC_INDEX_PATH" "generated_at" "")
   generated_date="${generated_at%%T*}"
   generated_epoch=$(sa_date_to_epoch "$generated_date")
   latest_synced=""
@@ -141,7 +141,7 @@ check_module_index_fresh() {
   if [[ -n "$latest_synced" ]]; then
     latest_epoch=$(sa_date_to_epoch "$latest_synced")
     if [[ -n "$generated_epoch" ]] && [[ -n "$latest_epoch" ]] && (( generated_epoch < latest_epoch )); then
-      add_warning "MODULE_INDEX_STALE" "module-index 比最新 Module Spec 更旧。" "重新生成 module-index。"
+      add_warning "SPEC_INDEX_STALE" "spec-index 比最新 Module Spec 更旧。" "重新生成 spec-index。"
     fi
   fi
 }
@@ -211,7 +211,7 @@ run_base_checks() {
   fi
 
   GLOBAL_SPECS_DIR=$(sa_parse_config_field "$CONFIG_PATH" "global_specs" ".specanchor/global/")
-  MODULE_INDEX_PATH=$(sa_parse_config_field "$CONFIG_PATH" "module_index" ".specanchor/module-index.md")
+  SPEC_INDEX_PATH=$(sa_spec_index_path "$CONFIG_PATH")
   PROJECT_CODEMAP_PATH=$(sa_parse_config_field "$CONFIG_PATH" "project_codemap" ".specanchor/project-codemap.md")
 
   CHECK_SPECANCHOR_DIR=true
@@ -241,9 +241,15 @@ run_base_checks() {
     fi
   fi
 
-  CHECK_MODULE_INDEX=true
-  if [[ "$MODE" == "full" ]] && [[ ! -f "$MODULE_INDEX_PATH" ]]; then
-    add_warning "MODULE_INDEX_MISSING" "未找到 module-index: ${MODULE_INDEX_PATH}" "运行 bash scripts/specanchor-index.sh 重新生成 module-index。"
+  CHECK_SPEC_INDEX=true
+  if [[ "$MODE" == "full" ]]; then
+    local loaded_index=""
+    loaded_index=$(sa_load_spec_index_or_legacy "$CONFIG_PATH" 2>/dev/null || true)
+    if [[ -z "$loaded_index" ]]; then
+      add_warning "SPEC_INDEX_MISSING" "未找到 spec-index: ${SPEC_INDEX_PATH}" "运行 bash scripts/specanchor-index.sh 重新生成 spec-index。"
+    elif [[ "$(sa_index_type "$loaded_index")" != "spec-index" ]]; then
+      add_warning "SPEC_INDEX_LEGACY_FALLBACK" "当前仍在使用 legacy module-index fallback: ${loaded_index}" "运行 bash scripts/specanchor-index.sh 迁移到 spec-index。"
+    fi
   fi
 
   CHECK_SOURCES=true
@@ -291,7 +297,7 @@ run_base_checks() {
 run_agent_profile_checks() {
   CHECK_PROFILE=true
   [[ -f "$SKILL_ROOT/references/assembly-trace.md" ]] || add_blocking "ASSEMBLY_TRACE_REF_MISSING" "缺少 references/assembly-trace.md" "恢复 Assembly Trace 协议文档。"
-  [[ -f "$MODULE_INDEX_PATH" ]] || add_blocking "MODULE_INDEX_REQUIRED" "agent profile 要求可读的 module-index。" "恢复或生成 module-index。"
+  [[ -n "$(sa_load_spec_index_or_legacy "$CONFIG_PATH" 2>/dev/null || true)" ]] || add_blocking "SPEC_INDEX_REQUIRED" "agent profile 要求可读的 spec-index。" "恢复或生成 spec-index。"
 
   local ref
   while IFS= read -r ref; do
@@ -340,7 +346,7 @@ run_maintainer_profile_checks() {
   if [[ "$ALLOW_DIRTY" != "true" ]] && [[ -n "$(git status --short 2>/dev/null || true)" ]]; then
     add_blocking "WORKTREE_DIRTY" "maintainer profile 要求干净工作树。" "提交、stash，或改用 --allow-dirty。"
   fi
-  check_module_index_fresh
+  check_spec_index_fresh
   check_project_codemap_paths
   [[ -d "$SKILL_ROOT/tests/fixtures/agent-reliability" ]] || add_warning "FIXTURES_MISSING" "缺少 tests/fixtures/agent-reliability" "补充 beta 可靠性 fixtures。"
 }
@@ -446,7 +452,7 @@ print_json() {
   printf '    "anchor_yaml": %s,\n' "$CHECK_ANCHOR_YAML"
   printf '    "specanchor_dir": %s,\n' "$CHECK_SPECANCHOR_DIR"
   printf '    "global_specs": %s,\n' "$CHECK_GLOBAL_SPECS"
-  printf '    "module_index": %s,\n' "$CHECK_MODULE_INDEX"
+  printf '    "spec_index": %s,\n' "$CHECK_SPEC_INDEX"
   printf '    "sources": %s,\n' "$CHECK_SOURCES"
   printf '    "frontmatter": %s,\n' "$CHECK_FRONTMATTER"
   printf '    "coverage": %s,\n' "$CHECK_COVERAGE"

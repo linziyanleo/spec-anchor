@@ -17,7 +17,7 @@ BUDGET_PROFILE="normal"
 
 CONFIG_PATH=""
 MODE="unknown"
-MODULE_INDEX_PATH=".specanchor/module-index.md"
+SPEC_INDEX_PATH=".specanchor/spec-index.md"
 CODEMAP_PATH=".specanchor/project-codemap.md"
 CHECK_STALE_DAYS=14
 CHECK_OUTDATED_DAYS=30
@@ -95,7 +95,7 @@ confidence_for_match_type() {
     always_global) printf '1.00\n' ;;
     path_prefix) printf '0.95\n' ;;
     frontmatter_applies_to|frontmatter_key_file) printf '0.90\n' ;;
-    module_index_entry) printf '0.85\n' ;;
+    spec_index_entry) printf '0.85\n' ;;
     source_path_mapping) printf '0.80\n' ;;
     task_spec_recent) printf '0.75\n' ;;
     codemap_area) printf '0.70\n' ;;
@@ -418,7 +418,7 @@ load_config() {
   fi
 
   MODE=$(sa_parse_config_field "$CONFIG_PATH" "mode" "full")
-  MODULE_INDEX_PATH=$(sa_parse_config_field "$CONFIG_PATH" "module_index" ".specanchor/module-index.md")
+  SPEC_INDEX_PATH=$(sa_load_spec_index_or_legacy "$CONFIG_PATH" 2>/dev/null || sa_spec_index_path "$CONFIG_PATH")
   CODEMAP_PATH=$(sa_parse_config_field "$CONFIG_PATH" "project_codemap" ".specanchor/project-codemap.md")
   CHECK_STALE_DAYS=$(sa_parse_config_field "$CONFIG_PATH" "stale_days" "14")
   CHECK_OUTDATED_DAYS=$(sa_parse_config_field "$CONFIG_PATH" "outdated_days" "30")
@@ -438,41 +438,20 @@ resolve_global_anchors() {
   done
 }
 
-resolve_module_index_matches() {
+resolve_spec_index_matches() {
   local target_file="$1"
-  [[ -f "$MODULE_INDEX_PATH" ]] || return 0
+  [[ -f "$SPEC_INDEX_PATH" ]] || return 0
 
-  local in_modules=0 current_path="" current_spec=""
-  while IFS= read -r line; do
-    local trimmed
-    trimmed=$(sa_trim_spaces "$line")
-
-    if [[ "$trimmed" == "modules:" ]]; then
-      in_modules=1
-      continue
+  local current_path current_spec _summary _health
+  while IFS=$'\t' read -r current_path current_spec _summary _health; do
+    if [[ -n "$current_path" ]] && [[ -n "$current_spec" ]] && [[ "$target_file" == "$current_path"* ]]; then
+      add_or_update_anchor \
+        "module" \
+        ".specanchor/modules/${current_spec}" \
+        "spec_index_entry" \
+        "Spec index maps ${target_file} to ${current_path}."
     fi
-    if [[ $in_modules -eq 1 ]] && [[ "$trimmed" == "uncovered:"* ]]; then
-      break
-    fi
-    if [[ $in_modules -eq 0 ]]; then
-      continue
-    fi
-
-    if [[ "$trimmed" == "- path:"* ]]; then
-      current_path=$(sa_normalize_scalar "${trimmed#- path:}")
-    elif [[ "$trimmed" == "spec:"* ]]; then
-      current_spec=$(sa_normalize_scalar "${trimmed#spec:}")
-      if [[ -n "$current_path" ]] && [[ -n "$current_spec" ]] && [[ "$target_file" == "$current_path"* ]]; then
-        add_or_update_anchor \
-          "module" \
-          ".specanchor/modules/${current_spec}" \
-          "module_index_entry" \
-          "Module index maps ${target_file} to ${current_path}."
-      fi
-      current_path=""
-      current_spec=""
-    fi
-  done < "$MODULE_INDEX_PATH"
+  done < <(sa_iter_index_modules "$SPEC_INDEX_PATH")
 }
 
 resolve_full_mode_for_file() {
@@ -511,7 +490,7 @@ resolve_full_mode_for_file() {
     done
   fi
 
-  resolve_module_index_matches "$target_file"
+  resolve_spec_index_matches "$target_file"
 
   if [[ -f "$CODEMAP_PATH" ]]; then
     local target_root
@@ -788,7 +767,7 @@ print_json() {
   printf '\n  ],\n'
   printf '  "trace": {\n'
   printf '    "config": "%s",\n' "$(sa_json_escape "$CONFIG_PATH")"
-  printf '    "module_index": "%s",\n' "$(sa_json_escape "$MODULE_INDEX_PATH")"
+  printf '    "spec_index": "%s",\n' "$(sa_json_escape "$SPEC_INDEX_PATH")"
   printf '    "codemap": "%s",\n' "$(sa_json_escape "$CODEMAP_PATH")"
   printf '    "sources_checked": %s,\n' "$SOURCES_CHECKED"
   printf '    "resolver": "specanchor-resolve.sh"\n'
@@ -841,7 +820,7 @@ print_markdown() {
   echo ""
   echo "## Trace"
   echo "- config: ${CONFIG_PATH}"
-  echo "- module_index: ${MODULE_INDEX_PATH}"
+  echo "- spec_index: ${SPEC_INDEX_PATH}"
   echo "- codemap: ${CODEMAP_PATH}"
   echo "- sources_checked: ${SOURCES_CHECKED}"
   echo "- resolver: specanchor-resolve.sh"
@@ -920,7 +899,7 @@ main() {
 
   if ! load_config; then
     if [[ "$FORMAT" == "json" ]]; then
-      printf '{"schema_version":"specanchor.resolve.v2","status":"error","mode":"unknown","budget":{"profile":"%s","max_files":%s,"max_lines":%s,"estimated_files":0,"estimated_lines":0,"truncated":false},"inputs":{"files":[],"intent":null,"diff_from":null},"anchors":[],"missing":[],"warnings":[{"code":"CONFIG_MISSING","message":"anchor.yaml or .specanchor/config.yaml was not found."}],"trace":{"config":"","module_index":"","codemap":"","sources_checked":0,"resolver":"specanchor-resolve.sh"}}\n' "$BUDGET_PROFILE" "$MAX_FILES" "$MAX_LINES"
+      printf '{"schema_version":"specanchor.resolve.v2","status":"error","mode":"unknown","budget":{"profile":"%s","max_files":%s,"max_lines":%s,"estimated_files":0,"estimated_lines":0,"truncated":false},"inputs":{"files":[],"intent":null,"diff_from":null},"anchors":[],"missing":[],"warnings":[{"code":"CONFIG_MISSING","message":"anchor.yaml or .specanchor/config.yaml was not found."}],"trace":{"config":"","spec_index":"","codemap":"","sources_checked":0,"resolver":"specanchor-resolve.sh"}}\n' "$BUDGET_PROFILE" "$MAX_FILES" "$MAX_LINES"
       exit 2
     fi
     sa_die "CONFIG_MISSING: 未找到 anchor.yaml 或 .specanchor/config.yaml" 2

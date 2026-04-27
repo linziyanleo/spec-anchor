@@ -145,7 +145,7 @@ collect_stats() {
       mp=$(parse_frontmatter_field "$f" "module_path")
       ls=$(parse_frontmatter_field "$f" "last_synced")
 
-      if [[ -z "$mp" ]] || [[ -z "$ls" ]] || [[ ! -d "$mp" ]]; then
+      if [[ -z "$mp" ]] || [[ -z "$ls" ]] || [[ ! -e "$mp" ]]; then
         stale=$((stale + 1))
         continue
       fi
@@ -186,16 +186,13 @@ collect_stats() {
   fi
 
   local index_format="missing"
-  if [[ -f ".specanchor/module-index.md" ]]; then
-    local first_line
-    first_line=$(head -1 ".specanchor/module-index.md")
-    if [[ "$first_line" == "---" ]]; then
-      local idx_type
-      idx_type=$(parse_yaml_field ".specanchor/module-index.md" "type" "")
-      [[ "$idx_type" == "module-index" ]] && index_format="v2" || index_format="legacy"
-    else
-      index_format="legacy"
-    fi
+  local index_path=""
+  if index_path=$(sa_load_spec_index_or_legacy "$config" 2>/dev/null); then
+    case "$(sa_index_type "$index_path")" in
+      spec-index) index_format="v3" ;;
+      module-index) index_format="legacy-module-v2" ;;
+      *) index_format="legacy" ;;
+    esac
   fi
 
   S_MODE="$mode"
@@ -240,9 +237,10 @@ output_summary() {
     echo -e "    健康度: 🟢${S_FRESH} FRESH  🟡${S_DRIFTED} DRIFTED  🟠${S_STALE} STALE  🔴${S_OUTDATED} OUTDATED"
   fi
 
-  echo -n "  Module Index: "
+  echo -n "  Spec Index: "
   case "$S_INDEX_FORMAT" in
-    v2)     echo -e "${GREEN}v2 (structured)${RESET}" ;;
+    v3)     echo -e "${GREEN}v3 (structured)${RESET}" ;;
+    legacy-module-v2) echo -e "${YELLOW}legacy module-index v2${RESET} — 建议运行 specanchor_index 迁移" ;;
     legacy) echo -e "${YELLOW}legacy (Markdown table)${RESET} — 建议运行 specanchor_index 迁移" ;;
     missing) echo -e "${YELLOW}missing${RESET} — 建议运行 specanchor_index 生成" ;;
   esac
@@ -291,7 +289,7 @@ output_json() {
   printf '  "module_specs": {"count": %d, "health": {"fresh": %d, "drifted": %d, "stale": %d, "outdated": %d}},\n' \
     "$S_MODULE_COUNT" "$S_FRESH" "$S_DRIFTED" "$S_STALE" "$S_OUTDATED"
   printf '  "task_specs": {"active": %d, "archived": %d},\n' "$S_TASK_ACTIVE" "$S_TASK_ARCHIVED"
-  printf '  "module_index_format": "%s",\n' "$S_INDEX_FORMAT"
+  printf '  "spec_index_format": "%s",\n' "$S_INDEX_FORMAT"
   printf '  "thresholds": {"stale_days": %d, "outdated_days": %d}\n' "$S_STALE_DAYS" "$S_OUTDATED_DAYS"
   printf '}\n'
 }

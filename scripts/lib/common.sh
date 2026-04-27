@@ -156,6 +156,153 @@ sa_parse_config_field() {
   sa_parse_yaml_field "$config" "$field" "$default"
 }
 
+sa_spec_index_path() {
+  local config="${1:-}"
+  local value=""
+  if [[ -n "$config" ]] && [[ -f "$config" ]]; then
+    value=$(sa_parse_config_field "$config" "spec_index" "")
+  fi
+  if [[ -n "$value" ]]; then
+    printf '%s\n' "$value"
+  else
+    printf '.specanchor/spec-index.md\n'
+  fi
+}
+
+sa_module_index_path() {
+  local config="${1:-}"
+  local value=""
+  if [[ -n "$config" ]] && [[ -f "$config" ]]; then
+    value=$(sa_parse_config_field "$config" "module_index" "")
+  fi
+  if [[ -n "$value" ]]; then
+    printf '%s\n' "$value"
+  else
+    printf '.specanchor/module-index.md\n'
+  fi
+}
+
+sa_load_spec_index_or_legacy() {
+  local config="${1:-}"
+  local spec_index module_index
+  spec_index=$(sa_spec_index_path "$config")
+  module_index=$(sa_module_index_path "$config")
+
+  if [[ -f "$spec_index" ]]; then
+    printf '%s\n' "$spec_index"
+    return 0
+  fi
+  if [[ -f "$module_index" ]]; then
+    printf '%s\n' "$module_index"
+    return 0
+  fi
+  return 1
+}
+
+sa_index_type() {
+  local file="$1"
+  [[ -f "$file" ]] || {
+    printf 'missing\n'
+    return 0
+  }
+  if [[ "$(head -1 "$file" 2>/dev/null || true)" != "---" ]]; then
+    printf 'legacy\n'
+    return 0
+  fi
+  local idx_type
+  idx_type=$(sa_parse_yaml_field "$file" "type" "")
+  case "$idx_type" in
+    spec-index|module-index) printf '%s\n' "$idx_type" ;;
+    *) printf 'legacy\n' ;;
+  esac
+}
+
+sa_iter_index_modules() {
+  local index_file="$1"
+  [[ -f "$index_file" ]] || return 0
+
+  local idx_type
+  idx_type=$(sa_index_type "$index_file")
+
+  if [[ "$idx_type" == "legacy" ]]; then
+    while IFS='|' read -r _ module_path spec_file _ _; do
+      module_path=$(sa_trim_spaces "$module_path")
+      spec_file=$(sa_trim_spaces "$spec_file")
+      [[ -z "$module_path" ]] && continue
+      [[ "$module_path" == "模块路径" ]] && continue
+      [[ "$module_path" == "--------" ]] && continue
+      printf '%s\t%s\t\t\n' "$module_path" "$spec_file"
+    done < "$index_file"
+    return 0
+  fi
+
+  local in_specs=0 in_modules=0
+  local current_path="" current_spec="" current_summary="" current_health=""
+
+  _sa_emit_index_module() {
+    if [[ -n "$current_path" ]] && [[ -n "$current_spec" ]]; then
+      printf '%s\t%s\t%s\t%s\n' "$current_path" "$current_spec" "$current_summary" "$current_health"
+    fi
+  }
+
+  while IFS= read -r line; do
+    local trimmed
+    trimmed=$(sa_trim_spaces "$line")
+
+    if [[ "$idx_type" == "spec-index" ]]; then
+      if [[ "$line" =~ ^specs: ]]; then
+        in_specs=1
+        in_modules=0
+        continue
+      fi
+      if [[ $in_specs -eq 1 ]] && [[ "$line" =~ ^[A-Za-z0-9_-]+: ]]; then
+        _sa_emit_index_module
+        in_specs=0
+        in_modules=0
+        current_path="" current_spec="" current_summary="" current_health=""
+        continue
+      fi
+      if [[ $in_specs -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{2}modules: ]]; then
+        in_modules=1
+        continue
+      fi
+      if [[ $in_modules -eq 1 ]] && [[ "$line" =~ ^[[:space:]]{2}[A-Za-z0-9_-]+: ]] && [[ ! "$line" =~ ^[[:space:]]{4} ]]; then
+        _sa_emit_index_module
+        in_modules=0
+        current_path="" current_spec="" current_summary="" current_health=""
+        continue
+      fi
+    else
+      if [[ "$trimmed" == "modules:" ]]; then
+        in_modules=1
+        continue
+      fi
+      if [[ $in_modules -eq 1 ]] && [[ "$trimmed" == "uncovered:"* ]]; then
+        _sa_emit_index_module
+        current_path="" current_spec="" current_summary="" current_health=""
+        break
+      fi
+    fi
+
+    [[ $in_modules -eq 1 ]] || continue
+
+    if [[ "$trimmed" == "- path:"* ]]; then
+      _sa_emit_index_module
+      current_path=$(sa_normalize_scalar "${trimmed#- path:}")
+      current_spec="" current_summary="" current_health=""
+    elif [[ "$trimmed" == "spec:"* ]]; then
+      current_spec=$(sa_normalize_scalar "${trimmed#spec:}")
+    elif [[ "$trimmed" == "summary:"* ]]; then
+      current_summary=$(sa_normalize_scalar "${trimmed#summary:}")
+    elif [[ "$trimmed" == "health:"* ]]; then
+      current_health=$(sa_normalize_scalar "${trimmed#health:}")
+    fi
+  done < "$index_file"
+
+  _sa_emit_index_module
+  unset -f _sa_emit_index_module
+}
+
 sa_iter_yaml_sources() {
   local file="$1"
   [[ -f "$file" ]] || return 0

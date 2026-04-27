@@ -160,7 +160,7 @@ run_scan_if_available() {
   fi
 }
 
-refresh_module_index() {
+refresh_spec_index() {
   local config="$1"
   local mode
   mode=$(sa_parse_config_field "$config" "mode" "full")
@@ -310,7 +310,7 @@ check_single_module() {
     return
   fi
 
-  if [[ ! -d "$module_path" ]]; then
+  if [[ ! -e "$module_path" ]]; then
     status_icon="${YELLOW}~${RESET}"
     status_label="STALE (invalid module_path)"
     printf "  %b %-18s %-25s synced %-12s %3d commits since   %s\n" \
@@ -391,7 +391,7 @@ check_module() {
       ls=$(parse_frontmatter_field "$spec_file" "last_synced")
       local mp
       mp=$(parse_frontmatter_field "$spec_file" "module_path")
-      if [[ -n "$ls" ]] && [[ -n "$mp" ]] && [[ -d "$mp" ]]; then
+      if [[ -n "$ls" ]] && [[ -n "$mp" ]] && [[ -e "$mp" ]]; then
         local c
         c=$(git log --oneline --since="${ls} 00:00:00" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
         if [[ $c -eq 0 ]]; then
@@ -475,7 +475,7 @@ check_global() {
         has_warnings=1
         continue
       fi
-      if [[ ! -d "$mp" ]]; then
+      if [[ ! -e "$mp" ]]; then
         echo -e "  ${YELLOW}~${RESET} ${mod_name} (${mp}) STALE (invalid module_path)"
         has_warnings=1
         continue
@@ -653,7 +653,7 @@ main() {
       [[ -z "$config" ]] && config=$(find_config)
       run_scan_if_available
       check_global "$config"
-      refresh_module_index "$config"
+      refresh_spec_index "$config"
       ;;
     coverage)
       [[ $# -lt 1 ]] && die "coverage 级需要指定至少一个文件路径"

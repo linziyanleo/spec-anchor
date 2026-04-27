@@ -51,7 +51,7 @@ generate_anchor_yaml() {
 
   cat > "anchor.yaml" <<YAML
 specanchor:
-  version: "0.4.0-alpha.2"
+  version: "0.4.0-beta.2"
   project_name: "${project_name}"
 
   mode: "${mode}"
@@ -61,7 +61,8 @@ specanchor:
     module_specs: ".specanchor/modules/"
     task_specs: ".specanchor/tasks/"
     archive: ".specanchor/archive/"
-    module_index: ".specanchor/module-index.md"
+    spec_index: ".specanchor/spec-index.md"
+    module_index: ".specanchor/module-index.md"  # DEPRECATED: v0.5 删除；迁移期仅作 fallback
     project_codemap: ".specanchor/project-codemap.md"
 
   coverage:
@@ -145,8 +146,8 @@ EOF
   echo -e "  ${GREEN}✓${RESET} ${setup_file} (starter)"
 }
 
-generate_empty_module_index() {
-  local index_file=".specanchor/module-index.md"
+generate_empty_spec_index() {
+  local index_file=".specanchor/spec-index.md"
 
   if [[ -x "${SCRIPT_DIR}/specanchor-index.sh" ]]; then
     bash "${SCRIPT_DIR}/specanchor-index.sh" --config=anchor.yaml --output="$index_file"
@@ -154,29 +155,42 @@ generate_empty_module_index() {
     cat > "$index_file" <<'EOF'
 ---
 specanchor:
-  type: module-index
+  type: spec-index
+  version: 3
   generated_at: ""
-  module_count: 0
-  covered_count: 0
-  uncovered_count: 0
+  spec_counts:
+    globals: 0
+    modules: 0
+    tasks_active: 0
+    tasks_archived: 0
   health_summary:
-    fresh: 0
-    drifted: 0
-    stale: 0
-    outdated: 0
-
-modules: []
-
+    globals:
+      fresh: 0
+      drifted: 0
+      stale: 0
+      outdated: 0
+    modules:
+      fresh: 0
+      drifted: 0
+      stale: 0
+      outdated: 0
+    tasks:
+      active: 0
+      archived: 0
+specs:
+  globals: []
+  modules: []
+  tasks: []
 uncovered: []
 ---
 
-# Module Spec 索引
+# Spec Index
 
 <!-- 以下由 specanchor-index.sh 从 frontmatter 自动渲染，请勿手动编辑 -->
 
-**统计**: 0 个模块 | 0 已覆盖 | 0 未覆盖
+**Stats**: 0 globals | 0 modules | 0 active tasks | 0 archived tasks
 EOF
-    echo -e "  ${GREEN}✓${RESET} .specanchor/module-index.md (empty)"
+    echo -e "  ${GREEN}✓${RESET} .specanchor/spec-index.md (empty)"
   fi
 }
 
@@ -261,7 +275,7 @@ main() {
   if [[ "$mode" == "full" ]]; then
     create_directory_structure
     generate_starter_global_specs
-    generate_empty_module_index
+    generate_empty_spec_index
     generate_empty_codemap
   fi
 

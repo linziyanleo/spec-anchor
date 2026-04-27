@@ -37,10 +37,13 @@ hygiene_status() {
   fi
 }
 
-check_module_index() {
-  local module_index=".specanchor/module-index.md"
-  if [[ ! -f "$module_index" ]]; then
-    add_finding "warning" "MODULE_INDEX_MISSING" "$module_index" "module-index.md is missing." "Run bash scripts/specanchor-index.sh"
+check_spec_index() {
+  local config index_file index_type
+  config=$(sa_find_config 2>/dev/null || true)
+  index_file=$(sa_load_spec_index_or_legacy "$config" 2>/dev/null || true)
+  if [[ -z "$index_file" ]]; then
+    index_file=".specanchor/spec-index.md"
+    add_finding "warning" "SPEC_INDEX_MISSING" "$index_file" "spec-index.md is missing." "Run bash scripts/specanchor-index.sh"
     if [[ "$FIX_GENERATED" == "true" ]]; then
       bash "$SCRIPT_DIR/specanchor-index.sh" >/dev/null
     fi
@@ -48,41 +51,27 @@ check_module_index() {
   fi
 
   local line_count
-  line_count=$(sa_file_line_count "$module_index")
+  line_count=$(sa_file_line_count "$index_file")
   if [[ "$line_count" -gt 220 ]]; then
-    add_finding "warning" "MODULE_INDEX_TOO_LONG" "$module_index" "module-index.md exceeds the recommended line budget." "Prune summaries or regenerate the index."
+    add_finding "warning" "SPEC_INDEX_TOO_LONG" "$index_file" "spec-index.md exceeds the recommended line budget." "Prune summaries or regenerate the index."
   fi
 
-  local in_modules=0 current_path="" current_spec=""
-  while IFS= read -r line; do
-    local trimmed
-    trimmed=$(sa_trim_spaces "$line")
-    if [[ "$trimmed" == "modules:" ]]; then
-      in_modules=1
-      continue
-    fi
-    if [[ $in_modules -eq 1 ]] && [[ "$trimmed" == "uncovered:"* ]]; then
-      break
-    fi
-    if [[ $in_modules -eq 0 ]]; then
-      continue
-    fi
-    if [[ "$trimmed" == "- path:"* ]]; then
-      current_path=$(sa_normalize_scalar "${trimmed#- path:}")
-    elif [[ "$trimmed" == "spec:"* ]]; then
-      current_spec=$(sa_normalize_scalar "${trimmed#spec:}")
-      if [[ -n "$current_path" ]] && [[ ! -e "$current_path" ]]; then
-        add_finding "warning" "MODULE_INDEX_PATH_MISSING" "$current_path" "module-index references a path that does not exist." "Update the index or restore the path."
-      fi
-      if [[ -n "$current_spec" ]] && [[ ! -f ".specanchor/modules/${current_spec}" ]]; then
-        add_finding "warning" "MODULE_INDEX_SPEC_MISSING" ".specanchor/modules/${current_spec}" "module-index references a Module Spec that does not exist." "Regenerate the index."
-      fi
-      current_path=""
-      current_spec=""
-    fi
-  done < "$module_index"
+  index_type=$(sa_index_type "$index_file")
+  if [[ "$index_type" != "spec-index" ]]; then
+    add_finding "warning" "SPEC_INDEX_LEGACY_FALLBACK" "$index_file" "legacy module-index fallback is still in use." "Run bash scripts/specanchor-index.sh"
+  fi
 
-  if [[ "$FIX_GENERATED" == "true" ]] && grep -q 'MODULE_INDEX_' < <(printf '%s\n' "${FINDING_CODE[@]:-}"); then
+  local current_path current_spec _summary _health
+  while IFS=$'\t' read -r current_path current_spec _summary _health; do
+    if [[ -n "$current_path" ]] && [[ ! -e "$current_path" ]]; then
+      add_finding "warning" "SPEC_INDEX_PATH_MISSING" "$current_path" "spec-index references a path that does not exist." "Update the index or restore the path."
+    fi
+    if [[ -n "$current_spec" ]] && [[ ! -f ".specanchor/modules/${current_spec}" ]]; then
+      add_finding "warning" "SPEC_INDEX_SPEC_MISSING" ".specanchor/modules/${current_spec}" "spec-index references a Module Spec that does not exist." "Regenerate the index."
+    fi
+  done < <(sa_iter_index_modules "$index_file")
+
+  if [[ "$FIX_GENERATED" == "true" ]] && grep -q 'SPEC_INDEX_' < <(printf '%s\n' "${FINDING_CODE[@]:-}"); then
     bash "$SCRIPT_DIR/specanchor-index.sh" >/dev/null
   fi
 }
@@ -322,7 +311,7 @@ main() {
     shift
   done
 
-  check_module_index
+  check_spec_index
   check_duplicate_modules
   check_global_sizes
   check_module_summaries
