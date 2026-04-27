@@ -121,6 +121,19 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "index.sh treats existing single-file module_path as FRESH" {
+  create_single_file_module_spec "src/pages/home.tsx" "2026-04-14"
+  cd "$SANDBOX"
+
+  bash "${SCRIPTS_DIR}/specanchor-index.sh" --config=anchor.yaml
+
+  run grep 'path: "src/pages/home.tsx"' ".specanchor/spec-index.md"
+  [ "$status" -eq 0 ]
+  run grep 'health: "FRESH"' ".specanchor/spec-index.md"
+  [ "$status" -eq 0 ]
+}
+
+# --- Empty dir ---
 @test "index.sh handles empty modules dir" {
   cd "$SANDBOX"
 

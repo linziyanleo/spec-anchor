@@ -6,14 +6,16 @@
 
 ## 参数
 
-- `path`（必须，从用户意图推断模块路径）: 模块目录路径
+- `path`（必须，从用户意图推断模块路径）: 模块路径（目录或单文件）
 - `scan`（可选）: 额外扫描路径（如依赖模块）
 
 ## 执行
 
-1. 检查模块目录存在。不存在则报错
+1. 检查模块路径存在。不存在则报错
 2. 生成 Module ID：路径中 `/` 替换为 `-`（如 `src/modules/auth` → `src-modules-auth`）
-3. 扫描模块目录下所有代码文件
+3. 扫描代码：
+   - path 为目录 → 扫描目录下所有代码文件
+   - path 为单文件 → 扫描该文件本身
 4. 确定 Spec 路径：`.specanchor/modules/<module-id>.spec.md`
 5. **更新模式**（Spec 已存在）：
    - 读取 frontmatter，保留 `owner` / `reviewers`

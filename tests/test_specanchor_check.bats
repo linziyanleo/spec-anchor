@@ -136,6 +136,17 @@ EOF
   [[ "$output" == *"FRESH"* ]]
 }
 
+@test "module: existing single-file module_path → FRESH" {
+  local spec_file
+  spec_file=$(create_single_file_module_spec "src/pages/home.tsx" "2026-04-01")
+
+  run bash "${SANDBOX_SCRIPTS}/specanchor-check.sh" module "$spec_file"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"src/pages/home.tsx"* ]]
+  [[ "$output" == *"FRESH"* ]]
+  [[ "$output" != *"invalid module_path"* ]]
+}
+
 @test "module: stale module → STALE" {
   # 使用很久以前的同步日期
   create_module_spec "src/auth/" "2026-03-01"
@@ -229,6 +240,16 @@ EOF
   run bash "${SANDBOX_SCRIPTS}/specanchor-check.sh" global
   [ "$status" -eq 0 ]
   [[ "$output" == *"(none)"* ]]
+}
+
+@test "global: existing single-file module_path → no invalid warning" {
+  create_global_spec "coding-standards"
+  create_single_file_module_spec "src/pages/home.tsx" "2026-04-01"
+
+  run bash "${SANDBOX_SCRIPTS}/specanchor-check.sh" global
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"(none)"* ]]
+  [[ "$output" != *"invalid module_path"* ]]
 }
 
 @test "global: invalid module_path → surfaces warning" {

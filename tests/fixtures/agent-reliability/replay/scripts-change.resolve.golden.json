@@ -50,7 +50,7 @@
       "match_type": "path_prefix",
       "confidence": 0.95,
       "reasons": ["File path scripts/specanchor-boot.sh is inside module_path scripts/.","Spec index maps scripts/specanchor-boot.sh to scripts/."],
-      "freshness": "fresh"
+      "freshness": "drifted"
     },
     {
       "level": "codemap",

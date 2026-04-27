@@ -50,7 +50,7 @@
       "match_type": "path_prefix",
       "confidence": 0.95,
       "reasons": ["File path references/commands/check.md is inside module_path references/.","Spec index maps references/commands/check.md to references/."],
-      "freshness": "fresh"
+      "freshness": "drifted"
     },
     {
       "level": "codemap",
