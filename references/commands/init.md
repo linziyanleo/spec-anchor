@@ -21,7 +21,7 @@ bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name> [--scan-s
 # 由 Agent 执行 specanchor_global 命令
 ```
 
-**脚本处理的部分**（步骤 1, 4-6）：检查已初始化、目录结构创建、anchor.yaml 生成、module-index.md 初始化、外部来源检测。
+**脚本处理的部分**（步骤 1, 4-6）：检查已初始化、目录结构创建、anchor.yaml 生成、spec-index.md 初始化、外部来源检测。
 **Agent 处理的部分**（步骤 2-3, 7-12）：来源治理策略确认、模式选择（需交互）、scan.sh 生成、git hook 配置、Global Spec 生成、Frontmatter 注入。
 
 ### 详细步骤
@@ -94,7 +94,7 @@ bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name> [--scan-s
    │   └── _cross-module/
    ├── archive/
    ├── scripts/
-   ├── module-index.md
+   ├── spec-index.md
    └── project-codemap.md
    ```
 
@@ -146,7 +146,7 @@ bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name> [--scan-s
     - **文件有 frontmatter 但无 `specanchor:` 段** → 在已有 frontmatter 中追加 `specanchor:` 段，不覆盖原有字段
     - **文件已有 `specanchor:` 段** → 跳过（幂等安全）
 
-    脚本自动推断以下字段：`author`（git config）、`created`（git 首次提交日期或文件名日期前缀）、`branch`（当前分支）、`task_name`/`module_name`（从 H1 标题或文件名推断）、`writing_protocol`（从 anchor.yaml 读取）、`status`（从 checklist 完成度推断）、`sdd_phase`（从已完成章节推断）。
+    脚本自动推断以下字段：`author`（git config）、`created`（git 首次提交日期或文件名日期前缀）、`branch`（当前分支）、`task_name`/`module_name`（从 H1 标题或文件名推断）、`writing_protocol`（从 anchor.yaml 读取）、`status`（SDD 模式由正文 RIPER marker 派生，其他模式从 checklist 完成度推断）。
 
     注入完成后自动输出摘要（N injected / M skipped / K failed）。
 

@@ -4,14 +4,14 @@ specanchor:
   module_name: "协议层"
   module_path: "references/"
   summary: "协议声明层：命令定义、Spec 模板、Schema 系统、核心协议"
-  version: "1.2.0"
+  version: "1.3.0"
   owner: "maintainers"
   author: "maintainers"
   reviewers: []
   created: "2026-04-02"
-  updated: "2026-04-21"
-  last_synced: "2026-04-21"
-  last_change: "将公开样本的作者字段泛化，并保留可公开的协议层基线"
+  updated: "2026-04-27"
+  last_synced: "2026-04-27"
+  last_change: "将 quickref 降为 boot fallback，并同步 SDD body phase marker 与 spec-index v3 契约"
   status: active
   depends_on: []
 ---
@@ -27,7 +27,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 - 所有命令定义文件独立自包含：Agent 仅需读取单个 `commands/<cmd>.md` 即可执行
 - Schema 每个目录必须包含 `schema.yaml` + `template.md` 两个文件
 - 模板文件中使用 `<placeholder>` 标记占位符，不使用 Jinja/Handlebars 等模板语法
-- `commands-quickref.md` 必须与 `commands/` 目录保持同步（仅覆盖主 skill 的 `specanchor_*` 核心命令）
+- Boot 输出的 `Available Commands:` 是默认命令路由真源；`commands-quickref.md` 必须与 `commands/` 目录保持同步，但仅作 boot 不可用时的 fallback
 - Global Spec 模板中各类型合计 ≤ 200 行的硬约束在模板文件内声明
 
 ## 3. 公开接口
@@ -72,7 +72,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 |------|------|
 | `specanchor-protocol.md` | 核心协议（启动检查、加载规则、Schema 发现、管理协议） |
 | `external-sources-protocol.md` | 外部来源治理协议（sources 配置、frontmatter 注入、腐化检测） |
-| `commands-quickref.md` | 意图映射快速参考（自然语言 → 核心命令路由） |
+| `commands-quickref.md` | 意图映射快速参考（boot 不可用时的自然语言 → 核心命令路由 fallback） |
 | `script-contract.md` | 脚本清单、调用契约与输出边界 |
 | `assembly-trace.md` | Assembly Trace 的格式与刷新时机 |
 | `workflow-gates.md` | `⚡/📋` 选择与严格门禁规则 |
@@ -92,7 +92,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 
 - 文件全部为 Markdown 或 YAML，不含可执行代码
 - `task-spec-template.md` 已标记 DEPRECATED，不应被新代码引用
-- Schema 模板中的章节编号与 `specanchor-check.sh` 的 `detect_sdd_phase()` 存在耦合
+- SDD-RIPER-ONE Task Spec 的 phase 真源是 body marker：`> Current RIPER Phase: <PHASE>`；章节推断只用于 legacy fallback
 
 ## 7. 代码结构
 
@@ -106,5 +106,4 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 ## 8. 已知问题
 
 - `task-spec-template.md` 虽标记 DEPRECATED 但未从 git 移除，可能误导 Agent 引用
-- `commands-quickref.md` 与 `SKILL.md` 仍有少量摘要信息重复，修改命令语义时必须同步更新
 - Schema 的 `match.when` 语义匹配依赖 Agent 理解力，无回退到关键词匹配的降级机制

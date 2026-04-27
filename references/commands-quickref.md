@@ -1,6 +1,6 @@
 # SpecAnchor 意图映射
 
-用户用自然语言描述意图时，根据下表匹配到对应命令，然后读取该命令的详细定义文件执行。所有详细定义路径都相对于 Skill 根目录（即主 `SKILL.md` 所在目录）。
+boot 输出已嵌入 `Available Commands:` 紧凑映射；本文件是 boot 缺失或需要人工查表时的 fallback。用户用自然语言描述意图时，根据下表匹配到对应命令，然后读取该命令的详细定义文件执行。所有详细定义路径都相对于 Skill 根目录（即主 `SKILL.md` 所在目录）。
 
 命令语义统一如下：
 
@@ -24,7 +24,7 @@
 | 加载规范 / 读取 Spec 到上下文                     | `specanchor_load`   | `references/commands/load.md`     |
 | 查看规范状态 / 覆盖率 / 哪些 Spec 加载了          | `specanchor_status` | `references/commands/status.md`   |
 | 检测 Spec-代码对齐 / 检查过期 / 覆盖率报告        | `specanchor_check`  | `references/commands/check.md`    |
-| 更新模块索引 / 刷新 module-index                  | `specanchor_index`  | `references/commands/index.md`    |
+| 更新规范索引 / 刷新 spec-index                    | `specanchor_index`  | `references/commands/index.md`    |
 | 导入 OpenSpec / 兼容 OpenSpec / 从 OpenSpec 迁移  | `specanchor_import` | `references/commands/import.md`   |
 
 ## 按场景分组
@@ -52,7 +52,7 @@
 
 "看看规范状态" / "覆盖率怎么样" → `specanchor_status`
 "检查 Spec 和代码是否对齐" / "模块规范是否过期" → `specanchor_check`
-"更新模块索引" → `specanchor_index`
+"更新规范索引" → `specanchor_index`
 
 ### 外部导入
 

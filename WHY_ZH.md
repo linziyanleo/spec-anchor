@@ -57,7 +57,7 @@ SpecAnchor 是这个模式在**AI 辅助开发**领域的实例：
 2. **不追求 100% 覆盖**——让最重要的模块先有 Spec，渐进式覆盖
 3. **不绑定写作工具**——SpecAnchor 只管"组织"（放哪、格式、状态），不管"写作"（默认 SDD-RIPER-ONE，可替换为 OpenSpec 等任何格式）
 4. **Global Spec ≤ 200 行**——这是 AI 上下文的物理约束，强制精简
-5. **Module Spec 集中管理**——存放在 `.specanchor/modules/`，通过 `module-index.md` 索引到真实模块路径
+5. **Module Spec 集中管理**——存放在 `.specanchor/modules/`，通过 `spec-index.md` 索引到真实模块路径
 6. **全量更新 + git 管理版本**——Module Spec 更新时全文重写，通过 `git diff` 和 Code Review 管理变更
 7. **平台无关**——纯文本 Skill，支持 Cursor、Claude Code、Cline 及任何可读取文件的 AI 工具
 8. **单一职责**——非 Spec 治理能力应由独立 skill 负责，不塞进主 Skill 的 token 预算

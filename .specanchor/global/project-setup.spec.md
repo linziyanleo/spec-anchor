@@ -2,11 +2,11 @@
 specanchor:
   level: global
   type: project-setup
-  version: "1.2.0"
+  version: "1.3.0"
   author: "maintainers"
   reviewers: []
-  last_synced: "2026-04-21"
-  last_change: "更新公开仓库的 smoke 验证命令，并将作者字段泛化"
+  last_synced: "2026-04-27"
+  last_change: "更新 spec-index v3 初始化、索引生成与严格校验命令"
   applies_to: "**/*"
 ---
 
@@ -32,11 +32,14 @@ specanchor:
 - 严格健康检查：`bash scripts/specanchor-doctor.sh --strict`
 - 锚点解析：`bash scripts/specanchor-resolve.sh --files=... --intent=...`
 - 基础校验：`bash scripts/specanchor-validate.sh`
-- 索引生成：`bash scripts/specanchor-index.sh`
+- 严格校验：`bash scripts/specanchor-validate.sh --strict`
+- 索引生成：`bash scripts/specanchor-index.sh`（生成 `.specanchor/spec-index.md`）
+- 兼容索引生成：`bash scripts/specanchor-index.sh --legacy-module-index`（同时生成 deprecated `.specanchor/module-index.md`）
 - 对齐检测：`bash scripts/specanchor-check.sh <task|module|global|coverage>`
 - Frontmatter 注入：`bash scripts/frontmatter-inject.sh <file|--dir path>`
 - 注入+检测：`bash scripts/frontmatter-inject-and-check.sh --dir <path>`
 - 回归测试：`bash tests/run.sh`
+- 完整底层回归：`SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh`
 
 ## 开发约定
 - 分支策略：main 为主分支，feature 分支 → PR → merge

@@ -92,37 +92,38 @@ mode: parasitic 时:
 | `status` | 检查文件中的 checklist：全部 `[x]` → "done"，否则 → "in_progress" |
 | `created` | 取文件的 git 首次提交日期 |
 | `related_modules` | 从文件内容中提取模块引用 |
-| `sdd_phase` | 不适用（显示 "N/A"） |
+| RIPER phase | 不注入 frontmatter；如使用 SDD 模式，写入正文 `> Current RIPER Phase: ...` marker |
 
-## §4 module-index.md 扩展
+## §4 spec-index.md 扩展
 
-当存在 sources 时，`module-index.md` 的 v2 格式在 `modules[]` 数组中通过 `source` 字段区分来源：
+当存在 sources 时，`spec-index.md` 的 v3 格式在 `specs.modules[]` 数组中通过 `source` 字段区分来源：
 
 ```yaml
-modules:
-  - path: "src/modules/auth"
-    spec: "src-modules-auth.spec.md"
-    summary: "用户认证与鉴权"
-    source: native
-    status: active
-    health: FRESH
-    # ...
+specs:
+  modules:
+    - path: "src/modules/auth"
+      spec: "src-modules-auth.spec.md"
+      summary: "用户认证与鉴权"
+      source: native
+      status: active
+      health: FRESH
+      # ...
 
-  - path: "src/modules/payment"
-    spec: "specs/payments/spec.md"
-    summary: "支付处理"
-    source: "external:spec-kit"
-    status: active
-    health: DRIFTED
-    # ...
+    - path: "src/modules/payment"
+      spec: "specs/payments/spec.md"
+      summary: "支付处理"
+      source: "external:spec-kit"
+      status: active
+      health: DRIFTED
+      # ...
 
-  - path: "src/modules/ui"
-    spec: ".qoder/specs/ui.md"
-    summary: "UI 组件库"
-    source: "external:qoder"
-    status: active
-    health: FRESH
-    # ...
+    - path: "src/modules/ui"
+      spec: ".qoder/specs/ui.md"
+      summary: "UI 组件库"
+      source: "external:qoder"
+      status: active
+      health: FRESH
+      # ...
 ```
 
 - `native`：SpecAnchor 原生格式（有 YAML frontmatter），存放在 `.specanchor/modules/`
@@ -155,7 +156,7 @@ Sources:
 ### On-Demand 加载
 
 当用户提及的文件路径匹配到 source 的模块时：
-1. 通过扩展后的 `module-index.md` 查找
+1. 通过扩展后的 `spec-index.md` 查找
 2. 找到 source 来源 → 从外部路径读取 spec 文件并注入上下文
 3. 提示用户："ℹ️ 已加载外部来源的 Module Spec: `<path>`（来自 <type>，无 frontmatter）"
 
@@ -188,9 +189,8 @@ bash "$SA_SKILL_DIR/scripts/frontmatter-inject-and-check.sh" --dir <source_path>
 | `task_name` / `module_name` | 从 H1 标题提取 → 从文件名推断 |
 | `writing_protocol` | 从 `anchor.yaml` 的 `writing_protocol.schema` 读取 |
 | `status` | 从 checklist 完成度推断（全部完成→done，部分→in_progress，无→draft） |
-| `sdd_phase` | 从已完成章节推断（有 §6→REVIEW，有 §5→EXECUTE，等） |
 | `related_global` | 扫描 `.specanchor/global/` 列出所有 .spec.md |
-| `related_modules` | 从文件内容匹配 module-index.md |
+| `related_modules` | 从文件内容匹配 spec-index.md |
 
 ### 三种情况处理
 

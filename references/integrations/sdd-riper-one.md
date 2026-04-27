@@ -4,7 +4,7 @@
 
 映射关系：
 
-- Pre-Research：自动加载 Global Spec，并根据 `module-index.md`/文件路径决定相关 Module Spec。
+- Pre-Research：自动加载 Global Spec，并根据 `spec-index.md`/文件路径决定相关 Module Spec。
 - Research：Module Spec 作为现状输入。
 - Plan：Task Spec 的 File Changes 应与相关 Module Spec 关键文件交叉校验。
 - Execute：代码生成受 Global + Module Spec 约束。

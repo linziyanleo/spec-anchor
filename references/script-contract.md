@@ -15,7 +15,7 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/<script-name>.s
 | `specanchor-init.sh` | 初始化 `anchor.yaml` 与 `.specanchor/` 基线 | yes |
 | `specanchor-boot.sh` | 启动检查、输出配置/Spec 摘要 | no |
 | `specanchor-status.sh` | 状态、覆盖率、健康度概览 | no |
-| `specanchor-index.sh` | 生成 `module-index.md` | yes |
+| `specanchor-index.sh` | 生成 `spec-index.md` | yes |
 | `specanchor-check.sh` | Task/Module/Global/Coverage 对齐检测 | no |
 | `frontmatter-inject.sh` | 注入或更新 `specanchor:` frontmatter | yes |
 | `frontmatter-inject-and-check.sh` | 注入 + 对齐检测组合器 | yes |

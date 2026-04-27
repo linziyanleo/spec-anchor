@@ -17,7 +17,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.4.0--beta.1-brightgreen.svg" alt="Version 0.4.0-beta.1" />
+  <img src="https://img.shields.io/badge/version-0.4.0--beta.2-brightgreen.svg" alt="Version 0.4.0-beta.2" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -111,7 +111,7 @@ Claude: [runs specanchor-check.sh alignment]
 | 自带写作工作流 | — | ✅ 6 个 slash 命令 | ✅ artifact DAG（自称 fluid-by-design）| ✅ 内置 `sdd-riper-one`，可切换 |
 | **AI 动手前自动加载相关 Spec** | ❌ | ❌ 需要社区扩展 "Memory Loader" | ❌ 只在 `/opsx:*` 命令触发时装载 | ✅ Assembly Trace 每轮输出 |
 | **Global 层是独立 spec 文件** | — | ✅ `constitution.md`（单份） | ⚠️ 只是 `config.yaml` 里的 `context:` 字符串 | ✅ `global/*.spec.md`（多份：architecture / coding-standards / project-setup，各自独立 review） |
-| **持久化的 Module 层** | — | ❌ feature 是分支级瞬时概念，归档即消失 | ✅ `specs/<domain>/spec.md` | ✅ `modules/*.spec.md` + `module-index.md` 索引 |
+| **持久化的 Module 层** | — | ❌ feature 是分支级瞬时概念，归档即消失 | ✅ `specs/<domain>/spec.md` | ✅ `modules/*.spec.md` + `spec-index.md` 索引 |
 | Task / Change 层 | ❌ | ✅ 每 feature 一个目录 | ✅ `changes/<id>/` | ✅ `tasks/<module>/YYYY-MM-DD_*.spec.md`（按模块归档） |
 | Spec ↔ 源代码 drift 检测 | ❌ | ⚠️ `/speckit.analyze` 只比 spec↔plan↔tasks，不看代码 | ⚠️ `/opsx:verify` 是一次性可选检查 | ✅ `specanchor-check` 按目标文件持续检测 |
 | 模块覆盖度追踪 | ❌ | ❌ | ❌ | ✅ `specanchor-check coverage` |
@@ -163,7 +163,7 @@ anchor.yaml
 ├── modules/                         # 触碰即补（不要一次性铺满）
 ├── tasks/                           # 按任务、按模块归档的 spec
 ├── archive/                         # 完成的任务挪到这里
-├── module-index.md                  # 路径 → module spec 查询表
+├── spec-index.md                  # 路径 → module spec 查询表
 └── project-codemap.md               # 高层代码地图
 ```
 

@@ -16,4 +16,4 @@
 4. 推断业务规则（基于代码逻辑和命名）
 5. 使用 `references/module-spec-template.md` 生成 `.specanchor/modules/<module-id>.spec.md`，status = draft
 6. 对不确定的推断章节，标注"由代码推断，待人工确认"
-7. 更新 `.specanchor/module-index.md`
+7. 更新 `.specanchor/spec-index.md`

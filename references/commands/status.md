@@ -22,7 +22,7 @@ bash "<skill_install_dir>/scripts/specanchor-status.sh"
 2. 扫描 `.specanchor/global/`，统计 Global Spec 数量和总行数
 3. 扫描 `.specanchor/modules/`，统计 Module Spec 覆盖率和健康度
 4. 统计活跃/归档 Task Spec 数量
-5. 检测 module-index.md 格式（v2/legacy/missing）
+5. 检测 spec-index.md 格式（v2/legacy/missing）
 6. 输出简洁摘要 + 默认 Assembly Trace
 
 脚本只负责报告当前默认装配策略：

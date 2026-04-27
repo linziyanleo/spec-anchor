@@ -10,7 +10,7 @@ After running `specanchor-init.sh --mode=full`, the temp project should contain:
 - `.specanchor/tasks/`
 - `.specanchor/archive/`
 - `.specanchor/scripts/`
-- `.specanchor/module-index.md`
+- `.specanchor/spec-index.md`
 - `.specanchor/project-codemap.md`
 
 The starter Global Specs are intentionally generic. They exist so a clean project can pass `boot`, `doctor --strict`, and `validate` before the first project-specific refinement pass.

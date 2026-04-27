@@ -4,12 +4,12 @@ specanchor:
   module_name: "scripts"
   module_path: "scripts/"
   summary: "Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验"
-  version: "2.1.0"
+  version: "2.2.0"
   owner: "maintainers"
   created: "2026-04-02"
   status: active
-  last_synced: "2026-04-21"
-  last_change: "full-mode init 现在会种下 starter Global Specs，validate 支持 summary，resolve 支持 parasitic source-file fallback"
+  last_synced: "2026-04-27"
+  last_change: "落地 spec-index v3、SDD phase body marker、严格 validate 与 legacy module-index fallback"
   depends_on: []
 ---
 
@@ -39,8 +39,7 @@ specanchor:
 | `--mode=full\|parasitic` | 运行模式（默认 full） |
 | `--scan-sources` | 扫描检测已有 spec 体系 |
 
-**脚本处理**: 目录创建、anchor.yaml 生成、module-index.md 初始化、来源检测
-**脚本处理**: 目录创建、anchor.yaml 生成、starter Global Specs、module-index.md 初始化、来源检测
+**脚本处理**: 目录创建、anchor.yaml 生成、starter Global Specs、spec-index.md 初始化、deprecated module-index 路径兼容、来源检测
 **Agent 处理**: 来源策略确认、细化 starter Global Specs（需代码分析）
 
 ### specanchor-status.sh
@@ -52,18 +51,19 @@ specanchor:
 | `--config=<path>` | 配置文件路径（默认自动查找） |
 | `--format=summary\|json` | 输出格式（默认 summary） |
 
-输出内容: Global Spec 统计、Module Spec 覆盖率/健康度、Task Spec 统计、Module Index 格式状态、默认 Assembly Trace
+输出内容: Global Spec 统计、Module Spec 覆盖率/健康度、Task Spec 统计、Spec Index 格式状态、默认 Assembly Trace
 
 ### specanchor-index.sh
 
-生成/更新 module-index.md（v2 YAML frontmatter 格式）：
+生成/更新 spec-index.md（v3 block YAML frontmatter 格式）：
 
 | 参数 | 说明 |
 |------|------|
 | `--config=<path>` | 配置文件路径（默认自动查找） |
-| `--output=<path>` | 输出路径（默认 .specanchor/module-index.md） |
+| `--output=<path>` | 输出路径（默认 .specanchor/spec-index.md） |
+| `--legacy-module-index` | 兼容模式：同时生成 deprecated .specanchor/module-index.md |
 
-自动扫描 `.specanchor/modules/` 下所有 Module Spec，读取 frontmatter，计算健康度（FRESH/DRIFTED/STALE/OUTDATED），生成 v2 格式索引文件。
+自动扫描 `.specanchor/global/`、`.specanchor/modules/`、`.specanchor/tasks/`，读取 frontmatter 和 SDD body phase marker，计算健康度（FRESH/DRIFTED/STALE/OUTDATED），生成 v3 索引文件。
 
 ### specanchor-boot.sh
 
@@ -72,8 +72,9 @@ specanchor:
 | 参数 | 说明 |
 |------|------|
 | `--format=summary\|full\|json` | 输出格式（默认 summary） |
+| `--with-schemas` | summary/full 中显式输出 schema 摘要 |
 
-环境变量 `SPECANCHOR_SKILL_DIR` 指向 Skill 安装目录，用于查找内置 schemas。无论 `summary` 还是 `full`，都显式输出本轮 Assembly Trace；`full` 额外附带 Global Spec 正文。
+环境变量 `SPECANCHOR_SKILL_DIR` 指向 Skill 安装目录，用于查找内置 schemas。无论 `summary` 还是 `full`，都显式输出本轮 Assembly Trace；`summary` 默认输出 `Available Commands:` 与 `Available Modules:`，把 quickref/module lookup 降为 fallback；`full` 额外附带 Global Spec 正文。
 
 ### specanchor-check.sh
 
@@ -97,9 +98,9 @@ Layer 1 — Frontmatter 自动推断与注入：
 | 单文件 | `<file> [options]` | 为单个 Spec 文件注入 frontmatter |
 | 批量 | `--dir <directory> [options]` | 为目录下所有 `.md` 文件批量注入 |
 
-**关键选项**: `--dry-run`（预览）, `--force`（覆盖已有）, `--task-name`, `--status`, `--level`
+**关键选项**: `--dry-run`（预览）, `--force`（覆盖已有）, `--task-name`, `--status`, `--level`, `--migrate-sdd-phase`, `--normalize-task-status`
 
-**自动推断字段**: level, author, created, branch, protocol, task_name, sdd_phase, status, related_global, related_modules
+**自动推断字段**: level, author, created, branch, protocol, task_name, status, related_global, related_modules。SDD phase 不再写入 frontmatter，必须从 body 的 `> Current RIPER Phase: <PHASE>` marker 解析；section inference 仅作 legacy fallback。
 
 ### frontmatter-inject-and-check.sh
 
@@ -135,6 +136,22 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 
 返回应加载的 Global/Module/Sources 锚点，以及 missing 覆盖建议。`parasitic` 模式按 source path、已知 source file、简单 token 匹配顺序做 deterministic-first 解析。
 
+### specanchor-assemble.sh
+
+将 resolve 结果转换为 agent-ready context plan：
+
+| 参数 | 说明 |
+|------|------|
+| `--files=<csv>` / `--files-from=<path>` | 本轮目标文件列表 |
+| `--intent=<text>` / `--intent-file=<path>` | 自然语言任务摘要 |
+| `--diff-from=<ref>` | 从 git diff 自动补充文件列表 |
+| `--resolve-json=<path>` | 复用已生成的 resolve JSON |
+| `--budget=compact\|normal\|full` | 上下文预算策略 |
+| `--format=text\|markdown\|json` | 输出格式 |
+| `--write-trace=<path>` | 写出 Assembly Trace |
+
+输出 bounded read plan、Assembly Trace 与 agent instructions，不直接读取或修改业务文件。
+
 ### specanchor-validate.sh
 
 基础 schema/frontmatter 校验：
@@ -143,8 +160,9 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 |------|------|
 | `--format=text\|summary\|json` | 输出格式（`summary` 是 `text` 的别名） |
 | `--path <file>` | 只校验单个文件 |
+| `--strict` | warning 也返回非零 |
 
-当前最小校验：`specanchor.level`、`module_path`、`status`、日期字段、`anchor.yaml` 版本字段。
+当前最小校验：`specanchor.level`、`module_path`、level-aware `status`、日期字段、frontmatter `sdd_phase` deprecation、`anchor.yaml` 版本字段。退出码：0=clean 或非 strict warning，1=strict warning，2=blocking error。
 
 ## 4. 内部状态
 
@@ -156,6 +174,7 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 - 工具函数：`die()`（错误退出）, `warn()`（警告）, `info()`（信息）, `success()`（成功）
 - 配置解析：`find_config()` + `parse_yaml_field(file, field, default)`
 - Frontmatter 解析：`parse_frontmatter_field(file, field)` + `parse_frontmatter_list(file, field)`
+- 索引读取：运行时消费者必须通过 `sa_load_spec_index_or_legacy()` 与 `sa_iter_index_modules()` 优先读取 spec-index v3，legacy module-index 仅作 fallback
 
 ## 6. 约束
 
@@ -170,19 +189,20 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 |------|------|
 | `specanchor-init.sh` | 目录结构和配置初始化（半脚本化） |
 | `specanchor-status.sh` | 状态/覆盖率报告（summary/json） |
-| `specanchor-index.sh` | module-index.md 生成/更新（v2 格式） |
+| `specanchor-index.sh` | spec-index.md 生成/更新（v3 格式，可选 legacy module-index） |
 | `specanchor-boot.sh` | 启动检查（只读摘要输出） |
 | `specanchor-check.sh` | Spec-Commit 对齐检测（task/module/global/coverage） |
 | `frontmatter-inject.sh` | Frontmatter 自动推断与注入 Layer 1 |
 | `frontmatter-inject-and-check.sh` | Layer 2 组合器（注入 + 检测） |
 | `specanchor-doctor.sh` | 只读健康检查 |
 | `specanchor-resolve.sh` | 锚点解析 |
+| `specanchor-assemble.sh` | resolve 结果到 agent context plan 的装配器 |
 | `specanchor-validate.sh` | 基础 schema/frontmatter 校验 |
+| `lib/common.sh` | 跨脚本共享函数库 |
 
 ## 8. 已知问题（待修复）
 
 - 老脚本仍有重复的 `parse_yaml_field()` / `find_config()`，可逐步收敛到 `scripts/lib/common.sh`
 - `frontmatter-inject.sh` 的 trap 在循环中被覆盖，可能导致 tmpfile 泄漏
 - `specanchor-check.sh` 的 `check_task` 使用双向子串匹配，可能产生假阳性
-- `detect_sdd_phase()` 硬编码章节号，与 Schema 模板耦合
 - `usage()` 在 `specanchor-check.sh` 中引用未初始化的配置变量

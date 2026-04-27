@@ -17,7 +17,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.4.0--beta.1-brightgreen.svg" alt="Version 0.4.0-beta.1" />
+  <img src="https://img.shields.io/badge/version-0.4.0--beta.2-brightgreen.svg" alt="Version 0.4.0-beta.2" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -112,7 +112,7 @@ Each tier is a persistent, reviewable, git-versioned `.spec.md` file — not a r
 | Ships an authoring workflow | — | ✅ 6 slash commands | ✅ artifact DAG (fluid-by-design) | ✅ `sdd-riper-one` built in, swappable |
 | **Auto-loads relevant specs before AI writes code** | ❌ | ❌ (needs community "Memory Loader") | ❌ (only on `/opsx:*` trigger) | ✅ Assembly Trace every turn |
 | **Global tier as first-class spec files** | — | ✅ `constitution.md` (single file) | ⚠️ only a `context:` string in `config.yaml` | ✅ multiple `global/*.spec.md`, each independently reviewed |
-| **Persistent module tier** | — | ❌ features are branch-scoped and archived | ✅ `specs/<domain>/spec.md` | ✅ `modules/*.spec.md` + indexed via `module-index.md` |
+| **Persistent module tier** | — | ❌ features are branch-scoped and archived | ✅ `specs/<domain>/spec.md` | ✅ `modules/*.spec.md` + indexed via `spec-index.md` |
 | Task / change tier | ❌ | ✅ per-feature directory | ✅ `changes/<id>/` | ✅ `tasks/<module>/YYYY-MM-DD_*.spec.md` |
 | Spec ↔ source-code drift detection | ❌ | ⚠️ `/speckit.analyze` compares spec↔plan↔tasks, not code | ⚠️ `/opsx:verify` is one-shot, optional | ✅ `specanchor-check` runs continuously against real files |
 | Module coverage tracking | ❌ | ❌ | ❌ | ✅ `specanchor-check coverage` |
@@ -164,7 +164,7 @@ anchor.yaml
 ├── modules/                         # filled in on-touch (never all at once)
 ├── tasks/                           # per-task, per-module spec files
 ├── archive/                         # completed tasks move here
-├── module-index.md                  # path → module spec lookup
+├── spec-index.md                  # path → module spec lookup
 └── project-codemap.md               # high-level code map
 ```
 

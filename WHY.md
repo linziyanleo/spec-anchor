@@ -57,7 +57,7 @@ The difference: LLM Wiki pursues breadth of knowledge (richer over time), SpecAn
 2. **Don't aim for 100% coverage** — let the most critical modules have Specs first, progressively expand
 3. **Don't lock in a writing tool** — SpecAnchor only handles "organization" (where, format, status), not "writing" (defaults to SDD-RIPER-ONE, replaceable with OpenSpec or any format)
 4. **Global Spec ≤ 200 lines** — this is a physical constraint of AI context windows, enforcing conciseness
-5. **Centralized Module Spec management** — stored in `.specanchor/modules/`, indexed to real module paths via `module-index.md`
+5. **Centralized Module Spec management** — stored in `.specanchor/modules/`, indexed to real module paths via `spec-index.md`
 6. **Full rewrite + git versioning** — Module Spec updates are full rewrites, with changes managed through `git diff` and Code Review
 7. **Platform agnostic** — plain-text Skill, works with Cursor, Claude Code, Cline, and any AI tool that can read files
 8. **Single responsibility** — non-Spec governance capabilities should live in separate skills, not inside the core Skill token budget

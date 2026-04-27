@@ -2,11 +2,11 @@
 specanchor:
   level: global
   type: coding-standards
-  version: "2.1.1"
+  version: "2.2.0"
   author: "maintainers"
   reviewers: []
-  last_synced: "2026-04-23"
-  last_change: "补充 public release surface 文档契约，要求 README 类改动先跑仓库回归"
+  last_synced: "2026-04-27"
+  last_change: "补充 spec-index v3、严格校验与 Bash 3.2 phase parser 约束"
   applies_to: "scripts/**/*.sh, **/*.md"
 ---
 
@@ -26,6 +26,7 @@ specanchor:
 - 临时文件：`mktemp` 创建，cleanup 函数中统一清理（不在循环内反复 `trap`，应使用数组收集后统一清理）
 - 配置查找：`find_config()` 双路径（anchor.yaml → .specanchor/config.yaml）
 - YAML 解析：`parse_yaml_field()` 仅用于单行简单值，复杂结构（数组/嵌套）应避免在 Bash 中解析
+- Bash 正则：必须兼容 macOS Bash 3.2，使用 POSIX 字符类或显式枚举；不得依赖 `\w` 等不可移植扩展
 - 共享函数：跨脚本复用的函数（如 `parse_yaml_field`、`find_config`、颜色定义）应提取到 `scripts/lib/common.sh`，通过 `source` 引入
 - CLI 入口风格：顶层命令用 positional subcommand（`check task`），选项用 `--long-opt` 风格，不混用
 
@@ -46,6 +47,8 @@ specanchor:
 - Step 1 smoke gate：仓库根 `specanchor-boot.sh --format=summary` 不应再打印缺失 source 的 `✗`
 - 发布面文档契约：`README.md` / `README_ZH.md` / `CHANGELOG.md` / `docs/release/*` 属于公开 release surface；改动这些文件后，必须先本地跑通 `bash tests/run.sh`
 - consumer 安装链路：按 `.skillexclude` 安装到临时项目后，`specanchor-init.sh` + `specanchor-boot.sh` 必须通过
+- legacy Bats 补充面：索引、frontmatter、init、status 等底层行为变更后必须跑 `SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh`，除非明确退役对应 suite
+- 严格校验：`specanchor-validate.sh --strict` 遇到 warning 返回 1，遇到 blocking error 返回 2；非 strict warning 仍返回 0
 - 夹具目录：`tests/fixtures/*`
 - 断言工具：`tests/helpers/assert.sh`
 - 旧的 `tests/test_*.bats` 可保留为补充回归，但 CI 不依赖 bats-core

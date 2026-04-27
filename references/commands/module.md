@@ -23,5 +23,5 @@
    - 使用 `references/module-spec-template.md` 从代码推断所有章节
    - version = 1.0.0，status = draft，module_path = 用户指定路径
 7. 写入文件
-8. 更新 `.specanchor/module-index.md`
+8. 更新 `.specanchor/spec-index.md`
 9. 建议用户 `git diff` 确认变更

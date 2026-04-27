@@ -48,7 +48,7 @@ Assembly Trace:
 
 - `full`：始终加载 `anchor.yaml` + 全部 Global Spec；Module Spec 按需加载；`project-codemap.md` 按需加载。
 - `parasitic`：只加载 `anchor.yaml` 与外部 `sources`；不创建 full-only Spec。
-- 需要判断该读哪些模块时，优先看 `references/commands-quickref.md`、`.specanchor/module-index.md`，或运行 `bash scripts/specanchor-resolve.sh --files=... --intent=...`。
+- 需要判断该读哪些模块时，优先看 boot 输出的 `Available Commands:` / `Available Modules:` 段；boot 不可用时 fallback 到 `references/commands-quickref.md` / `.specanchor/spec-index.md`。
 - 当文件路径和任务意图已经明确时，复杂编码任务应在 boot 之后运行 `bash scripts/specanchor-assemble.sh --files=... --intent=...`，先拿到 bounded read plan，再进入编辑。
 
 ## Command Routing
@@ -59,7 +59,7 @@ Assembly Trace:
 - `SA:` 是可选的高级 shorthand，不是单独的 CLI 契约。
 - `scripts/*.sh` 是实现层入口，不替代用户侧命令语言。
 
-先读取 `references/commands-quickref.md`，再按匹配结果加载对应命令定义文件。
+boot 输出已嵌入紧凑意图映射；命中后直接读对应命令定义文件。仅在 boot 输出缺失时回落到 `references/commands-quickref.md`。
 
 | Internal ID | Purpose | Definition |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ Assembly Trace:
 | `specanchor_load` | 手动加载 Spec | `references/commands/load.md` |
 | `specanchor_status` | 查看状态与覆盖率 | `references/commands/status.md` |
 | `specanchor_check` | 运行对齐检测 | `references/commands/check.md` |
-| `specanchor_index` | 更新 module-index | `references/commands/index.md` |
+| `specanchor_index` | 更新 spec-index | `references/commands/index.md` |
 | `specanchor_import` | 导入外部 SDD 配置 | `references/commands/import.md` |
 
 ## Workflow Selection
@@ -83,7 +83,7 @@ Assembly Trace:
 
 ## Reference Index
 
-- `references/commands-quickref.md`：自然语言意图 → 内部命令 ID
+- `references/commands-quickref.md`：自然语言意图 → 内部命令 ID（boot routing 缺失时的 fallback）
 - `references/specanchor-protocol.md`：核心协议总览
 - `references/script-contract.md`：脚本清单、调用契约、输出边界
 - `references/assembly-trace.md`：Assembly Trace 格式与刷新时机

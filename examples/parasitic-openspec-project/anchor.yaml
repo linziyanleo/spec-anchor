@@ -8,7 +8,7 @@ specanchor:
     module_specs: ".specanchor/modules/"
     task_specs: ".specanchor/tasks/"
     archive: ".specanchor/archive/"
-    module_index: ".specanchor/module-index.md"
+    spec_index: ".specanchor/spec-index.md"
     project_codemap: ".specanchor/project-codemap.md"
 
   sources:

@@ -78,8 +78,8 @@
      - 将 `rules` 字段的内容合并到 `coding-standards.spec.md`（如果已存在则追加建议章节）
      - 输出草稿供用户 Review，不直接写入
 
-7. **更新 module-index.md**
-   - 将外部来源的模块信息追加到 `module-index.md`（标注 `来源: source:openspec`）
+7. **更新 spec-index.md**
+   - 将外部来源的模块信息追加到 `spec-index.md`（标注 `来源: source:openspec`）
 
 ## OpenSpec context 转译示例
 

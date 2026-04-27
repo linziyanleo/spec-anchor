@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.4.0-beta.2 — Frontmatter and Spec Index Refactor
+
+### Highlights
+
+- Moves SDD RIPER phase state from task frontmatter into the body marker `> Current RIPER Phase: ...`.
+- Adds v3 `.specanchor/spec-index.md` covering Global, Module, and Task Specs.
+- Updates boot output with compact `Available Commands` and `Available Modules` routing hints.
+- Keeps `.specanchor/module-index.md` as a migration fallback via `--legacy-module-index`.
+
+### Migration
+
+```bash
+bash scripts/frontmatter-inject.sh --migrate-sdd-phase --dir .specanchor/tasks
+bash scripts/frontmatter-inject.sh --normalize-task-status --dir .specanchor/tasks
+bash scripts/specanchor-index.sh --legacy-module-index
+```
+
+### Validation
+
+```bash
+bash scripts/specanchor-boot.sh --format=summary
+bash scripts/specanchor-doctor.sh --strict
+bash scripts/specanchor-validate.sh --strict
+bash tests/run.sh
+SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh
+```
+
 ## v0.4.0-beta.1 — Walkthrough Corrections
 
 ### Highlights
