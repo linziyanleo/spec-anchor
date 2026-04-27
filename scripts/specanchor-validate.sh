@@ -9,6 +9,7 @@ source "$SCRIPT_DIR/lib/common.sh"
 
 FORMAT="text"
 TARGET_PATH=""
+STRICT_MODE="false"
 
 declare -a ERRORS=()
 declare -a WARNINGS=()
@@ -22,10 +23,25 @@ add_warning() {
   WARNINGS+=("$1")
 }
 
-valid_status() {
-  case "$1" in
-    draft|review|active|deprecated|archived) return 0 ;;
-    *) return 1 ;;
+valid_status_for_level() {
+  local level="$1"
+  local status="$2"
+  case "$level" in
+    task)
+      case "$status" in
+        draft|in_progress|review|done|archived|active) return 0 ;;
+        *) return 1 ;;
+      esac
+      ;;
+    global|module|"")
+      case "$status" in
+        draft|review|active|deprecated|archived) return 0 ;;
+        *) return 1 ;;
+      esac
+      ;;
+    *)
+      return 1
+      ;;
   esac
 }
 
@@ -109,8 +125,14 @@ validate_spec_file() {
     fi
   fi
 
-  if [[ -n "$status" ]] && ! valid_status "$status"; then
+  if [[ -n "$status" ]] && ! valid_status_for_level "$expected_level" "$status"; then
     add_error "${file}: STATUS_INVALID unsupported status ${status}"
+  fi
+  if [[ "$expected_level" == "task" ]] && [[ "$status" == "active" ]]; then
+    add_warning "${file}: STATUS_LEGACY task status 'active' is deprecated; use 'in_progress'"
+  fi
+  if [[ "$expected_level" == "task" ]] && grep -q '^  sdd_phase:' "$file" 2>/dev/null; then
+    add_warning "${file}: FRONTMATTER_SDD_PHASE deprecated; move RIPER phase to body marker"
   fi
   if ! valid_date "$created"; then
     add_error "${file}: DATE_INVALID created=${created}"
@@ -309,6 +331,7 @@ usage() {
   cat <<'EOF'
 Usage:
   bash scripts/specanchor-validate.sh
+  bash scripts/specanchor-validate.sh --strict
   bash scripts/specanchor-validate.sh --format=json
   bash scripts/specanchor-validate.sh --format=summary
   bash scripts/specanchor-validate.sh --path .specanchor/modules/scripts.spec.md
@@ -321,6 +344,7 @@ main() {
     case "$1" in
       --format=json) FORMAT="json" ;;
       --format=text|--format=summary) FORMAT="text" ;;
+      --strict) STRICT_MODE="true" ;;
       --format)
         shift
         [[ $# -gt 0 ]] || sa_die "--format requires a value" 64
@@ -353,6 +377,9 @@ main() {
 
   if [[ ${#ERRORS[@]} -gt 0 ]]; then
     exit 2
+  fi
+  if [[ ${#WARNINGS[@]} -gt 0 ]] && [[ "$STRICT_MODE" == "true" ]]; then
+    exit 1
   fi
   exit 0
 }

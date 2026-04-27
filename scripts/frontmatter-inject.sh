@@ -18,8 +18,14 @@
 #   --dry-run                 只输出将要注入的 frontmatter，不修改文件
 #   --force                   已有 specanchor 段时强制覆盖
 #   --file-pattern <glob>     批量模式的文件匹配 (default: *.md)
+#   --migrate-sdd-phase       将 frontmatter sdd_phase 迁移到正文 marker
+#   --normalize-task-status   将 task status: active 迁移为 in_progress
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
 
 # ─── 颜色定义 ───
 
@@ -105,6 +111,20 @@ parse_yaml_field() {
   else
     echo "$default"
   fi
+}
+
+parse_frontmatter_field() {
+  local file="$1" field="$2"
+  local raw
+  raw=$(awk -v field="$field" '
+    /^---$/ { in_frontmatter = !in_frontmatter; next }
+    in_frontmatter && $0 ~ "^  " field ":" {
+      sub("^  " field ": *", "", $0)
+      print
+      exit
+    }
+  ' "$file")
+  normalize_scalar "$raw"
 }
 
 # ─── 自动推断函数 ───
@@ -197,29 +217,69 @@ detect_task_name() {
   echo "$filename"
 }
 
+phase_from_explicit_marker() {
+  local file="$1"
+  local line phase
+  line=$(grep -m1 '^>[[:space:]]*Current RIPER Phase:' "$file" 2>/dev/null || true)
+  [[ -n "$line" ]] || return 1
+
+  if [[ "$line" =~ ^\>[[:space:]]*Current[[:space:]]RIPER[[:space:]]Phase:[[:space:]]*\*{0,2}(RESEARCH|INNOVATE|PLAN|EXECUTE|REVIEW|DONE)\*{0,2}[[:space:]]*$ ]]; then
+    phase="${BASH_REMATCH[1]}"
+    printf '%s\n' "$phase"
+    return 0
+  fi
+
+  return 2
+}
+
+section_has_substantive_content() {
+  local file="$1"
+  local section="$2"
+  awk -v section="$section" '
+    $0 ~ "^## " section "\\." { in_section = 1; next }
+    in_section && $0 ~ "^## [0-9]+\\." { exit }
+    in_section {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      if (line == "") next
+      if (line ~ /^###/) next
+      if (line ~ /^- \[ \]/) next
+      if (line ~ /^- \.\.\./) next
+      if (line ~ /\.\.\./) next
+      if (line ~ /<[^>]+>/) next
+      if (line ~ /path\/to\/file/) next
+      if (line ~ /变更说明/) next
+      if (line ~ /^- (Pros|Cons|Selected|Why|Skipped|Reason):/) next
+      found = 1
+      exit
+    }
+    END { exit(found ? 0 : 1) }
+  ' "$file"
+}
+
 detect_sdd_phase() {
   local file="$1"
-  local content
-  content=$(cat "$file" 2>/dev/null || echo "")
+  local marker_phase marker_status
 
-  # SDD-RIPER-ONE 格式（优先检测）
-  if echo "$content" | grep -q '^## 7\. Plan-Execution Diff'; then
-    echo "DONE"
-  elif echo "$content" | grep -q '^## 6\. Review Verdict'; then
-    echo "REVIEW"
-  elif echo "$content" | grep -q '^## 5\. Execute Log'; then
-    echo "EXECUTE"
-  elif echo "$content" | grep -q '^## 4\. Plan'; then
-    echo "PLAN"
-  elif echo "$content" | grep -q '^## 3\. Innovate'; then
-    echo "INNOVATE"
-  elif echo "$content" | grep -q '^## 2\. Research'; then
-    echo "RESEARCH"
+  set +e
+  marker_phase=$(phase_from_explicit_marker "$file")
+  marker_status=$?
+  set -e
+  if [[ $marker_status -eq 0 ]]; then
+    printf '%s\n' "$marker_phase"
+    return 0
+  fi
+  if grep -q '^>[[:space:]]*Current RIPER Phase:' "$file" 2>/dev/null; then
+    printf 'RESEARCH\n'
+    return 0
+  fi
+
   # Superpowers plan 格式 fallback（### Task N: + checkbox 风格）
-  elif echo "$content" | grep -qE '^### Task [0-9]+:'; then
+  if grep -qE '^### Task [0-9]+:' "$file" 2>/dev/null; then
     local total_checks done_checks
-    total_checks=$(echo "$content" | grep -cE '^\s*- \[(x| )\]' || echo "0")
-    done_checks=$(echo "$content" | grep -cE '^\s*- \[x\]' || echo "0")
+    total_checks=$(grep -cE '^\s*- \[(x| )\]' "$file" 2>/dev/null | tr -d '[:space:]' || echo "0")
+    done_checks=$(grep -cE '^\s*- \[x\]' "$file" 2>/dev/null | tr -d '[:space:]' || echo "0")
     if [[ "$total_checks" -gt 0 ]] && [[ "$total_checks" -eq "$done_checks" ]]; then
       echo "DONE"
     elif [[ "$done_checks" -gt 0 ]]; then
@@ -227,11 +287,22 @@ detect_sdd_phase() {
     else
       echo "PLAN"
     fi
-  # Superpowers design spec 格式 fallback（**Goal:** + **Architecture:** 风格）
-  elif echo "$content" | grep -q '^\*\*Goal:\*\*'; then
+  elif grep -q '^\*\*Goal:\*\*' "$file" 2>/dev/null; then
     echo "RESEARCH"
   else
-    echo "RESEARCH"
+    if section_has_substantive_content "$file" "7"; then
+      echo "DONE"
+    elif section_has_substantive_content "$file" "6"; then
+      echo "REVIEW"
+    elif section_has_substantive_content "$file" "5"; then
+      echo "EXECUTE"
+    elif section_has_substantive_content "$file" "4"; then
+      echo "PLAN"
+    elif section_has_substantive_content "$file" "3"; then
+      echo "INNOVATE"
+    else
+      echo "RESEARCH"
+    fi
   fi
 }
 
@@ -248,7 +319,16 @@ detect_related_global() {
 
 detect_related_modules() {
   local file="$1"
-  local index_file=".specanchor/module-index.md"
+  local config index_file
+  config=$(find_config)
+  index_file=".specanchor/spec-index.md"
+  if [[ -n "$config" ]]; then
+    index_file=$(sa_load_spec_index_or_legacy "$config" 2>/dev/null || echo ".specanchor/module-index.md")
+  elif [[ -f ".specanchor/spec-index.md" ]]; then
+    index_file=".specanchor/spec-index.md"
+  else
+    index_file=".specanchor/module-index.md"
+  fi
   local result=""
 
   if [[ ! -f "$index_file" ]]; then
@@ -259,46 +339,34 @@ detect_related_modules() {
   local content
   content=$(cat "$file" 2>/dev/null || echo "")
 
-  local first_line
-  first_line=$(head -1 "$index_file")
-
-  if [[ "$first_line" == "---" ]]; then
-    local current_path="" current_spec=""
-    while IFS= read -r line; do
-      local trimmed
-      trimmed=$(echo "$line" | sed 's/^[[:space:]]*//')
-      if [[ "$trimmed" == path:* ]]; then
-        current_path=$(echo "$trimmed" | sed 's/^path: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')
-      elif [[ "$trimmed" == spec:* ]]; then
-        current_spec=$(echo "$trimmed" | sed 's/^spec: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')
-        if [[ -n "$current_path" ]] && [[ -n "$current_spec" ]]; then
-          if echo "$content" | grep -q "$current_path" 2>/dev/null; then
-            result="${result}    - \"${current_spec}\"\n"
-          fi
-        fi
-        current_path=""
-        current_spec=""
-      fi
-    done < "$index_file"
-  else
-    while IFS='|' read -r _ module_path spec_file _ _; do
-      module_path=$(echo "$module_path" | xargs 2>/dev/null || echo "")
-      spec_file=$(echo "$spec_file" | xargs 2>/dev/null || echo "")
-      [[ -z "$module_path" ]] && continue
-      [[ "$module_path" == "模块路径" ]] && continue
-      [[ "$module_path" == "--------" ]] && continue
-
-      if echo "$content" | grep -q "$module_path" 2>/dev/null; then
-        result="${result}    - \"${spec_file}\"\n"
-      fi
-    done < "$index_file"
-  fi
+  local module_path spec_file _summary _health
+  while IFS=$'\t' read -r module_path spec_file _summary _health; do
+    [[ -n "$module_path" ]] || continue
+    [[ -n "$spec_file" ]] || continue
+    if echo "$content" | grep -q "$module_path" 2>/dev/null; then
+      result="${result}    - \".specanchor/modules/${spec_file}\"\n"
+    fi
+  done < <(sa_iter_index_modules "$index_file")
 
   echo -e "$result"
 }
 
 detect_status() {
   local file="$1"
+  local protocol="${2:-}"
+
+  if [[ "$protocol" == "sdd-riper-one" ]]; then
+    local phase
+    phase=$(detect_sdd_phase "$file")
+    case "$phase" in
+      RESEARCH|INNOVATE) echo "draft" ;;
+      PLAN|EXECUTE) echo "in_progress" ;;
+      REVIEW) echo "review" ;;
+      DONE) echo "done" ;;
+      *) echo "draft" ;;
+    esac
+    return 0
+  fi
 
   local total_checks
   total_checks=$(grep -cE '^\s*- \[(x| )\]' "$file" 2>/dev/null | tr -d '[:space:]' || echo "0")
@@ -312,6 +380,102 @@ detect_status() {
   else
     echo "draft"
   fi
+}
+
+inject_sdd_phase_to_body() {
+  local file="$1"
+  local phase="$2"
+  [[ -f "$file" ]] || return 0
+  [[ -n "$phase" ]] || phase="RESEARCH"
+
+  local tmpfile
+  tmpfile=$(mktemp)
+
+  if grep -q '^>[[:space:]]*Current RIPER Phase:' "$file" 2>/dev/null; then
+    sed -E "s#^>[[:space:]]*Current RIPER Phase:.*#> Current RIPER Phase: ${phase}#" "$file" > "$tmpfile"
+    mv "$tmpfile" "$file"
+    return 0
+  fi
+
+  awk -v phase="$phase" '
+    BEGIN { inserted = 0 }
+    {
+      print
+      if (!inserted && $0 ~ /^# SDD Spec:/) {
+        print ""
+        print "> Current RIPER Phase: " phase
+        inserted = 1
+      }
+    }
+    END {
+      if (!inserted) {
+        print ""
+        print "> Current RIPER Phase: " phase
+      }
+    }
+  ' "$file" > "$tmpfile"
+  mv "$tmpfile" "$file"
+}
+
+remove_frontmatter_field() {
+  local file="$1"
+  local field="$2"
+  local tmpfile
+  tmpfile=$(mktemp)
+  awk -v field="$field" '
+    /^---$/ { in_frontmatter = !in_frontmatter; print; next }
+    in_frontmatter && $0 ~ "^  " field ":" { next }
+    { print }
+  ' "$file" > "$tmpfile"
+  mv "$tmpfile" "$file"
+}
+
+migrate_sdd_phase_in_file() {
+  local file="$1"
+  [[ -f "$file" ]] || { warn "文件不存在: $file"; COUNT_FAILED=$((COUNT_FAILED + 1)); return; }
+
+  local phase
+  phase=$(parse_frontmatter_field "$file" "sdd_phase")
+  if [[ -z "$phase" ]]; then
+    skip "无 frontmatter sdd_phase，跳过: $file"
+    COUNT_SKIPPED=$((COUNT_SKIPPED + 1))
+    return
+  fi
+
+  inject_sdd_phase_to_body "$file" "$phase"
+  remove_frontmatter_field "$file" "sdd_phase"
+  success "迁移 sdd_phase 到正文: $file"
+  COUNT_INJECTED=$((COUNT_INJECTED + 1))
+  INJECTED_FILES+=("$file")
+}
+
+normalize_task_status_in_file() {
+  local file="$1"
+  [[ -f "$file" ]] || { warn "文件不存在: $file"; COUNT_FAILED=$((COUNT_FAILED + 1)); return; }
+
+  local level status
+  level=$(parse_frontmatter_field "$file" "level")
+  status=$(parse_frontmatter_field "$file" "status")
+  if [[ "$level" != "task" ]] || [[ "$status" != "active" ]]; then
+    skip "无需迁移 task status: $file"
+    COUNT_SKIPPED=$((COUNT_SKIPPED + 1))
+    return
+  fi
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  awk '
+    /^---$/ { in_frontmatter = !in_frontmatter; print; next }
+    in_frontmatter && $0 ~ /^  status:[[:space:]]*"?active"?[[:space:]]*$/ {
+      print "  status: \"in_progress\""
+      next
+    }
+    { print }
+  ' "$file" > "$tmpfile"
+  mv "$tmpfile" "$file"
+  success "迁移 task status active → in_progress: $file"
+  COUNT_INJECTED=$((COUNT_INJECTED + 1))
+  INJECTED_FILES+=("$file")
 }
 
 # ─── Frontmatter 检测 ───
@@ -356,9 +520,8 @@ generate_frontmatter() {
   local last_change="$6"
   local branch="$7"
   local protocol="$8"
-  local sdd_phase="$9"
-  local related_global="${10}"
-  local related_modules="${11}"
+  local related_global="$9"
+  local related_modules="${10}"
 
   local fm=""
   fm+="specanchor:\n"
@@ -388,23 +551,19 @@ generate_frontmatter() {
   if [[ "$level" == "task" ]]; then
     if [[ -n "$related_modules" ]]; then
       fm+="  related_modules:\n"
-      fm+="${related_modules}"
+      fm+="${related_modules}\n"
     else
       fm+="  related_modules: []\n"
     fi
 
     if [[ -n "$related_global" ]]; then
       fm+="  related_global:\n"
-      fm+="${related_global}"
+      fm+="${related_global}\n"
     else
       fm+="  related_global: []\n"
     fi
 
     fm+="  writing_protocol: \"${protocol}\"\n"
-
-    if [[ "$protocol" == "sdd-riper-one" ]]; then
-      fm+="  sdd_phase: \"${sdd_phase}\"\n"
-    fi
   fi
 
   fm+="  branch: \"${branch}\"\n"
@@ -447,14 +606,14 @@ inject_single_file() {
   protocol="${opt_protocol:-$(detect_protocol "$config")}"
   task_name="${opt_task_name:-$(detect_task_name "$file")}"
   sdd_phase=$(detect_sdd_phase "$file")
-  status="${opt_status:-$(detect_status "$file")}"
+  status="${opt_status:-$(detect_status "$file" "$protocol")}"
   last_change="${opt_last_change:-}"
   related_global=$(detect_related_global)
   related_modules=$(detect_related_modules "$file")
 
   local fm_content
   fm_content=$(generate_frontmatter "$level" "$task_name" "$author" "$created" "$status" \
-    "$last_change" "$branch" "$protocol" "$sdd_phase" "$related_global" "$related_modules")
+    "$last_change" "$branch" "$protocol" "$related_global" "$related_modules")
 
   if [[ "$opt_dry_run" == "true" ]]; then
     echo -e "${BOLD}[dry-run] ${file}${RESET}"
@@ -481,6 +640,9 @@ inject_single_file() {
         cat "$file"
       } > "$tmpfile"
       mv "$tmpfile" "$file"
+      if [[ "$level" == "task" ]] && [[ "$protocol" == "sdd-riper-one" ]]; then
+        inject_sdd_phase_to_body "$file" "$sdd_phase"
+      fi
       success "注入 frontmatter: $file"
       ;;
     no_specanchor)
@@ -497,6 +659,9 @@ inject_single_file() {
         tail -n +"$end_line" "$file"
       } > "$tmpfile"
       mv "$tmpfile" "$file"
+      if [[ "$level" == "task" ]] && [[ "$protocol" == "sdd-riper-one" ]]; then
+        inject_sdd_phase_to_body "$file" "$sdd_phase"
+      fi
       success "追加 specanchor 段到已有 frontmatter: $file"
       ;;
     has_specanchor)
@@ -517,6 +682,9 @@ inject_single_file() {
           tail -n +"$end_line" "$file"
         } > "$tmpfile"
         mv "$tmpfile" "$file"
+        if [[ "$level" == "task" ]] && [[ "$protocol" == "sdd-riper-one" ]]; then
+          inject_sdd_phase_to_body "$file" "$sdd_phase"
+        fi
         success "强制覆盖 specanchor 段: $file"
       fi
       ;;
@@ -545,6 +713,8 @@ usage() {
   echo "  --dry-run                 只输出将要注入的 frontmatter，不修改文件"
   echo "  --force                   已有 specanchor 段时强制覆盖"
   echo "  --file-pattern <glob>     批量模式的文件匹配 (default: *.md)"
+  echo "  --migrate-sdd-phase       将 frontmatter sdd_phase 迁移到正文 marker"
+  echo "  --normalize-task-status   将 task status: active 迁移为 in_progress"
   echo ""
   echo "Examples:"
   echo "  frontmatter-inject.sh mydocs/specs/2026-03-16_spec.md"
@@ -566,6 +736,8 @@ main() {
   local opt_dry_run="false"
   local opt_force="false"
   local opt_file_pattern="*.md"
+  local opt_migrate_sdd_phase="false"
+  local opt_normalize_task_status="false"
 
   [[ $# -eq 0 ]] && usage
 
@@ -582,6 +754,8 @@ main() {
       --dry-run) opt_dry_run="true"; shift ;;
       --force) opt_force="true"; shift ;;
       --file-pattern) opt_file_pattern="$2"; shift 2 ;;
+      --migrate-sdd-phase) opt_migrate_sdd_phase="true"; shift ;;
+      --normalize-task-status) opt_normalize_task_status="true"; shift ;;
       -*)
         die "未知选项: $1"
         ;;
@@ -608,6 +782,8 @@ main() {
     echo -e "  ${DIM}config: (none — using defaults)${RESET}"
   fi
   [[ "$opt_dry_run" == "true" ]] && echo -e "  ${YELLOW}mode: dry-run${RESET}"
+  [[ "$opt_migrate_sdd_phase" == "true" ]] && echo -e "  ${YELLOW}mode: migrate-sdd-phase${RESET}"
+  [[ "$opt_normalize_task_status" == "true" ]] && echo -e "  ${YELLOW}mode: normalize-task-status${RESET}"
   echo ""
 
   if [[ -n "$target_dir" ]]; then
@@ -617,15 +793,33 @@ main() {
     while IFS= read -r f; do
       [[ -n "$f" ]] || continue
       files_found=$((files_found + 1))
-      inject_single_file "$f" "$opt_task_name" "$opt_status" "$opt_last_change" \
-        "$opt_level" "$opt_protocol" "$opt_no_config" "$opt_dry_run" "$opt_force" "$config"
-    done < <(find "$target_dir" -maxdepth 1 -name "$opt_file_pattern" -type f 2>/dev/null | sort)
+      if [[ "$opt_migrate_sdd_phase" == "true" ]]; then
+        migrate_sdd_phase_in_file "$f"
+      elif [[ "$opt_normalize_task_status" == "true" ]]; then
+        normalize_task_status_in_file "$f"
+      else
+        inject_single_file "$f" "$opt_task_name" "$opt_status" "$opt_last_change" \
+          "$opt_level" "$opt_protocol" "$opt_no_config" "$opt_dry_run" "$opt_force" "$config"
+      fi
+    done < <(
+      if [[ "$opt_migrate_sdd_phase" == "true" ]] || [[ "$opt_normalize_task_status" == "true" ]]; then
+        find "$target_dir" -name "$opt_file_pattern" -type f 2>/dev/null | sort
+      else
+        find "$target_dir" -maxdepth 1 -name "$opt_file_pattern" -type f 2>/dev/null | sort
+      fi
+    )
 
     [[ $files_found -eq 0 ]] && warn "目录中未找到匹配 $opt_file_pattern 的文件: $target_dir"
 
   elif [[ -n "$target_file" ]]; then
-    inject_single_file "$target_file" "$opt_task_name" "$opt_status" "$opt_last_change" \
-      "$opt_level" "$opt_protocol" "$opt_no_config" "$opt_dry_run" "$opt_force" "$config"
+    if [[ "$opt_migrate_sdd_phase" == "true" ]]; then
+      migrate_sdd_phase_in_file "$target_file"
+    elif [[ "$opt_normalize_task_status" == "true" ]]; then
+      normalize_task_status_in_file "$target_file"
+    else
+      inject_single_file "$target_file" "$opt_task_name" "$opt_status" "$opt_last_change" \
+        "$opt_level" "$opt_protocol" "$opt_no_config" "$opt_dry_run" "$opt_force" "$config"
+    fi
   else
     die "请指定目标文件或 --dir <目录>"
   fi

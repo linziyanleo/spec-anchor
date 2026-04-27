@@ -21,11 +21,12 @@ specanchor:
     - ".specanchor/global/coding-standards.spec.md"
   flow_type: "standard"               # standard (📋 标准流程) | light (⚡ 轻量流程)
   writing_protocol: "sdd-riper-one"
-  sdd_phase: "RESEARCH"              # RESEARCH | INNOVATE | PLAN | EXECUTE | REVIEW | DONE
   branch: "<branch_name>"
 ---
 
 # SDD Spec: <任务名称>
+
+> Current RIPER Phase: RESEARCH
 
 ## 0. Open Questions
 - [ ] None
@@ -125,5 +126,6 @@ specanchor:
 | `related_modules` | 否 | 关联 Module Spec 路径列表 |
 | `related_global` | 否 | 引用的 Global Spec 路径列表 |
 | `writing_protocol` | 否 | 写作协议名称（默认 "sdd-riper-one"） |
-| `sdd_phase` | 否 | 当前 RIPER 阶段 |
 | `branch` | 否 | 关联 git 分支名 |
+
+当前 RIPER 阶段写在正文 marker 中：`> Current RIPER Phase: RESEARCH`。

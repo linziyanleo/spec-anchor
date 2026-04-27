@@ -32,11 +32,12 @@ specanchor:
   related_global:
     - ".specanchor/global/coding-standards.spec.md"
   flow_type: "standard"               # standard (📋 标准流程) | light (⚡ 轻量流程)
-  sdd_phase: "RESEARCH"              # RESEARCH | INNOVATE | PLAN | EXECUTE | REVIEW | DONE
   branch: "<branch_name>"
 ---
 
 # SDD Spec: <任务名称>
+
+> Current RIPER Phase: RESEARCH
 
 ## 0. Open Questions
 - [ ] None
@@ -132,11 +133,12 @@ specanchor:
     - ".specanchor/modules/<module-id>.spec.md"
   related_global:
     - ".specanchor/global/coding-standards.spec.md"
-  sdd_phase: "RESEARCH"
   branch: "<branch_name>"
 ---
 
 # SDD Spec: <任务名称>
+
+> Current RIPER Phase: RESEARCH
 
 ## 0. Open Questions
 - [ ] None
@@ -320,8 +322,9 @@ specanchor:
 | `last_change` | 否 | 最近一次变更的简要说明（单行） |
 | `related_modules` | 否 | 关联 Module Spec 路径列表 |
 | `related_global` | 否 | 引用的 Global Spec 路径列表 |
-| `sdd_phase` | 否 | 当前 RIPER 阶段（仅 SDD 模式） |
 | `branch` | 否 | 关联 git 分支名 |
+
+SDD 模式当前 RIPER 阶段写在正文 marker 中：`> Current RIPER Phase: RESEARCH`。
 
 ## 路径规则
 
