@@ -158,3 +158,44 @@ specanchor:
 - **推荐理由**: 这与现有 `resolve`、`validate` 和路径前缀匹配机制最一致，修复范围小，能直接消除 `STALE` 误判并恢复健康度信号可信度。
 - **风险提示**: 如果不先把“文件级 module”与“块级 module”分开，后续容易把一个小 bug 修复演变成协议重写。
 - **下一步**: 先依据本结论创建实现型 Task Spec，聚焦 `index + check + status + docs + tests` 的最小一致性修复；块级 module 另立课题。
+
+## 1.2 Hard Boundaries
+
+> not applicable — legacy task (predates v0.5.0-beta.1 Harness Context Control schema)
+
+- (none)
+
+## 1.3 Allowed Freedom
+
+> not applicable — legacy task
+
+- (none)
+
+### 4.7 Checkpoints — Contract
+
+> not applicable — legacy task
+
+#### CP-1 (legacy, no checkpoint contract recorded)
+- Output: (none)
+- Awaits: pass
+
+## 5.2 Checkpoint Decisions Log
+
+> not applicable — legacy task; no per-checkpoint decisions recorded
+
+### Recent (active, hot)
+
+- (none)
+
+## 6.2 Evidence Ledger
+
+> not applicable — legacy task; evidence (if any) recorded inline above
+
+### Commands Run
+
+| Command | Status | Output ref |
+|---|---|---|
+
+## 7.2 Handoff Packet
+
+> not applicable — legacy task (auto-generated section, no handoff produced)

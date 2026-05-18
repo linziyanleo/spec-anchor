@@ -4,12 +4,12 @@ specanchor:
   module_name: "scripts"
   module_path: "scripts/"
   summary: "Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验"
-  version: "2.2.0"
+  version: "2.3.0"
   owner: "maintainers"
   created: "2026-04-02"
   status: active
-  last_synced: "2026-04-27"
-  last_change: "落地 spec-index v3、SDD phase body marker、严格 validate 与 legacy module-index fallback"
+  last_synced: "2026-05-18"
+  last_change: "v0.5.0-beta.1 Harness Context Control：新增 lib/{decision,evidence}-filter.sh、specanchor-doctor --lint=context-control、specanchor-assemble --mode=handoff、.githooks/pre-commit 集成 lint"
   depends_on: []
 ---
 
@@ -119,8 +119,11 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 
 | 参数 | 说明 |
 |------|------|
-| `--format=text\|json` | 输出格式（默认 text） |
+| `--format=text\|json\|markdown` | 输出格式（默认 text） |
 | `--strict` | warning 也返回非零 |
+| `--profile=default\|agent\|release\|maintainer` | 检查 profile（默认 default） |
+| `--allow-dirty` | maintainer profile 允许工作树有未提交改动 |
+| `--lint=context-control` | 跑 Harness Context Control lint（v0.5.0-beta.1+）：扫描所有 task spec，按 `anchor.yaml.context_control.enforce` 等级检查 6 区段（hard_boundaries / allowed_freedom / checkpoints_contract / decisions_log / evidence_ledger / handoff_packet）是否存在 |
 
 **退出码**: 0=ok/非 strict warning, 1=strict warning, 2=blocking error, 64=参数错误
 
@@ -149,8 +152,11 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 | `--budget=compact\|normal\|full` | 上下文预算策略 |
 | `--format=text\|markdown\|json` | 输出格式 |
 | `--write-trace=<path>` | 写出 Assembly Trace |
+| `--mode=handoff` | 切换到 Harness Context Control handoff 模式（v0.5.0-beta.1+） |
+| `--task-spec=<path>` | handoff 模式：目标 Task Spec 路径 |
+| `--write-back` | handoff 模式：把 packet 回写到 Task Spec §7.2 |
 
-输出 bounded read plan、Assembly Trace 与 agent instructions，不直接读取或修改业务文件。
+默认输出 bounded read plan、Assembly Trace 与 agent instructions，不直接读取或修改业务文件。`--mode=handoff` 输出 handoff packet（task name / phase / hot decisions / evidence status / next step），用于跨 session 接手。
 
 ### specanchor-validate.sh
 
@@ -163,6 +169,17 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 | `--strict` | warning 也返回非零 |
 
 当前最小校验：`specanchor.level`、`module_path`、level-aware `status`、日期字段、frontmatter `sdd_phase` deprecation、`anchor.yaml` 版本字段。退出码：0=clean 或非 strict warning，1=strict warning，2=blocking error。
+
+### specanchor-hygiene.sh
+
+只读 spec drift / dead-link 巡检，输出 finding 列表（`severity / code / path`）：
+
+| 参数 | 说明 |
+|------|------|
+| `--format=markdown\|text\|json` | 输出格式（默认 markdown；`text` 是 `markdown` 别名） |
+| `--fix-generated` | 仅对自动生成产物（如 spec-index）尝试就地修复，其他 finding 仍只读 |
+
+**职责边界**：纯巡检工具，不修改业务 spec；与 `specanchor-doctor.sh` 的区别——doctor 关注配置健康（anchor.yaml / 路径连通），hygiene 关注内容腐化（断链、生成产物过期）。
 
 ## 4. 内部状态
 
@@ -198,7 +215,10 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 | `specanchor-resolve.sh` | 锚点解析 |
 | `specanchor-assemble.sh` | resolve 结果到 agent context plan 的装配器 |
 | `specanchor-validate.sh` | 基础 schema/frontmatter 校验 |
+| `specanchor-hygiene.sh` | 只读 spec drift / dead-link 巡检（可选修复 generated 产物） |
 | `lib/common.sh` | 跨脚本共享函数库 |
+| `lib/decision-filter.sh` | Harness Context Control：Task Spec §5.2 hot/cold/superseded/withdrawn 分类（双重接口 lib + CLI） |
+| `lib/evidence-filter.sh` | Harness Context Control：Task Spec §6.2 4 子段解析 + hot/cold 分类（双重接口 lib + CLI） |
 
 ## 8. 已知问题（待修复）
 

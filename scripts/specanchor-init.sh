@@ -51,7 +51,7 @@ generate_anchor_yaml() {
 
   cat > "anchor.yaml" <<YAML
 specanchor:
-  version: "0.4.0-beta.2"
+  version: "0.5.0-beta.1"
   project_name: "${project_name}"
 
   mode: "${mode}"
@@ -81,6 +81,26 @@ specanchor:
   sync:
     auto_check_on_mr: true
     sprint_sync_reminder: true
+
+  # === Harness Context Control 配置（v0.5.0-beta.1 引入） ===
+  context_control:
+    decision_log:
+      hot_window: 5
+      hot_types: [redirect, rollback, halt]
+      respect_phase: true
+    evidence_log:
+      hot_window: 5
+      hot_status: [failed, unverified-risk]
+      auto_pin_acceptance: true
+    enforce:
+      hard_boundaries: error      # error | warning | off
+      allowed_freedom: warning
+      checkpoints_contract: warning
+      evidence_ledger: warning
+      handoff_packet: warning
+    pre_commit:
+      enabled: true
+      blocking: false             # 开发期 warning-only；项目稳定后可切 true
 YAML
 
   echo -e "  ${GREEN}✓${RESET} anchor.yaml"

@@ -1,0 +1,24 @@
+{
+  "task": {
+    "name": "Fixture: supersede case",
+    "status": "in_progress",
+    "phase": "EXECUTE"
+  },
+  "spec_landscape": {
+    "modules": [".specanchor/modules/test.spec.md"]
+  },
+  "active_decisions_hot": ["cp-03","cp-02"],
+  "evidence": {
+    "verified": 2,
+    "unverified_risk": 1,
+    "failed": 0,
+    "pending": 0
+  },
+  "totals": {
+    "decisions_hot": 2,
+    "decisions_cold": 0,
+    "decisions_superseded": 1,
+    "decisions_withdrawn": 1
+  },
+  "next_step": "all execute steps complete"
+}

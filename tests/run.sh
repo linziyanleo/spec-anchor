@@ -384,8 +384,8 @@ test_release_metadata_is_aligned() {
   changelog=$(cat "${REPO_ROOT}/CHANGELOG.md")
   settings=$(cat "${REPO_ROOT}/.github/settings.yml")
 
-  assert_contains "$anchor_contents" 'version: "0.4.0-beta.2"'
-  assert_contains "$readme_en" 'badge/version-0.4.0--beta.2-brightgreen.svg'
+  assert_contains "$anchor_contents" 'version: "0.5.0-beta.1"'
+  assert_contains "$readme_en" 'badge/version-0.5.0--beta.1-brightgreen.svg'
   assert_contains "$readme_en" 'actions/workflows/ci.yml/badge.svg'
   assert_contains "$readme_en" '[docs/USAGE_PROOF.md](docs/USAGE_PROOF.md)'
   assert_contains "$readme_en" '[examples/minimal-full-project/](examples/minimal-full-project/)'
@@ -393,12 +393,14 @@ test_release_metadata_is_aligned() {
   assert_contains "$readme_en" '[references/agents/agent-contract.md](references/agents/agent-contract.md)'
   assert_contains "$readme_zh" '[`docs/USAGE_PROOF.md`](docs/USAGE_PROOF.md)'
   assert_contains "$readme_zh" '[`docs/agent-reliability.md`](docs/agent-reliability.md)'
+  assert_contains "$changelog" '## v0.5.0-beta.1 — Harness Context Control'
   assert_contains "$changelog" '## v0.4.0-beta.1 — Walkthrough Corrections'
   assert_contains "$changelog" '## v0.4.0-beta.2 — Frontmatter and Spec Index Refactor'
   assert_contains "$changelog" '## v0.4.0-beta — Agent Reliability'
   assert_contains "$changelog" '## v0.4.0-alpha.2 — Usage Proof'
   assert_file_exists "${REPO_ROOT}/docs/USAGE_PROOF.md"
   assert_file_exists "${REPO_ROOT}/docs/agent-reliability.md"
+  assert_file_exists "${REPO_ROOT}/docs/release/v0.5.0-beta.1.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.1.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.2.md"
   assert_file_exists "${REPO_ROOT}/docs/release/v0.4.0-beta.md"
@@ -458,6 +460,40 @@ test_agent_reliability_suite() {
   assert_contains "$CAPTURE_OUTPUT" 'SpecAnchor Agent Reliability Tests'
 }
 
+test_handoff_supersede_text() {
+  local fixture="${REPO_ROOT}/tests/fixtures/context-control/supersede-case"
+  local out_file
+  out_file=$(make_temp_dir)/handoff.text
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-assemble.sh" --mode=handoff --task-spec="${fixture}/task.spec.md" --format=text
+  assert_eq "$CAPTURE_STATUS" "0"
+  printf '%s\n' "$CAPTURE_OUTPUT" | sed '/^> Last generated:/d' > "$out_file"
+  diff "$out_file" "${fixture}/expected/handoff.text"
+}
+
+test_handoff_supersede_json() {
+  local fixture="${REPO_ROOT}/tests/fixtures/context-control/supersede-case"
+  local out_file
+  out_file=$(make_temp_dir)/handoff.json
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-assemble.sh" --mode=handoff --task-spec="${fixture}/task.spec.md" --format=json
+  assert_eq "$CAPTURE_STATUS" "0"
+  printf '%s\n' "$CAPTURE_OUTPUT" | sed '/"generated_at":/d' > "$out_file"
+  assert_valid_json "$out_file"
+  diff "$out_file" "${fixture}/expected/handoff.json"
+}
+
+test_decision_filter_supersede_classification() {
+  local fixture="${REPO_ROOT}/tests/fixtures/context-control/supersede-case"
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/lib/decision-filter.sh" --task-spec="${fixture}/task.spec.md" --format=text
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'Hot (active, in-prompt) — 2 entries'
+  assert_contains "$CAPTURE_OUTPUT" 'Superseded — 1 entries'
+  assert_contains "$CAPTURE_OUTPUT" 'cp-03'
+  assert_contains "$CAPTURE_OUTPUT" 'cp-02'
+  assert_contains "$CAPTURE_OUTPUT" 'cp-01'
+  # cp-04 is withdrawn, must not appear in any visible section
+  assert_not_contains "$CAPTURE_OUTPUT" 'cp-04'
+}
+
 echo "=== SpecAnchor Public Shell Tests ==="
 
 run_test test_repo_boot_json
@@ -489,6 +525,9 @@ run_test test_doctor_release_profile_markdown
 run_test test_consumer_install_smoke
 run_test test_usage_proof_suite
 run_test test_agent_reliability_suite
+run_test test_handoff_supersede_text
+run_test test_handoff_supersede_json
+run_test test_decision_filter_supersede_classification
 
 echo ""
 echo "Summary: ${PASS_COUNT} passed, ${FAIL_COUNT} failed"

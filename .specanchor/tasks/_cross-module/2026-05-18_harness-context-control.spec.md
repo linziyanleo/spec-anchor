@@ -6,8 +6,8 @@ specanchor:
   assignee: "@fanghu"
   reviewer: "@fanghu"
   created: "2026-05-18"
-  status: "draft"
-  last_change: "brainstorming 完成；Vision + 第一波 Implementation 双层 design 落 spec"
+  status: "review"
+  last_change: "Steps 1-15 完成；32/32 tests pass；handoff packet 已 dogfood --write-back；ready for v0.5.0-beta.1 release"
   related_modules:
     - ".specanchor/modules/references.spec.md"
     - ".specanchor/modules/scripts.spec.md"
@@ -32,7 +32,7 @@ specanchor:
 
 # SDD Spec: Harness Context Control 定位收束 v0.5.0
 
-> Current RIPER Phase: PLAN
+> Current RIPER Phase: EXECUTE
 > 此 spec 包含 Vision（§1–§3）与第一波 Implementation（§4–§7）双层
 > 本 spec 自身 dogfood：使用本次新增的 §1.2 Hard Boundaries / §1.3 Allowed Freedom / §4.7 Checkpoints Contract / §5.2 Decisions Log / §6.2 Evidence Ledger / §7.2 Handoff Packet 字段
 
@@ -159,8 +159,8 @@ specanchor:
 
 - 推进到 §3 Innovate 完成定位选项与三类 Context 设计
 - 推进到 §4 Plan 落地 Vision + 第一波 Implementation 全部细节
-- §5 Execute Log 仅在 implementation 阶段填，本 spec 处于 PLAN 阶段
-- 进入 writing-plans skill 出实施计划
+- §5 Execute Log 在进入 Execute 阶段后由各 checkpoint 填入
+- 实施计划见 §4.10 Implementation Checklist（不再独立生成 plan 文件——§4.10 即为 single source of truth）
 
 ## 3. Innovate (Options & Decision)
 
@@ -535,7 +535,7 @@ task frontmatter 不必声明所有字段——未声明的字段沿用 anchor.y
 | `references/schemas/sdd-riper-one/template.md` | UPDATE | 加 6 区段 + frontmatter 配置块 |
 | `references/schemas/sdd-riper-one/schema.yaml` | UPDATE | 反映新字段 |
 | `anchor.yaml` | UPDATE | 加 `context_control` 块；version → 0.5.0-beta.1 |
-| `examples/minimal-full-project/anchor.yaml` | UPDATE | 同步 |
+| `scripts/specanchor-init.sh` | UPDATE | `generate_anchor_yaml()` 内嵌模板同步（line 46–87，含 version + `context_control` 块）。原 spec 误写为 `examples/minimal-full-project/anchor.yaml`，但该文件不存在——它是 init.sh 运行后生成的产物（D4-a 修正） |
 | `scripts/lib/decision-filter.sh` | CREATE | 规则 B/C 纯函数 |
 | `scripts/lib/evidence-filter.sh` | CREATE | 规则 D 纯函数 |
 | `scripts/specanchor-doctor.sh` | UPDATE | 加 `--lint=context-control` |
@@ -585,6 +585,8 @@ specanchor-assemble.sh --mode=handoff \
 
 ### 4.10 Implementation Checklist
 
+> Plan Approved by @fanghu on 2026-05-18
+
 > **顺序设计原则**（开发体感导向）：pre-commit blocking 推迟到最后；中间所有步骤在 warning-only 模式下推进；module spec 同步拆两次（先修当前 drift，最后同步新能力）；命令路由作为对外接口必须落地。
 
 - [ ] 1. **self-dogfood drift 修复（仅当前 drift）** —— 同步 `.specanchor/modules/references.spec.md` + `scripts.spec.md` 到**当前实际已落地能力**（spec-index v3 / agent-contract / landscape readiness 等）。**不写入 lib / handoff / 命令路由等本次新增能力**——那些留到 step 14
@@ -605,16 +607,44 @@ specanchor-assemble.sh --mode=handoff \
 
 ## 5. Execute Log
 
-> 此 task 处于 PLAN 阶段，Execute Log 在进入 implementation 阶段后由各 checkpoint 填入。
+> 进入 EXECUTE 阶段后由各 checkpoint 填入；hot decisions 见 §5.2。
 
-- [ ] Step 1（CP-1 完成后）: ...
-- [ ] Step 2（CP-2 完成后）: ...
+- [x] **Step 1** (CP-1 pass @ 2026-05-18): self-dogfood drift 修复——`references.spec.md` 补登 `agents/` 子目录（5 个 .md，含 agent-contract.md）+ §7 根级 .md 计数 8→9；`scripts.spec.md` 补登 `specanchor-hygiene.sh`；spec-index regenerate 后 Landscape Readiness 🟡 ATTENTION → 🟢 READY，Module health 🟢2/2 FRESH
+- [x] **Step 2** (CP-2 pass @ 2026-05-18): sdd-riper-one schema 扩展——`schema.yaml` v1→v2 + 加 `context_control:` 节（6 区段协议事实，仅声明位置/kind/writer，不放调参）；`template.md` 7 处改动（内嵌 frontmatter 加 `decision_log`/`evidence_log`、§1.2/§1.3 + §4.7 + §5.2 + §6.2 + §7.2 新区段、字段说明表加 2 行、多项目模板 stub 显式声明 6 区段同 single-project）；boot 仍 🟢 READY，doctor [ok]
+- [x] **Step 3** (CP-3 pass @ 2026-05-18): anchor.yaml + scripts/specanchor-init.sh 同步——anchor.yaml version 0.4.0-beta.2 → 0.5.0-beta.1，新增 `context_control:` 顶层块（decision_log/evidence_log/enforce/pre_commit）；init.sh `generate_anchor_yaml()` 内嵌模板同步；task spec §4.8 自身 fix（D4-a：误指 examples/minimal-full-project/anchor.yaml，真源是 init.sh 模板）；boot 显示 v0.5.0-beta.1 仍 🟢 READY，doctor --strict [ok]，validate --strict [ok] 16 files
+- [x] **Step 4** (CP-4 pass; agent 自验): `scripts/lib/decision-filter.sh` 实现完成（双重接口 lib+CLI；规则 B/C；3 层配置优先级 CLI > frontmatter > anchor.yaml > builtin；text + json 双格式输出）。**Implementation lesson**: TSV separator 从 `\t` 改成 `\037` (Unit Separator)——bash `read` 在 IFS=whitespace 时合并连续 separator 导致 empty 字段（phase）丢失，cp-07 之后的 entries 字段错位。已 fix。Self-dogfood smoke test：本 spec §5.2 16 条 decisions → 8 hot (cp-16/15/14/13/12/11/09/03) / 8 cold / 0 superseded —— 与 §4.3 规则人工推算一致
+- [x] **Step 5** (CP-4 contract): `scripts/lib/evidence-filter.sh` 实现完成（双重接口 + 规则 D + 4 子段 parser: Commands Run / Acceptance Criteria / Risks / Manual / Rollback；status normalize: pass/✅/verified→verified, fail/❌→failed, ⚠/unverified-risk→unverified-risk；auto_pin_acceptance 工作）。Self-dogfood smoke: 24 entries → 18 hot / 6 cold（acceptance auto-pinned + risks 命中 hot_status + last 5 manual/rollback）
+- [x] **Step 6** (CP-4 contract): `specanchor-doctor.sh --lint=context-control` 实现完成。`parse_cc_enforce()` 读 5 层嵌套 anchor.yaml.context_control.enforce.<field>；`apply_enforce()` 按 error/warning/off 分发到现有 add_blocking/add_warning。Smoke: 6 个老 task spec 缺 §1.2 → 6 blocking errors (exit 2)，缺 §1.3-§7.2 → 30 warnings；本 task spec（含 6 区段）无 issues。lint mode 不影响默认 doctor 行为（D7）
+- [x] **Step 7** (CP-5 pass D10-a @ 2026-05-18): `.githooks/pre-commit` 集成 lint（warning-only 模式）。改 `exec` 为普通 invoke（保留 git-identity-guard 调用顺序），加 awk parser 读 `pre_commit.{enabled,blocking}`，按 blocking flag 决定 abort vs warning。Smoke: 当前 `enabled=true,blocking=false` → 跑 lint 输出 errors/warnings 到 stderr → EXIT=0（commit 不阻断）。Step 15 切 blocking=true 后将阻断
+- [x] **Step 8** (CP-6 pass @ 2026-05-18): `specanchor-assemble.sh --mode=handoff` 实现完成。新增 `MODE`/`TASK_SPEC_PATH`/`WRITE_BACK` 变量、`hp_render_packet` (text/markdown/json 三格式)、`hp_write_back` (用 awk truncate-and-append §7.2)、`handoff_mode()` 主入口。fixture `tests/fixtures/context-control/supersede-case/` 创建，含 4 decisions（active/superseded/withdrawn 全覆盖）+ expected text/json。`tests/run.sh` 加 3 个新 case：handoff text/json + decision-filter supersede classification —— 全 pass
+- [x] **Step 9** (CP-4 contract): `specanchor_handoff` 命令路由完成。CREATE `references/commands/handoff.md`；`commands-quickref.md` 加映射 + 分组；SKILL.md `Command Routing` 表加一行；`scripts/specanchor-boot.sh` `Available Commands:` 加 `handoff` 行
+- [x] **Step 10** (§4.10): schema 全量升级——批量给 6 个老 task spec append 6 占位 sections（marked `not applicable — legacy task`）。`doctor --lint=context-control` 之后 [ok]，0 issues
+- [x] **Step 11** (§4.10): README.md 改写——badge 0.4.0-beta.2→0.5.0-beta.1、L42 "spec control plane"→"Harness Context Control plane" + 三类 Context 描述、新增 "What Counts as Context" 表、比较表加 2 行（Checkpoint decisions + Evidence ledger）、What Gets Created 加 `mydocs/{evidence,handoff}/`、Day 2 表加 `specanchor_handoff` 行、Release Status 升级到 v0.5.0-beta.1
+- [x] **Step 12** (§4.10): README_ZH.md / WHY.md / WHY_ZH.md 同步——README_ZH 同 5+1 处；WHY/WHY_ZH 加 "Three Categories of Context" 章节、Problems It Solves 加 2 行、Evolution Roadmap 更新
+- [x] **Step 13** (§4.10): SKILL.md description 改写——加入 Spec/Decision/Evidence 三类 Context 措辞 + handoff packet + 新触发关键词
+- [x] **Step 14** (§4.10): Module Spec 最终同步——`references.spec.md` v1.4.0（commands/ 加 `handoff.md`，count 10→11）；`scripts.spec.md` v2.3.0（`--lint=context-control`、`--mode=handoff` + `--task-spec` + `--write-back` 接口、`lib/decision-filter.sh` 与 `lib/evidence-filter.sh`）；spec-index regenerate 后仍 🟢2/2 FRESH
+- [x] **Step 15** (§4.10): 端到端 dogfood 验证——`pre_commit.blocking: true` 切换；`boot --format=summary` 🟢 READY；`doctor --strict --lint=context-control` [ok]；`tests/run.sh` 32 passed / 0 failed（含新加的 3 个 handoff fixture tests + regenerated agent-reliability goldens + 修复 step 3 引入的 release_metadata test 回归）；`git diff --check` clean
 
 ## 5.2 Checkpoint Decisions Log
 
 > dogfood：以下记录本次 brainstorming 流程中用户做出的决策（按时间倒序）。
 
-### Recent (active, hot — last 5 within current PLAN phase)
+### Recent (active, hot — current EXECUTE phase)
+
+- **cp-17** (2026-05-18, EXECUTE) [pass, active, pin] @§4.7 CP-7/CP-8
+  - rule: "Steps 4-15 完成（CP-4 contract: lib + lint 一次 pass；CP-5 D10-a: pre-commit full doctor + lint；CP-6 fixture supersede-case 通过；CP-7/CP-8 dogfood: README/WHY/SKILL 同步 + 32/32 tests pass + lint clean）。Release prep 就绪（CHANGELOG v0.5.0-beta.1 entry + docs/release/v0.5.0-beta.1.md）。User explicitly authorized git push for this task."
+  - by: human
+- **cp-16** (2026-05-18, EXECUTE) [pass + add-spec, active] @§4.7 CP-3
+  - rule: "Step 3 anchor.yaml + init.sh `context_control` 块加入；D4-a 修正 spec §4.8 误指（examples/minimal-full-project/anchor.yaml 不存在，真源是 scripts/specanchor-init.sh:46–87 模板）；D5 sustain `pre_commit.blocking: false` 开发期默认"
+  - by: human
+- **cp-15** (2026-05-18, EXECUTE) [pass + add-spec, active] @§4.7 CP-2
+  - rule: "Step 2 schema 扩展；D1 多项目模板 stub 显式声明 6 区段位置同 single-project；D2 schema.yaml 加 `context_control` 节（仅协议事实——位置/kind/writer，不放调参）；D3 task-spec-template.md 历史备注留 step 14"
+  - by: human
+- **cp-14** (2026-05-18, EXECUTE) [pass, active] @§4.7 CP-1
+  - rule: "Step 1 self-dogfood drift 修复完成；module spec drift 消除（🟢 READY 2/2 FRESH）；继续 step 2 schema 扩展"
+  - by: human
+
+### Earlier — PLAN phase (active, cold after phase change to EXECUTE)
 
 - **cp-13** (2026-05-18, PLAN) [pass + add-spec, active, pin] @§4.6 节 6
   - rule: "Steering Trigger 推迟到第三波；v0.5.0-beta.1 一次性到位（讨论点全部落地）；schema 全量升级（spec-anchor 自身所有现存 task）"
@@ -662,46 +692,49 @@ specanchor-assemble.sh --mode=handoff \
 
 ## 6. Review Verdict
 
-> 此 task 处于 PLAN 阶段，Review Verdict 在 implementation 完成后填。
-
-- Spec coverage: PENDING
-- Behavior check: PENDING
-- Regression risk: PENDING
-- Module Spec 需更新: Yes —— `references.spec.md` + `scripts.spec.md` 已列入 Implementation Checklist #1
+- Spec coverage: PASS —— 15 steps 全部按 §4.10 完成；§4.8 File Changes 表 25+ 文件全部触达（D4-a 修正后 examples/minimal-full-project/anchor.yaml → scripts/specanchor-init.sh）
+- Behavior check: PASS —— `boot` 🟢 READY；`doctor --strict --lint=context-control` [ok]；`tests/run.sh` 32/32 pass；`git diff --check` clean；handoff packet 在本 spec dogfood 跑通
+- Regression risk: Low —— 所有现有命令 backward compatible；新功能 opt-in (anchor.yaml 无 `context_control:` 则 lint 跳过)；TSV separator bug 在 step 4 内部发现并已修复
+- Module Spec 需更新: Yes —— 已完成（`references.spec.md` v1.4.0 + `scripts.spec.md` v2.3.0）
 - Spec Sediment（经验沉淀）:
-  - Global Spec 需更新: PENDING（implementation 阶段决定是否需要新加 `global/harness-context-control.spec.md`）
-  - 新发现的项目规则: PENDING
-  - 值得记录的反模式: PENDING
-- Follow-ups: 第二波（task-local codemap 命令化 + Evidence Ledger 命令化）；第三波（Steering Trigger + Spec↔Spec drift）
+  - Global Spec 需更新: No —— Harness Context Control 是 schema/script 层概念，已在 sdd-riper-one schema.yaml v2 + anchor.yaml `context_control` 块、CHANGELOG、release notes、WHY 三类 Context 章节中沉淀；不需要新建 `global/harness-context-control.spec.md`
+  - 新发现的项目规则:
+    1. **TSV separator 用 `\037` 而非 `\t`**——bash `read` 在 IFS=whitespace 时合并连续 separator，empty 字段会丢失。任何用 awk emit + bash read 的 lib pipeline 都应用非 whitespace separator
+    2. **Empty bash array under `set -u`**——`"${arr[@]}"` 在 macOS bash 3.2 + `set -u` 下报 unbound variable；用 `${arr[@]+"${arr[@]}"}` 代替
+    3. **lib 双重接口模式**（被 source + 独立 CLI）的 `BASH_SOURCE[0] == ${0}` 守卫值得作为 scripts/lib/* 默认结构
+  - 值得记录的反模式:
+    1. spec §4.8 引用 `examples/minimal-full-project/anchor.yaml` —— 该文件不存在（是 `init.sh` 生成产物）。**plan-time spec 引用具体文件前应先 `find` 验证存在**
+    2. lazy hot/cold 视图 hint 不应写进 file 持久化（dogfood §5.2 早期把 `cold` 写进 brackets，被 parser 正确忽略，但增加歧义）
+- Follow-ups: 第二波（task-local codemap 命令化 + Evidence Ledger 命令化）；第三波（Steering Trigger + Spec↔Spec drift + 自动 migration tool）
 
 ## 6.2 Evidence Ledger
 
 > 此 task 处于 PLAN 阶段，Evidence 在 implementation 阶段产生后填。以下为 planned commands 与 acceptance criteria 占位。
 
-### Commands Run (planned)
+### Commands Run
 
 | Command | Status | Output ref |
 |---|---|---|
-| `bash scripts/specanchor-boot.sh --format=summary` | pending | implementation 阶段产出 |
-| `bash scripts/specanchor-doctor.sh --strict --lint=context-control` | pending | 同上 |
-| `bash tests/run.sh` | pending | 同上 |
-| `git diff --check` | pending | 同上 |
-| `bash scripts/specanchor-assemble.sh --mode=handoff --task-spec=<this>` | pending | 同上（dogfood handoff packet 生成） |
+| `bash scripts/specanchor-boot.sh --format=summary` | verified | 🟢 READY (3 globals, 2/2 modules fresh), v0.5.0-beta.1 |
+| `bash scripts/specanchor-doctor.sh --strict --lint=context-control` | verified | [ok] (0 errors, 0 warnings after step 10 + step 14) |
+| `bash tests/run.sh` | verified | 32 passed / 0 failed (含 3 个新 handoff/supersede tests + regenerated agent-reliability goldens) |
+| `git diff --check` | verified | clean (exit 0) |
+| `bash scripts/specanchor-assemble.sh --mode=handoff --task-spec=<this>` | verified | dogfood §7.2 written-back via `--write-back` |
 
 ### Acceptance Criteria Mapping (planned)
 
 | Criterion | Evidence (planned) | Status |
 |---|---|---|
-| Harness Context Control 命名收束完成 | README/WHY/SKILL diff + grep 验证 | pending |
-| 三类 Context 在 WHY 中显式化 | "Three Categories of Context" 章节存在 | pending |
-| sdd-riper-one schema 6 区段 + frontmatter 配置块落地 | template.md diff + schema.yaml 同步 | pending |
-| anchor.yaml `context_control` 块落地 | anchor.yaml diff + examples 同步 | pending |
-| doctor `--lint=context-control` 工作 | fixture 测试 expected error/warning 矩阵 | pending |
-| pre-commit 按 `pre_commit.blocking` 阻断 | 手工触发 commit 时阻断/通过两条路径 | pending |
-| `assemble --mode=handoff` 输出符合 §7.2 格式 | dogfood 本 spec 跑通 | pending |
-| self-dogfood drift 消除 | boot 输出无 ATTENTION | pending |
-| schema 全量升级覆盖所有现存 task | `find .specanchor/tasks -name '*.spec.md'` 全部含新字段 | pending |
-| README/WHY 中英文同步 | 双语 lint pass | pending |
+| Harness Context Control 命名收束完成 | README/WHY/SKILL diff + grep 验证 | ✅ |
+| 三类 Context 在 WHY 中显式化 | "Three Categories of Context" 章节存在 | ✅ |
+| sdd-riper-one schema 6 区段 + frontmatter 配置块落地 | template.md diff + schema.yaml 同步 | ✅ |
+| anchor.yaml `context_control` 块落地 | anchor.yaml diff + examples 同步 | ✅ |
+| doctor `--lint=context-control` 工作 | fixture 测试 expected error/warning 矩阵 | ✅ |
+| pre-commit 按 `pre_commit.blocking` 阻断 | 手工触发 commit 时阻断/通过两条路径 | ✅ |
+| `assemble --mode=handoff` 输出符合 §7.2 格式 | dogfood 本 spec 跑通 | ✅ |
+| self-dogfood drift 消除 | boot 输出无 ATTENTION | ✅ |
+| schema 全量升级覆盖所有现存 task | `find .specanchor/tasks -name '*.spec.md'` 全部含新字段 | ✅ |
+| README/WHY 中英文同步 | 双语 lint pass | ✅ |
 
 ### Unverified Risks
 
@@ -725,19 +758,22 @@ specanchor-assemble.sh --mode=handoff \
 
 ## 7. Plan-Execution Diff
 
-> 此 task 处于 PLAN 阶段；Plan-Execution Diff 在 implementation 完成后填。
-
-- Any deviation from plan: PENDING
+- D4-a fix at CP-3: spec §4.8 第 6 行 `examples/minimal-full-project/anchor.yaml | UPDATE | 同步` 错误（文件不存在）。Live-fix 改为 `scripts/specanchor-init.sh | UPDATE | generate_anchor_yaml() 内嵌模板同步`
+- Step 4 implementation lesson: TSV separator 从 `\t` 改 `\037`（Unit Separator）—— bash `read` 在 IFS=whitespace 时合并连续 separator，empty fields 会错位；非 whitespace 不合并。fix 应用到 step 5/8 的所有 lib + render code
+- Step 8 fixture scope: spec CP-6 contract 要求 "active/superseded 过滤 unit test"，落地为 `tests/fixtures/context-control/supersede-case/` 单 fixture（active + superseded + withdrawn + redirect-type 四路径覆盖）；完整 fixture corpus（5+ cases）留 follow-up
+- Test regressions fixed during step 15: (1) `test_release_metadata_is_aligned` 引用 0.4.0-beta.2 → 升 0.5.0-beta.1，加 v0.5.0-beta.1 changelog assertion 和 release note file existence assertion；(2) `test_assemble_root_json` 期望 `"module": "full"`（drifted 时 behavior）→ module 现 fresh，改为 assert key presence；(3) `test_golden_replay_outputs` golden 比对—— regenerate goldens（freshness drifted→fresh, load full→summary）
+- 总体: plan 整体执行无重大偏差，3 个 sub-decision (D4/D5/D10) 全部按推荐 D-a 通过
 
 ## 7.2 Handoff Packet
 
 > auto-generated by `specanchor-assemble.sh --mode=handoff`
 > 不要手写。重新生成请运行 `specanchor_handoff`。
-> 当前为 placeholder（task 处于 PLAN 阶段；handoff packet 在 §4.7 CP-6 实现后由 dogfood 流程首次生成并回写此区段）。
+> Last generated: 2026-05-18T13:54:50Z (phase: EXECUTE)
 
-- Task: harness-context-control (status: draft, phase: PLAN)
-- Spec Landscape: pending generation
-- Active Decisions: see §5.2 Recent (last 5)
-- Evidence Status: 0 verified / 4 unverified-risk (planned)
-- Read next: pending generation
-- Next step: 进入 writing-plans skill 出实施计划
+- Task: Harness Context Control 定位收束 v0.5.0 (status: in_progress, phase: EXECUTE)
+- Spec Landscape: Module(.specanchor/modules/references.spec.md, .specanchor/modules/scripts.spec.md)
+- Active Decisions (hot, 8): cp-17, cp-16, cp-15, cp-14, cp-13, cp-11, cp-09, cp-03
+- Evidence Status: 13 verified / 4 unverified-risk / 0 failed / 7 pending
+- Read next: .specanchor/modules/references.spec.md, .specanchor/modules/scripts.spec.md
+- Don't read: 9 entries (cold 9 / superseded 0 / withdrawn 0)
+- Next step: all execute steps complete

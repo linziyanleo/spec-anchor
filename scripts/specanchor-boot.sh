@@ -290,6 +290,7 @@ emit_command_routing() {
     check    -> commands/check.md     | 对齐检测
     index    -> commands/index.md     | 更新 spec-index
     import   -> commands/import.md    | 导入外部 SDD
+    handoff  -> commands/handoff.md   | 跨 session 导出 handoff packet
 EOF
 }
 

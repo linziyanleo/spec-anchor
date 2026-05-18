@@ -133,3 +133,44 @@ N/A（非代码变更）
 ## 7. Plan-Execution Diff
 
 - 无偏差。所有 7 步 Checklist 按计划完成，未增减文件或变更范围。
+
+## 1.2 Hard Boundaries
+
+> not applicable — legacy task (predates v0.5.0-beta.1 Harness Context Control schema)
+
+- (none)
+
+## 1.3 Allowed Freedom
+
+> not applicable — legacy task
+
+- (none)
+
+### 4.7 Checkpoints — Contract
+
+> not applicable — legacy task
+
+#### CP-1 (legacy, no checkpoint contract recorded)
+- Output: (none)
+- Awaits: pass
+
+## 5.2 Checkpoint Decisions Log
+
+> not applicable — legacy task; no per-checkpoint decisions recorded
+
+### Recent (active, hot)
+
+- (none)
+
+## 6.2 Evidence Ledger
+
+> not applicable — legacy task; evidence (if any) recorded inline above
+
+### Commands Run
+
+| Command | Status | Output ref |
+|---|---|---|
+
+## 7.2 Handoff Packet
+
+> not applicable — legacy task (auto-generated section, no handoff produced)

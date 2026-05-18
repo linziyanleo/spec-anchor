@@ -42,6 +42,20 @@ The difference: LLM Wiki pursues breadth of knowledge (richer over time), SpecAn
 
 ---
 
+## Three Categories of Context (v0.5.0+)
+
+LLM context is precious — long context rots in the middle, recency bias dominates, automatic compaction loses precision. SpecAnchor does not try to extend the window; it organizes what *deserves* to be in it. Starting from v0.5.0-beta.1 the framing is explicit: there are three kinds of context worth persisting.
+
+| Category | What it is | Lifecycle | Anti-decay tool |
+|---|---|---|---|
+| **Spec Context** | Static contracts: team rules, module interfaces, task intent | Versioned in git; rarely changes per turn | Assembly Trace + Schema Gate |
+| **Decision Context** | What humans said at each checkpoint (~47% "add-spec", ~25% "clarify" — the bulk of per-turn signal) | Sediments into Task Spec §5.2 per checkpoint; hot/cold lazy view auto-prunes | `decision_log` config + lazy filter |
+| **Evidence Context** | Verification proofs: command outputs, acceptance criteria, unverified risks | Appended to Task Spec §6.2 as work progresses; auto-pinned for acceptance criteria | `evidence_log` config + auto-pin |
+
+Why this matters: most prior tools (Spec-Kit, OpenSpec, plain Cursor rules) only model **Spec Context**. The 47% of human signal that lands as a checkpoint correction or addition was thrown away every turn. SpecAnchor v0.5.0 makes Decision and Evidence first-class so that every chat turn — and every new chat — can read a coherent record of "what specs apply, what has been decided, what has been verified" without re-deriving it from chat history.
+
+---
+
 ## Problems It Solves
 
 | Problem | SpecAnchor's Answer |
@@ -50,6 +64,8 @@ The difference: LLM Wiki pursues breadth of knowledge (richer over time), SpecAn
 | Different developers have inconsistent styles on the same module | Module Spec defines interface contracts and design conventions |
 | The "why" behind code changes gets lost | Task Spec records the intent and decisions behind every change |
 | Spec and code go out of sync (decay) | Alignment detection checks Spec-code consistency |
+| Checkpoint decisions get eaten by chat decay | **Decision Context** with `status` (active / superseded / withdrawn) and lazy hot/cold lifecycle (§5.2 Decision Log) |
+| Completion reports say "passed" but no evidence chain | **Evidence Ledger** with auto-pinned acceptance criteria, command logs, and unverified-risk registry (§6.2) |
 
 ## Design Principles
 
@@ -145,11 +161,14 @@ SpecAnchor will evolve alongside changes in AI capabilities and development para
 
 ### Current (v0.x) — Anchoring AI Context
 
-- Three-level Spec system (Global → Module → Task)
-- Coverage detection + staleness detection
+- Three-level Spec + Decision/Evidence Context system (v0.5.0+ explicit)
+- Coverage detection + staleness detection + `doctor --lint=context-control`
 - Declarative Schema system (SDD-RIPER-ONE / OpenSpec / custom compatible)
 - External Sources directory alias mapping
+- `specanchor_handoff` command for cross-session continuity
 - Plain-text Skill, platform agnostic
+- (deferred) Steering Trigger emit on verification failure × 2
+- (deferred) task-local codemap as a first-class command
 
 ### Near-term — Anchoring Human Cognition
 

@@ -4,14 +4,14 @@ specanchor:
   module_name: "协议层"
   module_path: "references/"
   summary: "协议声明层：命令定义、Spec 模板、Schema 系统、核心协议"
-  version: "1.3.0"
+  version: "1.4.0"
   owner: "maintainers"
   author: "maintainers"
   reviewers: []
   created: "2026-04-02"
-  updated: "2026-04-27"
-  last_synced: "2026-04-27"
-  last_change: "将 quickref 降为 boot fallback，并同步 SDD body phase marker 与 spec-index v3 契约"
+  updated: "2026-05-18"
+  last_synced: "2026-05-18"
+  last_change: "v0.5.0-beta.1 Harness Context Control：commands/ 加 handoff.md（specanchor_handoff），schema sdd-riper-one v2 加 6 区段 + context_control 节"
   status: active
   depends_on: []
 ---
@@ -46,6 +46,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | `check.md` | `specanchor_check` | 均可 |
 | `index.md` | `specanchor_index` | full |
 | `import.md` | `specanchor_import` | 均可 |
+| `handoff.md` | `specanchor_handoff` | 均可 |
 
 ### 3.2 Schema 系统（schemas/）
 
@@ -77,6 +78,8 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | `assembly-trace.md` | Assembly Trace 的格式与刷新时机 |
 | `workflow-gates.md` | `⚡/📋` 选择与严格门禁规则 |
 | `integrations/*.md` | 与 SDD-RIPER-ONE / superpowers 的集成说明 |
+| `agents/agent-contract.md` | Agent 标准工作循环（7 步：boot → resolve → workflow → execute → check → sediment → archive） |
+| `agents/{claude-code,codex,cursor,gemini}.md` | 各 Agent 工具的入口适配说明 |
 
 ## 4. 内部状态
 
@@ -98,10 +101,11 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 
 | 路径 | 文件数 | 职责 |
 |------|--------|------|
-| `commands/` | 10 个 .md | 各命令的详细定义 |
-| `schemas/` | 6 个子目录（各含 2 文件） | Schema 系统 |
-| 根级 .md | 8 个 | 协议、模板、快速参考 |
+| `commands/` | 11 个 .md | 各命令的详细定义（含 v0.5.0-beta.1 的 `handoff.md`） |
+| `schemas/` | 6 个子目录（各含 2 文件） | Schema 系统（sdd-riper-one v2 起含 `context_control` 节，声明 6 区段协议事实） |
+| 根级 .md | 9 个 | 协议、模板、快速参考 |
 | `integrations/` | 2 个 .md | 外部工作流集成说明 |
+| `agents/` | 5 个 .md | Agent 工作循环契约 + 各 Agent 入口适配 |
 
 ## 8. 已知问题
 

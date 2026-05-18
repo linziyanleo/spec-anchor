@@ -42,6 +42,20 @@ SpecAnchor 是这个模式在**AI 辅助开发**领域的实例：
 
 ---
 
+## 三类 Context（v0.5.0+ 显式化）
+
+LLM 上下文很贵——长上下文中段腐烂、recency bias 主导、自动总结无法挽回精度。SpecAnchor 不试图扩窗口，而是组织"值得"放进上下文的内容。从 v0.5.0-beta.1 起，框架明确把要持久化的上下文分成三类。
+
+| 类别 | 是什么 | 生命周期 | 抗腐化工具 |
+|---|---|---|---|
+| **Spec Context** | 静态契约：团队规则、模块接口、任务意图 | git 版本化；每轮基本不变 | Assembly Trace + Schema Gate |
+| **Decision Context** | 每个 checkpoint 上人类说了什么（约 47% 是"加料"，约 25% 是"追问"——单轮人工信号的主体） | 每个 checkpoint 沉淀进 Task Spec §5.2；hot/cold 懒计算视图自动收敛 | `decision_log` 配置 + lazy filter |
+| **Evidence Context** | 验收证据：命令输出、acceptance criteria、unverified-risk | 实施过程中追加进 Task Spec §6.2；acceptance criteria 自动 pin | `evidence_log` 配置 + auto-pin |
+
+为什么重要：之前的工具（Spec-Kit、OpenSpec、纯 Cursor rules）大多只建模 **Spec Context**。Checkpoint 上 47% 的人工信号——加料、追问、纠偏——每轮都被对话腐烂吃掉。SpecAnchor v0.5.0 把 Decision 和 Evidence 提升为一等公民，让每一轮（以及每一个新 chat）都能读到一份连贯的"哪些 spec 适用 / 已经决策了什么 / 已经验证了什么"的记录，而不必从聊天历史里反推。
+
+---
+
 ## 它解决什么问题
 
 | 问题                           | SpecAnchor 的回答                            |
@@ -50,6 +64,8 @@ SpecAnchor 是这个模式在**AI 辅助开发**领域的实例：
 | 不同开发者改同一模块风格不统一 | Module Spec 定义模块的接口契约和设计约定      |
 | 代码改了但"为什么改"丢失了     | Task Spec 记录每次变更的意图和决策            |
 | Spec 和代码不一致（腐化）      | 对齐检测功能检测 Spec-代码对齐度              |
+| Checkpoint 决策被对话腐烂吃掉 | **Decision Context**：status（active / superseded / withdrawn）+ 懒计算 hot/cold 生命周期（§5.2 决策日志） |
+| 完成报告说"通过了"但没证据链 | **Evidence Ledger**：acceptance criteria 自动 pin、命令日志、unverified-risk 登记（§6.2） |
 
 ## 设计原则
 
@@ -145,11 +161,14 @@ SpecAnchor 会随着 AI 能力和开发范式的变化而演进：
 
 ### 当前（v0.x）— 锚定 AI 上下文
 
-- 三级 Spec 体系（Global → Module → Task）
-- 覆盖率检测 + 腐化检测
+- 三级 Spec + Decision/Evidence Context 体系（v0.5.0+ 显式化）
+- 覆盖率检测 + 腐化检测 + `doctor --lint=context-control`
 - 声明式 Schema 系统（兼容 SDD-RIPER-ONE / OpenSpec / 自定义）
 - External Sources 目录别名映射
+- `specanchor_handoff` 命令支持跨 session 接手
 - 纯文本 Skill，平台无关
+- （延期）连续验证失败 ×2 自动 emit Steering Trigger
+- （延期）task-local codemap 升级为一等命令
 
 ### 近期 — 锚定人的认知
 

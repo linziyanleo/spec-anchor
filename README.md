@@ -17,7 +17,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.4.0--beta.2-brightgreen.svg" alt="Version 0.4.0-beta.2" />
+  <img src="https://img.shields.io/badge/version-0.5.0--beta.1-brightgreen.svg" alt="Version 0.4.0-beta.2" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -39,9 +39,19 @@
 
 **SpecAnchor is a three-tier spec system that loads itself.** It keeps your team's coding rules, module contracts, and task intents in `.specanchor/`, then automatically loads the relevant ones into your AI's context before any code is generated — and checks later whether the code still matches.
 
-Think of it as a **spec control plane** for delegated agentic engineering: it assembles a *Spec Landscape* that every agent reads before acting, gates progress through *Schema Gates*, detects drift through an *Alignment Surface*, and channels lessons back into specs through *Spec Sediment*. You delegate work to agents; SpecAnchor makes sure they stay anchored.
+Think of it as a **Harness Context Control plane** for delegated agentic engineering: it organizes context across three categories — **Spec / Decision / Evidence** — assembles a *Spec Landscape* that every agent reads before acting, gates progress through *Schema Gates*, detects drift through an *Alignment Surface*, sediments checkpoint decisions and verification evidence into the Task Spec, and exports a *handoff packet* for cross-session continuity. You delegate work to agents; SpecAnchor makes sure they stay anchored.
 
 It ships a complete **spec-driven development** (SDD) authoring toolkit out of the box — the default `sdd-riper-one` schema gives you Research → Plan → Execute → Review gates — so **you don't need Spec-Kit or OpenSpec to use SpecAnchor**. If you already have an OpenSpec or custom spec directory, `parasitic` mode wraps it without migration. Keep your existing authoring, add SpecAnchor as the loader and anti-decay layer.
+
+### What Counts as Context
+
+| Category | Source | Typical artifact | Lifecycle |
+|---|---|---|---|
+| **Spec Context** | Team / module / task contracts | `.specanchor/global/`, `modules/`, `tasks/`, Assembly Trace | Static — versioned in git |
+| **Decision Context** | Checkpoint inputs from human reviewers | Task Spec §5.2 Checkpoint Decisions Log; hot/cold filter | Dynamic — sediments per checkpoint, hot view auto-pruned |
+| **Evidence Context** | Verification outputs and acceptance proofs | Task Spec §6.2 Evidence Ledger; auto-pinned acceptance criteria | Dynamic — handoff packet exposes verification status |
+
+All three live inside the Task Spec (single source of truth), assembled into bounded views by `specanchor_handoff`.
 
 > **→ Curious about the design philosophy? Read [WHY.md](WHY.md).**
 
@@ -118,6 +128,8 @@ Each tier is a persistent, reviewable, git-versioned `.spec.md` file — not a r
 | Task / change tier | ❌ | ✅ per-feature directory | ✅ `changes/<id>/` | ✅ `tasks/<module>/YYYY-MM-DD_*.spec.md` |
 | Spec ↔ source-code drift detection | ❌ | ⚠️ `/speckit.analyze` compares spec↔plan↔tasks, not code | ⚠️ `/opsx:verify` is one-shot, optional | ✅ `specanchor-check` runs continuously against real files |
 | Module coverage tracking | ❌ | ❌ | ❌ | ✅ `specanchor-check coverage` |
+| **Checkpoint decisions captured & filtered** | ❌ | ❌ | ❌ | ✅ Decision Log §5.2 + hot/cold lazy view |
+| **Evidence ledger as first-class** | ❌ | ❌ | ❌ | ✅ Evidence Ledger §6.2 + auto-pin acceptance criteria |
 | Wrap an existing spec directory | — | ❌ expects to own `.specify/` | ❌ expects to own `openspec/` | ✅ `parasitic` mode |
 
 Every tool here has *some* three-part structure — project context, persistent module contracts, per-change proposals. The real question is **how first-class each tier is**. Spec-Kit has a solid project and change tier but no persistent module layer. OpenSpec has solid module and change tiers but its project tier is a YAML string, not a reviewable spec file. SpecAnchor makes **all three tiers first-class, authored, indexed spec files** — which is what makes automatic resolution from file path + intent actually work.
@@ -168,6 +180,10 @@ anchor.yaml
 ├── archive/                         # completed tasks move here
 ├── spec-index.md                  # path → module spec lookup
 └── project-codemap.md               # high-level code map
+
+mydocs/                              # auto-generated views (when v0.5.0+ context_control enabled)
+├── evidence/                        # per-task verification logs
+└── handoff/                         # auto-generated handoff packets (specanchor_handoff)
 ```
 
 The starter Global Specs are intentionally generic; your first real use-case is refining them against your actual codebase. See [examples/minimal-full-project/](examples/minimal-full-project/) for the full expected layout.
@@ -185,6 +201,7 @@ SpecAnchor's user interface is natural language. Most prompts map to one interna
 | *"Check spec-code alignment"* | `specanchor_check` | drift report per Module Spec, with suggested action |
 | *"Infer a module spec for `src/auth`"* | `specanchor_infer` | draft Module Spec generated from code, needs human review |
 | *"What's the spec coverage?"* | `specanchor_status` | coverage % + module list with staleness timestamps |
+| *"Hand off this task to a new chat"* | `specanchor_handoff` | handoff packet (hot decisions + evidence status + read-next list) — paste into the new session |
 
 The full intent-to-command mapping is in [`references/commands-quickref.md`](references/commands-quickref.md).
 
@@ -225,9 +242,9 @@ git diff --check
 
 ## Release Status
 
-Current published prerelease: `v0.4.0-beta.1`.
+Current published prerelease: `v0.5.0-beta.1`.
 
-- Release notes: [`docs/release/v0.4.0-beta.1.md`](docs/release/v0.4.0-beta.1.md)
+- Release notes: [`docs/release/v0.5.0-beta.1.md`](docs/release/v0.5.0-beta.1.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Contributing

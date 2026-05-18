@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.5.0-beta.1 — Harness Context Control
+
+### Highlights
+
+- **Reframes SpecAnchor as a Harness Context Control plane**: three context categories (Spec / Decision / Evidence) made explicit in README, WHY, and SKILL.md.
+- **`sdd-riper-one` schema v2** adds 6 new sections to the Task Spec template: `§1.2 Hard Boundaries`, `§1.3 Allowed Freedom`, `§4.7 Checkpoints — Contract`, `§5.2 Checkpoint Decisions Log`, `§6.2 Evidence Ledger`, `§7.2 Handoff Packet`. The schema declares a `context_control` node listing kind/writer for each.
+- **`anchor.yaml` `context_control` block**: `decision_log` / `evidence_log` filter parameters, per-section `enforce` levels (`error / warning / off`), `pre_commit.{enabled, blocking}` switch.
+- **Two new pure-function libs** (dual interface — `source` + CLI):
+  - `scripts/lib/decision-filter.sh` — hot/cold/superseded/withdrawn classification for §5.2 with 3-tier config precedence (CLI > task frontmatter > anchor.yaml > builtin).
+  - `scripts/lib/evidence-filter.sh` — 4-subsection parser (Commands Run / Acceptance Criteria / Risks / Manual / Rollback) with status normalization and auto-pin acceptance.
+- **`specanchor-doctor.sh --lint=context-control`**: scans every active task spec, reports section presence per `enforce` level. Default doctor behavior unchanged (lint only triggers when `--lint=` is explicit).
+- **`specanchor-assemble.sh --mode=handoff`** + **`specanchor_handoff` command**: exports Task Spec hot decisions, evidence status, read-next files, and next step into a packet (text / markdown / json), with optional `--write-back` to refresh §7.2.
+- **`.githooks/pre-commit`** now runs context-control lint after the existing identity guard. Blocking is gated by `anchor.yaml.context_control.pre_commit.blocking` (default `true` for the spec-anchor repo; new projects start with `false`).
+- **TSV separator hardened** to `\037` (Unit Separator) inside the lib pipeline so bash `read` does not collapse empty fields — fixed a parser bug where decisions with empty phase markers shifted column positions.
+- **Self-dogfood**: this release was implemented while continuously running its own lint, filters, and handoff packet against `.specanchor/tasks/_cross-module/2026-05-18_harness-context-control.spec.md`.
+
+### Out of scope (deferred)
+
+- Steering Trigger emission on verification failure × 2 (third-wave; needs ≥50 real decisions corpus first)
+- task-local codemap as a first-class command (second-wave)
+- Spec ↔ Spec drift detection (third-wave)
+- Automatic migration tool for existing tasks (only upgrade docs are provided in this release)
+
+### Migration
+
+Existing projects will start showing context-control lint warnings/errors on their old task specs. To clear them:
+
+1. Add a `context_control:` block to `anchor.yaml` (see `scripts/specanchor-init.sh:46-87` for the generated template).
+2. For tasks created before v0.5.0-beta.1, append placeholder sections (`§1.2 / §1.3 / §4.7 / §5.2 / §6.2 / §7.2`) marked `not applicable — legacy task` to satisfy the lint without backfilling history.
+3. New tasks created via `specanchor_task` automatically get the v2 schema.
+
+Set `pre_commit.blocking: false` initially to keep the lint in warning-only mode while you upgrade.
+
 ## v0.4.0-beta.2 — Frontmatter and Spec Index Refactor
 
 ### Highlights
