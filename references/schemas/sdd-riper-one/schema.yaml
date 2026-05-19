@@ -77,6 +77,14 @@ frontmatter_fields:
     - scope
     - non_goals
 
+# Frontmatter 字段类型 —— 仅声明 list / object 字段（string 默认）
+field_types:
+  related_modules: list
+  related_global: list
+  decision_log: object
+  evidence_log: object
+  non_goals: list
+
 # Harness Context Control —— sdd-riper-one v2 起声明 6 个 Context 区段
 # 仅声明协议事实（区段位置 / kind / writer），不放调参（hot_window 等调参在 anchor.yaml.context_control 与 task frontmatter）
 context_control:
