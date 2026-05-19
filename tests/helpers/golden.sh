@@ -3,6 +3,30 @@
 # shellcheck source=tests/helpers/assert.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/assert.sh"
 
+# Normalize volatile JSON fields (e.g. `freshness` flips between fresh/drifted
+# depending on `git log --since=last_synced` against the current HEAD; not a
+# stable invariant for replay-style golden comparisons).
+_golden_normalize() {
+  python3 - "$1" <<'PY'
+import json, sys
+VOLATILE = {"freshness", "generated_at"}
+def normalize(obj):
+    if isinstance(obj, dict):
+        for k in list(obj.keys()):
+            if k in VOLATILE:
+                obj[k] = "<NORMALIZED>"
+            else:
+                normalize(obj[k])
+    elif isinstance(obj, list):
+        for item in obj:
+            normalize(item)
+with open(sys.argv[1]) as fh:
+    data = json.load(fh)
+normalize(data)
+json.dump(data, sys.stdout, indent=4, sort_keys=True)
+PY
+}
+
 assert_json_golden() {
   local actual_file="$1"
   local golden_file="$2"
@@ -11,12 +35,12 @@ assert_json_golden() {
   actual_pretty=$(mktemp)
   golden_pretty=$(mktemp)
 
-  python3 -m json.tool "$actual_file" >"$actual_pretty" || {
+  _golden_normalize "$actual_file" >"$actual_pretty" 2>/dev/null || {
     rm -f "$actual_pretty" "$golden_pretty"
     fail "invalid JSON for actual golden comparison: $actual_file"
     return 1
   }
-  python3 -m json.tool "$golden_file" >"$golden_pretty" || {
+  _golden_normalize "$golden_file" >"$golden_pretty" 2>/dev/null || {
     rm -f "$actual_pretty" "$golden_pretty"
     fail "invalid JSON for golden file: $golden_file"
     return 1
