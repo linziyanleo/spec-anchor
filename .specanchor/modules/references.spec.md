@@ -11,8 +11,8 @@ specanchor:
   created: "2026-04-02"
   updated: "2026-05-19"
   last_synced: "2026-05-19"
-  last_synced_sha: "cbf4cab"
-  last_change: "v0.5.0-beta.2 Handoff schema rollout: 新增 handoff schema (schemas/handoff/); commands/handoff.md 加两类 handoff 概念区分; commands/task.md 加 schema 选择速查; commands-quickref 扩展; integrations/goal-hook.md 新增"
+  last_synced_sha: "fc614d5"
+  last_change: "v0.5.0-beta.2 Frontmatter schema validation: 7 schema yaml 增 frontmatter_fields 段 (declarative 字段集 source of truth); sdd-riper-one schema 增 plan gate.bypass_when_goal_active: true; goal-hook.md 增机制化段引用该字段"
   status: active
   depends_on: []
 ---

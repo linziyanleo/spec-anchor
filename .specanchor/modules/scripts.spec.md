@@ -9,8 +9,8 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-19"
-  last_synced_sha: "cbf4cab"
-  last_change: "v0.5.0-beta.2 Schema-aware enforce: doctor.sh 加 schema_declares_section helper 链 + CC_LINT_SCHEMA_NOT_FOUND warning + --ignore-pattern; boot.sh Available Schemas 默认开 + --no-schemas 反向开关"
+  last_synced_sha: "fc614d5"
+  last_change: "v0.5.0-beta.2 schema-aware frontmatter validation: validate.sh + inject.sh 加 schema-aware helpers (parse_task_writing_protocol / locate_schema_yaml / parse_schema_frontmatter_fields 等) + 新错误码 FRONTMATTER_FIELD_UNKNOWN/MISSING_REQUIRED + generate_frontmatter 改为 schema-driven (fallback 保留)"
   depends_on: []
 ---
 

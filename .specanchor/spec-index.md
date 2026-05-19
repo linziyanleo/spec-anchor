@@ -2,7 +2,7 @@
 specanchor:
   type: spec-index
   version: 3
-  generated_at: "2026-05-19T14:20:54"
+  generated_at: "2026-05-19T14:34:52"
   spec_counts:
     globals: 3
     modules: 2
@@ -50,7 +50,7 @@ specs:
       status: "active"
       version: "1.4.0"
       last_synced: "2026-05-19"
-      last_synced_sha: "cbf4cab"
+      last_synced_sha: "fc614d5"
       owner: "maintainers"
       health: "FRESH"
     - path: "scripts/"
@@ -60,7 +60,7 @@ specs:
       status: "active"
       version: "2.3.0"
       last_synced: "2026-05-19"
-      last_synced_sha: "cbf4cab"
+      last_synced_sha: "fc614d5"
       owner: "maintainers"
       health: "FRESH"
   tasks:
