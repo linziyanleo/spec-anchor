@@ -2,6 +2,15 @@
 
 跨 session / new chat 导出当前 Task Spec 的 handoff packet——把 Spec / Decision / Evidence 三类 Context 的 hot 视图凝固成一个简短的指引文档，喂给新 chat 让它从同一个上下文继续工作。
 
+> **概念区分（v0.5.0-beta.2 起）**：spec-anchor 把"handoff"分成两个独立物种——
+>
+> | 物种 | 物理位置 | 生成方 | 适用场景 | 触发 |
+> |---|---|---|---|---|
+> | **Task-internal handoff packet** | sdd-riper-one task 内的 §7.2 段 | tool（auto-generated） | **单 task** 跨 session 接力（同一任务换 chat 继续） | **本命令 `specanchor_handoff`** |
+> | **Portfolio handoff spec** | 独立 spec 文件（用 `handoff` schema） | author（手写） | **跨 task / 跨 release** roadmap、deferred items 矩阵 | `specanchor_task` + `writing_protocol: handoff` |
+>
+> 两者**不是替代关系**。本命令仅生成 Task-internal packet。需要 portfolio handoff 时见 `references/schemas/handoff/template.md`。
+
 **用户可能这样说**: "把这个任务交给新 chat 继续" / "导出 handoff packet" / "换个 session 接着做" / "生成 §7.2 handoff" / "做一个跨会话的接手包"
 
 ## 参数

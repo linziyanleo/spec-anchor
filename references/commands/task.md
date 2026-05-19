@@ -71,3 +71,19 @@
 - 告知用户：`模块 <path> 尚无 Module Spec，正在从代码推断草稿...`
 - 生成完成后告知用户：`Module Spec 草稿已生成（status=draft），建议后续人工确认`
 - 然后继续创建 Task Spec 流程
+
+## Schema 选择速查
+
+详细 match 规则在每个 schema 的 `references/schemas/<name>/schema.yaml` 的 `match.when` 段。常见场景对应：
+
+| 任务性质 | 推荐 schema | 关键判断 |
+|---|---|---|
+| 新功能 / 增强 / 用户故事实现 | `sdd-riper-one`（默认） | 有 EXECUTE 阶段、需 Hard Boundaries / Decisions Log / Evidence Ledger |
+| 简单单文件修改 / 小 bug fix / 样式调整 | `simple` | 不需要 RIPER 流程，但仍想留 spec 记录 |
+| 技术调研 / 方案评估 / 选型 | `research` | 不产出代码，产出结论与建议 |
+| Bug 修复（有复现 + 根因 + 验证） | `bug-fix` | 需要 reproduction + RCA + regression test |
+| 重构（行为不变，结构变） | `refactor` | 需要 before/after equivalence 证明 |
+| 兼容 OpenSpec 现有规范 | `openspec-compat` | 来自 OpenSpec 工具的导入流程 |
+| **Portfolio handoff / deferred follow-up / cross-task roadmap** | **`handoff`** | 给下一会话的 entry point；items 矩阵；不实施任何 item |
+
+**Portfolio handoff 触发关键词**：用户说"deferred follow-up" / "下次会话的开场包" / "release follow-up" / "cross-task roadmap" / "v0.X.Y 接力"等，进入 `handoff` schema。详见 `references/schemas/handoff/template.md`。
