@@ -73,9 +73,10 @@ specanchor:
 | 参数 | 说明 |
 |------|------|
 | `--format=summary\|full\|json` | 输出格式（默认 summary） |
-| `--with-schemas` | summary/full 中显式输出 schema 摘要 |
+| `--with-schemas` | summary/full 中显式输出 schema 摘要（默认开启；保留 flag 用于向后兼容） |
+| `--no-schemas` | 关闭 Available Schemas 段（精简输出场景） |
 
-环境变量 `SPECANCHOR_SKILL_DIR` 指向 Skill 安装目录，用于查找内置 schemas。无论 `summary` 还是 `full`，都显式输出本轮 Assembly Trace；`summary` 默认输出 `Available Commands:` 与 `Available Modules:`，把 quickref/module lookup 降为 fallback；`full` 额外附带 Global Spec 正文。
+环境变量 `SPECANCHOR_SKILL_DIR` 指向 Skill 安装目录，用于查找内置 schemas。无论 `summary` 还是 `full`，都显式输出本轮 Assembly Trace；`summary` 默认输出 `Available Commands:`、`Available Modules:` 与 `Available Schemas:`，把 quickref/module/schema lookup 降为 fallback；`full` 额外附带 Global Spec 正文。
 
 ### specanchor-check.sh
 
