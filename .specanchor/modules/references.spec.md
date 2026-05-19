@@ -11,8 +11,8 @@ specanchor:
   created: "2026-04-02"
   updated: "2026-05-19"
   last_synced: "2026-05-19"
-  last_synced_sha: "6ec2463"
-  last_change: "v0.6 schema field_types: 7 schema yaml 增 field_types 段 (list/object 声明; string 默认), 与 frontmatter_fields 配对成完整字段集协议事实"
+  last_synced_sha: "3328e74"
+  last_change: "新增 references/commands/codemap.md —— specanchor_codemap 命令文档草稿（v0.5-followup Item 2；time-gated 到 ≥2026-06-15 才实施；含 4 个 implementation 开放问题）"
   status: active
   depends_on: []
 ---
