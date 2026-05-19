@@ -2,7 +2,7 @@
 specanchor:
   type: spec-index
   version: 3
-  generated_at: "2026-05-19T10:39:58"
+  generated_at: "2026-05-19T10:55:05"
   spec_counts:
     globals: 3
     modules: 2
@@ -15,8 +15,8 @@ specanchor:
       stale: 3
       outdated: 0
     modules:
-      fresh: 2
-      drifted: 0
+      fresh: 0
+      drifted: 2
       stale: 0
       outdated: 0
     tasks:
@@ -52,7 +52,7 @@ specs:
       last_synced: "2026-05-18"
       last_synced_sha: "0280dc6"
       owner: "maintainers"
-      health: "FRESH"
+      health: "DRIFTED"
     - path: "scripts/"
       spec: "scripts.spec.md"
       summary: "Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验"
@@ -62,7 +62,7 @@ specs:
       last_synced: "2026-05-18"
       last_synced_sha: "0280dc6"
       owner: "maintainers"
-      health: "FRESH"
+      health: "DRIFTED"
   tasks:
     - spec: ".specanchor/tasks/_cross-module/2026-05-19_module-drift-detection-sha-based.spec.md"
       task_name: "Module Drift Detection: SHA-based"
@@ -83,5 +83,5 @@ uncovered: []
 
 | Path | Spec | Summary | Status | Health | Version | Last Synced |
 |---|---|---|---|---|---|---|
-| references/ | references.spec.md | 协议声明层：命令定义、Spec 模板、Schema 系统、核心协议 | active | 🟢 FRESH | 1.4.0 | 2026-05-18 |
-| scripts/ | scripts.spec.md | Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验 | active | 🟢 FRESH | 2.3.0 | 2026-05-18 |
+| references/ | references.spec.md | 协议声明层：命令定义、Spec 模板、Schema 系统、核心协议 | active | 🟡 DRIFTED | 1.4.0 | 2026-05-18 |
+| scripts/ | scripts.spec.md | Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验 | active | 🟡 DRIFTED | 2.3.0 | 2026-05-18 |
