@@ -4,8 +4,8 @@ specanchor:
   task_name: "Spec↔Spec Drift Protocol Draft"
   author: "@方壶"
   created: "2026-05-19"
-  status: "in_progress"
-  last_change: "初始化：v0.5-followup Item 4 推进（仅 protocol 草稿；implementation 是 v0.6 候选）"
+  status: "done"
+  last_change: "DONE：references/spec-drift-protocol.md 草稿落地（8bf0772）；v0.5-followup Item 4 ✅；implementation 是 v0.6 候选"
   related_modules:
     - ".specanchor/modules/references.spec.md"
   related_global:

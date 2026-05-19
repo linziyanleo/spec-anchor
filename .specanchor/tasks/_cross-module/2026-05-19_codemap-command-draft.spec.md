@@ -4,8 +4,8 @@ specanchor:
   task_name: "Codemap Command Draft (time-gated implementation)"
   author: "@方壶"
   created: "2026-05-19"
-  status: "in_progress"
-  last_change: "初始化：v0.5-followup Item 2 推进（仅文档草稿；命令实施 time-gated 到 2026-06-15）"
+  status: "done"
+  last_change: "DONE：references/commands/codemap.md 草稿落地（3328e74）；v0.5-followup Item 2 ✅；implementation time-gated 到 ≥2026-06-15"
   related_modules:
     - ".specanchor/modules/references.spec.md"
   related_global:

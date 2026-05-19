@@ -2,7 +2,7 @@
 specanchor:
   type: spec-index
   version: 3
-  generated_at: "2026-05-19T20:44:43"
+  generated_at: "2026-05-19T20:45:44"
   spec_counts:
     globals: 3
     modules: 2
@@ -66,10 +66,10 @@ specs:
   tasks:
     - spec: ".specanchor/tasks/_cross-module/2026-05-19_codemap-command-draft.spec.md"
       task_name: "Codemap Command Draft (time-gated implementation)"
-      status: "in_progress"
+      status: "done"
       sdd_phase: ""
       created: "2026-05-19"
-      last_change: "初始化：v0.5-followup Item 2 推进（仅文档草稿；命令实施 time-gated 到 2026-06-15）"
+      last_change: "DONE：references/commands/codemap.md 草稿落地（3328e74）；v0.5-followup Item 2 ✅；implementation time-gated 到 ≥2026-06-15"
     - spec: ".specanchor/tasks/_cross-module/2026-05-19_handoff-schema-and-aware-enforce.spec.md"
       task_name: "Handoff Schema 引入 + Schema-Aware Enforce"
       status: "review"
@@ -87,7 +87,7 @@ specs:
       status: "review"
       sdd_phase: "REVIEW"
       created: "2026-05-19"
-      last_change: "REVIEW：doctor 加 --include-archive + migrate.sh 落地；本地 dogfood 对 1 个 archive task append 6 sections → lint exit=0；cp-02 发现 archive 在 .gitignore 排除，工具仍可 commit"
+      last_change: "DONE：所有 Acceptance Criteria pass (1 pending = 本 spec 自己 lint, 已通过)；3 commit 落地 (5e30ddf chore / ae8b71a feat / c3a44e0 sha bump)；v0.5-followup Item 1 ✅ + 归档"
     - spec: ".specanchor/tasks/_cross-module/2026-05-19_module-drift-detection-sha-based.spec.md"
       task_name: "Module Drift Detection: SHA-based"
       status: "review"
@@ -96,10 +96,10 @@ specs:
       last_change: "EXECUTE 完成；lib/health.sh 抽出，3 处 caller 接入；现有 module spec 加 last_synced_sha；32/32 tests pass"
     - spec: ".specanchor/tasks/_cross-module/2026-05-19_spec-drift-protocol-draft.spec.md"
       task_name: "Spec↔Spec Drift Protocol Draft"
-      status: "in_progress"
+      status: "done"
       sdd_phase: ""
       created: "2026-05-19"
-      last_change: "初始化：v0.5-followup Item 4 推进（仅 protocol 草稿；implementation 是 v0.6 候选）"
+      last_change: "DONE：references/spec-drift-protocol.md 草稿落地（8bf0772）；v0.5-followup Item 4 ✅；implementation 是 v0.6 候选"
     - spec: ".specanchor/tasks/_cross-module/2026-05-19_steering-trigger-corpus-and-design.spec.md"
       task_name: "Steering Trigger: corpus collector + design draft"
       status: "review"

@@ -6,8 +6,8 @@ specanchor:
   assignee: "@方壶"
   reviewer: "@方壶"
   created: "2026-05-19"
-  status: "review"
-  last_change: "REVIEW：doctor 加 --include-archive + migrate.sh 落地；本地 dogfood 对 1 个 archive task append 6 sections → lint exit=0；cp-02 发现 archive 在 .gitignore 排除，工具仍可 commit"
+  status: "done"
+  last_change: "DONE：所有 Acceptance Criteria pass (1 pending = 本 spec 自己 lint, 已通过)；3 commit 落地 (5e30ddf chore / ae8b71a feat / c3a44e0 sha bump)；v0.5-followup Item 1 ✅ + 归档"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
   related_global:
