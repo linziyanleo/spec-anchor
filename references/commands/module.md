@@ -20,7 +20,7 @@
 5. **更新模式**（Spec 已存在）：
    - 读取 frontmatter，保留 `owner` / `reviewers`
    - 使用 `references/module-spec-template.md` 全量重生成正文（§1-§7 全部章节）
-   - version minor +1，updated = 当前日期，last_synced = 当前日期
+   - version minor +1，updated = 当前日期，last_synced = 当前日期，last_synced_sha = 当前 HEAD short SHA
 6. **创建模式**（Spec 不存在）：
    - 使用 `references/module-spec-template.md` 从代码推断所有章节
    - version = 1.0.0，status = draft，module_path = 用户指定路径

@@ -6,6 +6,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
+# shellcheck source=scripts/lib/health.sh
+source "$SCRIPT_DIR/lib/health.sh"
 
 FORMAT="text"
 FILES_CSV=""
@@ -208,40 +210,24 @@ load_mode_for_anchor() {
 
 module_freshness() {
   local spec_file="$1"
-  local module_path last_synced commits_since synced_epoch now_epoch days_since
+  local module_path last_synced last_synced_sha health
   module_path=$(sa_parse_frontmatter_field "$spec_file" "module_path")
   last_synced=$(sa_parse_frontmatter_field "$spec_file" "last_synced")
+  last_synced_sha=$(sa_parse_frontmatter_field "$spec_file" "last_synced_sha")
 
   if [[ -z "$last_synced" ]]; then
     printf 'unknown\n'
     return 0
   fi
 
-  synced_epoch=$(sa_date_to_epoch "$last_synced")
-  if [[ -z "$synced_epoch" ]]; then
-    printf 'unknown\n'
-    return 0
-  fi
-
-  commits_since=0
-  if [[ -n "$module_path" ]] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    commits_since=$(git log --oneline --since="${last_synced} 00:00:00" -- "$module_path" 2>/dev/null | wc -l | tr -d ' ')
-  fi
-
-  if [[ "$commits_since" -eq 0 ]]; then
-    printf 'fresh\n'
-    return 0
-  fi
-
-  now_epoch=$(date "+%s")
-  days_since=$(( (now_epoch - synced_epoch) / 86400 ))
-  if [[ "$days_since" -ge "$CHECK_OUTDATED_DAYS" ]]; then
-    printf 'outdated\n'
-  elif [[ "$days_since" -ge "$CHECK_STALE_DAYS" ]]; then
-    printf 'stale\n'
-  else
-    printf 'drifted\n'
-  fi
+  health=$(compute_module_health "$module_path" "$last_synced" "$CHECK_STALE_DAYS" "$CHECK_OUTDATED_DAYS" "$last_synced_sha")
+  case "$health" in
+    FRESH)    printf 'fresh\n' ;;
+    DRIFTED)  printf 'drifted\n' ;;
+    STALE)    printf 'stale\n' ;;
+    OUTDATED) printf 'outdated\n' ;;
+    *)        printf 'unknown\n' ;;
+  esac
 }
 
 freshness_for_anchor() {

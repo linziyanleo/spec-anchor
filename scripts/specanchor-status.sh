@@ -11,6 +11,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
+# shellcheck source=scripts/lib/health.sh
+source "$SCRIPT_DIR/lib/health.sh"
 
 if [[ -t 1 ]]; then
   RED='\033[0;31m'
@@ -141,39 +143,17 @@ collect_stats() {
       [[ -f "$f" ]] || continue
       module_count=$((module_count + 1))
 
-      local mp ls
+      local mp ls lsha health
       mp=$(parse_frontmatter_field "$f" "module_path")
       ls=$(parse_frontmatter_field "$f" "last_synced")
-
-      if [[ -z "$mp" ]] || [[ -z "$ls" ]] || [[ ! -e "$mp" ]]; then
-        stale=$((stale + 1))
-        continue
-      fi
-
-      local commits_since=0
-      if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
-        commits_since=$(git log --oneline --since="${ls} 00:00:00" -- "$mp" 2>/dev/null | wc -l | tr -d ' ')
-      fi
-
-      if [[ $commits_since -eq 0 ]]; then
-        fresh=$((fresh + 1))
-      else
-        local synced_epoch now_epoch days_since
-        synced_epoch=$(sa_date_to_epoch "$ls")
-        if [[ -z "$synced_epoch" ]]; then
-          stale=$((stale + 1))
-          continue
-        fi
-        now_epoch=$(date "+%s")
-        days_since=$(( (now_epoch - synced_epoch) / 86400 ))
-        if [[ $days_since -ge $outdated_days ]]; then
-          outdated=$((outdated + 1))
-        elif [[ $days_since -ge $stale_days ]]; then
-          stale=$((stale + 1))
-        else
-          drifted=$((drifted + 1))
-        fi
-      fi
+      lsha=$(parse_frontmatter_field "$f" "last_synced_sha")
+      health=$(compute_module_health "$mp" "$ls" "$stale_days" "$outdated_days" "$lsha")
+      case "$health" in
+        FRESH) fresh=$((fresh + 1)) ;;
+        DRIFTED) drifted=$((drifted + 1)) ;;
+        STALE) stale=$((stale + 1)) ;;
+        OUTDATED) outdated=$((outdated + 1)) ;;
+      esac
     done
   fi
 

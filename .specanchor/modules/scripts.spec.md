@@ -9,6 +9,7 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-18"
+  last_synced_sha: "0280dc6"
   last_change: "v0.5.0-beta.1 Harness Context Control：新增 lib/{decision,evidence}-filter.sh、specanchor-doctor --lint=context-control、specanchor-assemble --mode=handoff、.githooks/pre-commit 集成 lint"
   depends_on: []
 ---

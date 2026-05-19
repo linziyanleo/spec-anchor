@@ -11,6 +11,7 @@ specanchor:
   created: "2026-04-02"
   updated: "2026-05-18"
   last_synced: "2026-05-18"
+  last_synced_sha: "0280dc6"
   last_change: "v0.5.0-beta.1 Harness Context Control：commands/ 加 handoff.md（specanchor_handoff），schema sdd-riper-one v2 加 6 区段 + context_control 节"
   status: active
   depends_on: []

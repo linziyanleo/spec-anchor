@@ -17,6 +17,7 @@ specanchor:
   created: "<YYYY-MM-DD>"
   updated: "<YYYY-MM-DD>"
   last_synced: "<YYYY-MM-DD>"
+  last_synced_sha: "<short-sha>"      # 可选；填则按 SHA 精确算 drift，否则 fallback 到日期
   last_change: "<最近一次变更的简要说明>"
   status: "draft"                    # draft | review | active | deprecated | archived
   depends_on:                        # 依赖的其他模块路径
@@ -92,6 +93,7 @@ specanchor:
 | `created` | 是 | 创建日期 |
 | `updated` | 是 | 最后更新日期 |
 | `last_synced` | 是 | 最后一次 Spec-代码同步日期 |
+| `last_synced_sha` | 否 | 最后一次 Spec-代码同步时的 git commit short SHA。填则按 SHA 精确算 drift（避免 sync commit 自身被误判为 drift）；不填则 fallback 到 `last_synced` 日期算法 |
 | `last_change` | 否 | 最近一次变更的简要说明（单行） |
 | `status` | 是 | 生命周期状态 |
 | `depends_on` | 否 | 依赖的其他模块路径列表 |

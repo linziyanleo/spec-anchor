@@ -13,6 +13,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
+# shellcheck source=scripts/lib/health.sh
+source "$SCRIPT_DIR/lib/health.sh"
 
 if [[ -t 1 ]]; then
   GREEN='\033[0;32m'
@@ -29,77 +31,6 @@ yaml_quote() {
   value=${value//\\/\\\\}
   value=${value//\"/\\\"}
   printf '"%s"' "$value"
-}
-
-date_to_epoch() {
-  sa_date_to_epoch "$1"
-}
-
-health_icon() {
-  case "$1" in
-    FRESH)    echo "🟢" ;;
-    DRIFTED)  echo "🟡" ;;
-    STALE)    echo "🟠" ;;
-    OUTDATED) echo "🔴" ;;
-    *)        echo "⚪" ;;
-  esac
-}
-
-compute_module_health() {
-  local module_path="$1" last_synced="$2" stale_days="$3" outdated_days="$4"
-
-  if [[ -z "$last_synced" ]] || [[ ! -e "$module_path" ]]; then
-    echo "STALE"
-    return
-  fi
-
-  local commits_since=0
-  if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
-    commits_since=$(git log --oneline --since="${last_synced} 00:00:00" -- "$module_path" 2>/dev/null | wc -l | tr -d ' ')
-  fi
-
-  if [[ $commits_since -eq 0 ]]; then
-    echo "FRESH"
-    return
-  fi
-
-  local synced_epoch now_epoch days_since
-  synced_epoch=$(date_to_epoch "$last_synced")
-  if [[ -z "$synced_epoch" ]]; then
-    echo "STALE"
-    return
-  fi
-  now_epoch=$(date "+%s")
-  days_since=$(( (now_epoch - synced_epoch) / 86400 ))
-
-  if [[ $days_since -ge $outdated_days ]]; then
-    echo "OUTDATED"
-  elif [[ $days_since -ge $stale_days ]]; then
-    echo "STALE"
-  else
-    echo "DRIFTED"
-  fi
-}
-
-compute_global_health() {
-  local last_synced="$1" stale_days="$2" outdated_days="$3"
-  local synced_epoch now_epoch days_since
-
-  synced_epoch=$(date_to_epoch "$last_synced")
-  if [[ -z "$last_synced" ]] || [[ -z "$synced_epoch" ]]; then
-    echo "STALE"
-    return
-  fi
-
-  now_epoch=$(date "+%s")
-  days_since=$(( (now_epoch - synced_epoch) / 86400 ))
-  if [[ $days_since -ge $outdated_days ]]; then
-    echo "OUTDATED"
-  elif [[ $days_since -ge $stale_days ]]; then
-    echo "STALE"
-  else
-    echo "FRESH"
-  fi
 }
 
 detect_task_phase_marker() {
@@ -153,6 +84,7 @@ write_legacy_module_index() {
         echo "    status: ${M_STATUSES[$i]}"
         echo "    version: $(yaml_quote "${M_VERSIONS[$i]}")"
         echo "    last_synced: $(yaml_quote "${M_SYNCS[$i]}")"
+        [[ -n "${M_SYNC_SHAS[$i]}" ]] && echo "    last_synced_sha: $(yaml_quote "${M_SYNC_SHAS[$i]}")"
         echo "    owner: $(yaml_quote "${M_OWNERS[$i]}")"
         echo "    health: ${M_HEALTHS[$i]}"
         echo ""
@@ -210,6 +142,7 @@ generate_spec_index() {
   M_STATUSES=()
   M_VERSIONS=()
   M_SYNCS=()
+  M_SYNC_SHAS=()
   M_OWNERS=()
   M_HEALTHS=()
   G_TYPES=()
@@ -259,7 +192,7 @@ generate_spec_index() {
   if [[ -d "$modules_dir" ]]; then
     for spec_file in "$modules_dir"/*.spec.md; do
       [[ -f "$spec_file" ]] || continue
-      local mp ms summary status version last_synced owner source health
+      local mp ms summary status version last_synced last_synced_sha owner source health
       mp=$(sa_parse_frontmatter_field "$spec_file" "module_path")
       [[ -z "$mp" ]] && continue
       ms=$(basename "$spec_file")
@@ -269,9 +202,10 @@ generate_spec_index() {
       version=$(sa_parse_frontmatter_field "$spec_file" "version")
       [[ -z "$version" ]] && version="0.0.0"
       last_synced=$(sa_parse_frontmatter_field "$spec_file" "last_synced")
+      last_synced_sha=$(sa_parse_frontmatter_field "$spec_file" "last_synced_sha")
       owner=$(sa_parse_frontmatter_field "$spec_file" "owner")
       source="native"
-      health=$(compute_module_health "$mp" "$last_synced" "$stale_days" "$outdated_days")
+      health=$(compute_module_health "$mp" "$last_synced" "$stale_days" "$outdated_days" "$last_synced_sha")
       case "$health" in
         FRESH) m_fresh=$((m_fresh + 1)) ;;
         DRIFTED) m_drifted=$((m_drifted + 1)) ;;
@@ -285,6 +219,7 @@ generate_spec_index() {
       M_STATUSES+=("$status")
       M_VERSIONS+=("$version")
       M_SYNCS+=("$last_synced")
+      M_SYNC_SHAS+=("$last_synced_sha")
       M_OWNERS+=("$owner")
       M_HEALTHS+=("$health")
     done
@@ -376,6 +311,7 @@ generate_spec_index() {
         echo "      status: $(yaml_quote "${M_STATUSES[$i]}")"
         echo "      version: $(yaml_quote "${M_VERSIONS[$i]}")"
         echo "      last_synced: $(yaml_quote "${M_SYNCS[$i]}")"
+        [[ -n "${M_SYNC_SHAS[$i]}" ]] && echo "      last_synced_sha: $(yaml_quote "${M_SYNC_SHAS[$i]}")"
         echo "      owner: $(yaml_quote "${M_OWNERS[$i]}")"
         echo "      health: $(yaml_quote "${M_HEALTHS[$i]}")"
       done
