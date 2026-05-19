@@ -28,7 +28,13 @@ fi
 
 die() { echo -e "${RED}error:${RESET} $*" >&2; exit 1; }
 declare -a S_GLOBAL_FILES=()
+declare -a S_TASK_NAMES=()
+declare -a S_TASK_STATUSES=()
+declare -a S_TASK_PHASES=()
+declare -a S_TASK_PROTOCOLS=()
+declare -a S_TASK_PATHS=()
 S_CONFIG_DISPLAY=""
+S_DEFAULT_SCHEMA=""
 
 normalize_scalar() {
   local value="${1:-}"
@@ -158,8 +164,33 @@ collect_stats() {
   fi
 
   local task_active=0 task_archived=0
+  S_DEFAULT_SCHEMA=$(sa_parse_config_field "$config" "schema" "sdd-riper-one")
   if [[ -d ".specanchor/tasks" ]]; then
     task_active=$(find ".specanchor/tasks" -name "*.spec.md" 2>/dev/null | wc -l | tr -d ' ')
+    S_TASK_NAMES=()
+    S_TASK_STATUSES=()
+    S_TASK_PHASES=()
+    S_TASK_PROTOCOLS=()
+    S_TASK_PATHS=()
+    local _tf _trel _tname _tstatus _tproto _tphase
+    while IFS= read -r _tf; do
+      [[ -f "$_tf" ]] || continue
+      _trel="${_tf#.specanchor/tasks/}"
+      _tname=$(parse_frontmatter_field "$_tf" "task_name")
+      _tstatus=$(parse_frontmatter_field "$_tf" "status")
+      _tproto=$(parse_frontmatter_field "$_tf" "writing_protocol")
+      [[ -z "$_tproto" ]] && _tproto="$S_DEFAULT_SCHEMA"
+      _tphase=""
+      if [[ "$_tproto" == "sdd-riper-one" ]]; then
+        _tphase=$(grep -m1 '^> Current RIPER Phase:' "$_tf" 2>/dev/null \
+          | sed -E 's/^> Current RIPER Phase:[[:space:]]*//' | tr -d '[:space:]')
+      fi
+      S_TASK_NAMES+=("${_tname:-(unnamed)}")
+      S_TASK_STATUSES+=("${_tstatus:-unknown}")
+      S_TASK_PHASES+=("$_tphase")
+      S_TASK_PROTOCOLS+=("$_tproto")
+      S_TASK_PATHS+=("$_trel")
+    done < <(find ".specanchor/tasks" -name "*.spec.md" 2>/dev/null | sort)
   fi
   if [[ -d ".specanchor/archive" ]]; then
     task_archived=$(find ".specanchor/archive" -name "*.spec.md" 2>/dev/null | wc -l | tr -d ' ')
@@ -226,6 +257,27 @@ output_summary() {
   esac
 
   echo -e "  Task Specs: ${S_TASK_ACTIVE} active, ${S_TASK_ARCHIVED} archived"
+  if [[ ${#S_TASK_NAMES[@]} -gt 0 ]]; then
+    echo -e "  Active Tasks:"
+    local _i _name _st _ph _pr _pa _color _meta
+    for _i in "${!S_TASK_NAMES[@]}"; do
+      _name="${S_TASK_NAMES[$_i]}"
+      _st="${S_TASK_STATUSES[$_i]}"
+      _ph="${S_TASK_PHASES[$_i]}"
+      _pr="${S_TASK_PROTOCOLS[$_i]}"
+      _pa="${S_TASK_PATHS[$_i]}"
+      _color="$DIM"
+      case "$_st" in
+        in_progress) _color="$YELLOW" ;;
+        review)      _color="$CYAN" ;;
+        done)        _color="$GREEN" ;;
+      esac
+      _meta="${_color}${_st}${RESET}"
+      [[ -n "$_ph" ]] && _meta="${_meta} ${DIM}·${RESET} ${_ph}"
+      _meta="${_meta} ${DIM}(${_pr})${RESET}"
+      echo -e "    - ${_name} [${_meta}] ${DIM}${_pa}${RESET}"
+    done
+  fi
   echo -e "  ${DIM}Thresholds: stale_days=${S_STALE_DAYS}, outdated_days=${S_OUTDATED_DAYS}${RESET}"
 
   if [[ $S_MODULE_COUNT -gt 0 ]]; then
@@ -269,6 +321,18 @@ output_json() {
   printf '  "module_specs": {"count": %d, "health": {"fresh": %d, "drifted": %d, "stale": %d, "outdated": %d}},\n' \
     "$S_MODULE_COUNT" "$S_FRESH" "$S_DRIFTED" "$S_STALE" "$S_OUTDATED"
   printf '  "task_specs": {"active": %d, "archived": %d},\n' "$S_TASK_ACTIVE" "$S_TASK_ARCHIVED"
+  printf '  "active_tasks": ['
+  local _at
+  for _at in "${!S_TASK_NAMES[@]}"; do
+    [[ $_at -gt 0 ]] && printf ','
+    printf '{"task_name":"%s","status":"%s","phase":"%s","writing_protocol":"%s","path":"%s"}' \
+      "$(sa_json_escape "${S_TASK_NAMES[$_at]}")" \
+      "$(sa_json_escape "${S_TASK_STATUSES[$_at]}")" \
+      "$(sa_json_escape "${S_TASK_PHASES[$_at]}")" \
+      "$(sa_json_escape "${S_TASK_PROTOCOLS[$_at]}")" \
+      "$(sa_json_escape "${S_TASK_PATHS[$_at]}")"
+  done
+  printf '],\n'
   printf '  "spec_index_format": "%s",\n' "$S_INDEX_FORMAT"
   printf '  "thresholds": {"stale_days": %d, "outdated_days": %d}\n' "$S_STALE_DAYS" "$S_OUTDATED_DAYS"
   printf '}\n'

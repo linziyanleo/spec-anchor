@@ -74,6 +74,13 @@ declare -a B_MOD_SPECS=()
 declare -a B_MOD_SUMMARIES=()
 declare -a B_MOD_HEALTHS=()
 
+# Active Task Specs
+declare -a B_TASK_NAMES=()
+declare -a B_TASK_STATUSES=()
+declare -a B_TASK_PHASES=()       # RIPER phase (sdd-riper-one schema only); empty for fluid schemas
+declare -a B_TASK_PROTOCOLS=()
+declare -a B_TASK_PATHS=()
+
 # Global Specs
 B_GLOBAL_STATUS=""    # ok | missing
 B_GLOBAL_COUNT=0
@@ -252,6 +259,35 @@ readiness_detail() {
   fi
 }
 
+emit_active_tasks() {
+  [[ "${#B_TASK_NAMES[@]}" -eq 0 ]] && return 0
+
+  echo -e "  Active Tasks:"
+  local i status_disp phase_disp protocol_disp name path
+  for i in "${!B_TASK_NAMES[@]}"; do
+    name="${B_TASK_NAMES[$i]}"
+    status_disp="${B_TASK_STATUSES[$i]}"
+    phase_disp="${B_TASK_PHASES[$i]}"
+    protocol_disp="${B_TASK_PROTOCOLS[$i]}"
+    path="${B_TASK_PATHS[$i]}"
+
+    local status_color="$DIM"
+    case "$status_disp" in
+      in_progress) status_color="$YELLOW" ;;
+      review)      status_color="$CYAN" ;;
+      done)        status_color="$GREEN" ;;
+      draft)       status_color="$DIM" ;;
+    esac
+
+    local meta="${status_color}${status_disp}${RESET}"
+    if [[ -n "$phase_disp" ]]; then
+      meta="${meta} ${DIM}·${RESET} ${phase_disp}"
+    fi
+    meta="${meta} ${DIM}(${protocol_disp})${RESET}"
+    echo -e "    - ${name} [${meta}] ${DIM}${path}${RESET}"
+  done
+}
+
 emit_assembly_trace() {
   local global_mode="$1"
   local i
@@ -373,6 +409,29 @@ boot_config() {
   B_DEFAULT_SCHEMA=$(sa_parse_config_field "$B_CONFIG_PATH" "schema" "sdd-riper-one")
 }
 
+collect_active_task_details() {
+  local file rel name status protocol phase
+  while IFS= read -r file; do
+    [[ -f "$file" ]] || continue
+    rel="${file#.specanchor/tasks/}"
+    name=$(parse_yaml_field "$file" "task_name")
+    status=$(parse_yaml_field "$file" "status")
+    protocol=$(parse_yaml_field "$file" "writing_protocol")
+    [[ -z "$protocol" ]] && protocol="$B_DEFAULT_SCHEMA"
+    [[ -z "$protocol" ]] && protocol="sdd-riper-one"
+    phase=""
+    if [[ "$protocol" == "sdd-riper-one" ]]; then
+      phase=$(grep -m1 '^> Current RIPER Phase:' "$file" 2>/dev/null \
+        | sed -E 's/^> Current RIPER Phase:[[:space:]]*//' | tr -d '[:space:]')
+    fi
+    B_TASK_NAMES+=("${name:-(unnamed)}")
+    B_TASK_STATUSES+=("${status:-unknown}")
+    B_TASK_PHASES+=("$phase")
+    B_TASK_PROTOCOLS+=("$protocol")
+    B_TASK_PATHS+=("$rel")
+  done < <(find ".specanchor/tasks" -name "*.spec.md" 2>/dev/null | sort)
+}
+
 boot_specanchor_dir() {
   if [[ ! -d ".specanchor" ]]; then
     B_SA_DIR="missing"
@@ -386,6 +445,7 @@ boot_specanchor_dir() {
 
   if [[ -d ".specanchor/tasks" ]]; then
     B_TASK_ACTIVE=$(find ".specanchor/tasks" -name "*.spec.md" 2>/dev/null | wc -l | tr -d ' ')
+    collect_active_task_details
   fi
   if [[ -d ".specanchor/archive" ]]; then
     B_TASK_ARCHIVED=$(find ".specanchor/archive" -name "*.spec.md" 2>/dev/null | wc -l | tr -d ' ')
@@ -584,6 +644,7 @@ output_summary() {
       echo -e "  ${YELLOW}⚠️ spec-index.md 不存在，建议运行 specanchor_index${RESET}"
     fi
     echo -e "  Task Specs: ${B_TASK_ACTIVE} active, ${B_TASK_ARCHIVED} archived"
+    emit_active_tasks
     emit_command_routing
     emit_available_modules
 
@@ -681,6 +742,18 @@ output_json() {
     printf '  "module_count": %d,\n' "$B_MODULE_COUNT"
     printf '  "task_active": %d,\n' "$B_TASK_ACTIVE"
     printf '  "task_archived": %d,\n' "$B_TASK_ARCHIVED"
+    printf '  "active_tasks": ['
+    local _t
+    for _t in "${!B_TASK_NAMES[@]}"; do
+      [[ $_t -gt 0 ]] && printf ','
+      printf '{"task_name":"%s","status":"%s","phase":"%s","writing_protocol":"%s","path":"%s"}' \
+        "$(sa_json_escape "${B_TASK_NAMES[$_t]}")" \
+        "$(sa_json_escape "${B_TASK_STATUSES[$_t]}")" \
+        "$(sa_json_escape "${B_TASK_PHASES[$_t]}")" \
+        "$(sa_json_escape "${B_TASK_PROTOCOLS[$_t]}")" \
+        "$(sa_json_escape "${B_TASK_PATHS[$_t]}")"
+    done
+    printf '],\n'
     printf '  "spec_index": "%s",\n' "$B_SPEC_INDEX"
     printf '  "spec_index_path": "%s",\n' "$(sa_json_escape "$B_SPEC_INDEX_PATH")"
     printf '  "spec_index_format": "%s",\n' "$B_SPEC_INDEX_FORMAT"
