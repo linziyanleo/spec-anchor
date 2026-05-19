@@ -572,6 +572,62 @@ check_existing_frontmatter() {
 
 # ─── Frontmatter 生成 ───
 
+# Generate the yaml line(s) for a single frontmatter field.
+# Output uses literal "\n" (echo -e style) so caller can accumulate via fm+=...
+# Returns empty for unknown fields (schema 声明但 inject 不知道生成方式 → 留给用户手动补).
+generate_field_value() {
+  local field="$1"
+  local task_name="$2"
+  local author="$3"
+  local created="$4"
+  local status="$5"
+  local last_change="$6"
+  local branch="$7"
+  local protocol="$8"
+  local related_global="$9"
+  local related_modules="${10}"
+
+  case "$field" in
+    task_name|module_name)
+      printf '  %s: "%s"\\n' "$field" "$task_name"
+      ;;
+    author)
+      printf '  author: "%s"\\n' "$author"
+      ;;
+    created)
+      printf '  created: "%s"\\n' "$created"
+      ;;
+    status)
+      printf '  status: "%s"\\n' "$status"
+      ;;
+    last_change)
+      [[ -n "$last_change" ]] && printf '  last_change: "%s"\\n' "$last_change"
+      ;;
+    related_modules)
+      if [[ -n "$related_modules" ]]; then
+        printf '  related_modules:\\n%s\\n' "$related_modules"
+      else
+        printf '  related_modules: []\\n'
+      fi
+      ;;
+    related_global)
+      if [[ -n "$related_global" ]]; then
+        printf '  related_global:\\n%s\\n' "$related_global"
+      else
+        printf '  related_global: []\\n'
+      fi
+      ;;
+    writing_protocol)
+      printf '  writing_protocol: "%s"\\n' "$protocol"
+      ;;
+    branch)
+      printf '  branch: "%s"\\n' "$branch"
+      ;;
+    *)
+      ;;
+  esac
+}
+
 generate_frontmatter() {
   local level="$1"
   local task_name="$2"
@@ -584,9 +640,9 @@ generate_frontmatter() {
   local related_global="$9"
   local related_modules="${10}"
 
-  # Schema-aware：仅 task level 走 schema-driven 字段集（schema yaml 立为 source of truth）。
-  # schema yaml 缺失或未声明 frontmatter_fields → schema_fields 为空 → has_schema_field 总返回 true（fallback 现有行为）。
-  # module/global level 暂不走 schema-driven，保持现有硬编码字段集（schema 系统当前仅适用 task）。
+  # Schema-driven dispatch loop (task level)：按 schema yaml frontmatter_fields 声明顺序 iterate。
+  # schema 缺失或未声明字段集 → schema_fields 为空 → fallback 到硬编码顺序（向后兼容）。
+  # module/global level：保持现有硬编码字段集（schema 系统当前仅适用 task）。
   local schema_fields=""
   if [[ "$level" == "task" ]]; then
     schema_fields=$(load_schema_field_set "$protocol")
@@ -597,9 +653,6 @@ generate_frontmatter() {
   fm+="  level: ${level}\n"
 
   case "$level" in
-    task)
-      has_schema_field "task_name" "$schema_fields" && fm+="  task_name: \"${task_name}\"\n"
-      ;;
     module)
       fm+="  module_name: \"${task_name}\"\n"
       fm+="  module_path: \"unknown\"\n"
@@ -607,46 +660,47 @@ generate_frontmatter() {
     global)
       fm+="  type: \"unknown\"\n"
       ;;
+    task)
+      if [[ -n "$schema_fields" ]]; then
+        local field snippet
+        while IFS= read -r field; do
+          [[ -z "$field" ]] && continue
+          [[ "$field" == "level" ]] && continue
+          snippet=$(generate_field_value "$field" "$task_name" "$author" "$created" "$status" \
+            "$last_change" "$branch" "$protocol" "$related_global" "$related_modules")
+          [[ -n "$snippet" ]] && fm+="$snippet"
+        done <<<"$schema_fields"
+      else
+        fm+="  task_name: \"${task_name}\"\n"
+        fm+="  author: \"${author}\"\n"
+        fm+="  created: \"${created}\"\n"
+        fm+="  status: \"${status}\"\n"
+        if [[ -n "$last_change" ]]; then
+          fm+="  last_change: \"${last_change}\"\n"
+        fi
+        if [[ -n "$related_modules" ]]; then
+          fm+="  related_modules:\n${related_modules}\n"
+        else
+          fm+="  related_modules: []\n"
+        fi
+        if [[ -n "$related_global" ]]; then
+          fm+="  related_global:\n${related_global}\n"
+        else
+          fm+="  related_global: []\n"
+        fi
+        fm+="  writing_protocol: \"${protocol}\"\n"
+        fm+="  branch: \"${branch}\"\n"
+      fi
+      ;;
   esac
 
-  if [[ "$level" == "task" ]]; then
-    has_schema_field "author" "$schema_fields" && fm+="  author: \"${author}\"\n"
-    has_schema_field "created" "$schema_fields" && fm+="  created: \"${created}\"\n"
-    has_schema_field "status" "$schema_fields" && fm+="  status: \"${status}\"\n"
-
-    if [[ -n "$last_change" ]] && has_schema_field "last_change" "$schema_fields"; then
-      fm+="  last_change: \"${last_change}\"\n"
-    fi
-
-    if has_schema_field "related_modules" "$schema_fields"; then
-      if [[ -n "$related_modules" ]]; then
-        fm+="  related_modules:\n"
-        fm+="${related_modules}\n"
-      else
-        fm+="  related_modules: []\n"
-      fi
-    fi
-
-    if has_schema_field "related_global" "$schema_fields"; then
-      if [[ -n "$related_global" ]]; then
-        fm+="  related_global:\n"
-        fm+="${related_global}\n"
-      else
-        fm+="  related_global: []\n"
-      fi
-    fi
-
-    has_schema_field "writing_protocol" "$schema_fields" && fm+="  writing_protocol: \"${protocol}\"\n"
-    has_schema_field "branch" "$schema_fields" && fm+="  branch: \"${branch}\"\n"
-  else
+  if [[ "$level" != "task" ]]; then
     fm+="  author: \"${author}\"\n"
     fm+="  created: \"${created}\"\n"
     fm+="  status: \"${status}\"\n"
-
     if [[ -n "$last_change" ]]; then
       fm+="  last_change: \"${last_change}\"\n"
     fi
-
     fm+="  branch: \"${branch}\"\n"
   fi
 

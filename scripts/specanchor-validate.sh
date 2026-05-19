@@ -138,9 +138,120 @@ extract_frontmatter_field_names() {
   ' "$file" 2>/dev/null
 }
 
+# Read field_types map from schema yaml. Echoes "name=type" per line.
+parse_schema_field_types() {
+  local schema_path="$1"
+  [[ -f "$schema_path" ]] || return 0
+  awk '
+    /^field_types:/ { in_ft=1; next }
+    /^[A-Za-z_-]+:/ && in_ft && !/^[[:space:]]/ { in_ft=0 }
+    in_ft && /^[[:space:]]+[a-zA-Z_-]+:[[:space:]]*[a-zA-Z_-]+/ {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      sub(/[[:space:]]*#.*$/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      idx = index(line, ":")
+      if (idx > 0) {
+        name = substr(line, 1, idx - 1)
+        tval = substr(line, idx + 1)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", tval)
+        if (name != "" && tval != "") print name "=" tval
+      }
+    }
+  ' "$schema_path" 2>/dev/null
+}
+
+# Extract raw yaml value (possibly multi-line) for a frontmatter field.
+# Returns the value text; caller infers type via infer_yaml_value_type.
+extract_frontmatter_field_value() {
+  local file="$1" field="$2"
+  awk -v target="$field" '
+    BEGIN { in_fm=0; fm_count=0; in_specanchor=0; in_field=0 }
+    /^---[[:space:]]*$/ {
+      fm_count++
+      if (fm_count == 1) { in_fm=1; next }
+      if (fm_count == 2) { exit }
+    }
+    in_fm && /^specanchor:/ { in_specanchor=1; next }
+    in_fm && /^[A-Za-z_-]+:/ && !/^specanchor:/ { in_specanchor=0; in_field=0; next }
+    in_fm && in_specanchor && match($0, "^  "target":") {
+      val = substr($0, RLENGTH+1)
+      sub(/^[[:space:]]+/, "", val)
+      print val
+      in_field = 1
+      next
+    }
+    in_field && /^    / { print $0; next }
+    in_field && /^  [a-zA-Z_-]+:/ { in_field = 0 }
+  ' "$file" 2>/dev/null
+}
+
+# Heuristically infer yaml value type. Returns: list | object | string.
+infer_yaml_value_type() {
+  local raw="$1"
+  if [[ "$raw" == *$'\n'* ]]; then
+    if printf '%s' "$raw" | grep -q '^[[:space:]]*-[[:space:]]'; then
+      printf 'list'
+      return
+    fi
+    if printf '%s' "$raw" | grep -q '^[[:space:]]\+[a-zA-Z_-]\+:'; then
+      printf 'object'
+      return
+    fi
+  fi
+  if [[ "$raw" =~ ^\[.*\]$ ]]; then
+    printf 'list'
+    return
+  fi
+  if [[ "$raw" =~ ^\{.*\}$ ]]; then
+    printf 'object'
+    return
+  fi
+  printf 'string'
+}
+
+# Validate field value type against schema declaration. Adds warning on mismatch.
+validate_field_type() {
+  local file="$1" field="$2" declared_type="$3"
+  local raw_value actual_type
+  raw_value=$(extract_frontmatter_field_value "$file" "$field")
+  [[ -z "$raw_value" ]] && return 0
+  actual_type=$(infer_yaml_value_type "$raw_value")
+  if [[ "$actual_type" != "$declared_type" ]]; then
+    add_warning "${file}: FRONTMATTER_FIELD_TYPE_MISMATCH field '${field}' declared as ${declared_type}, got ${actual_type}"
+  fi
+}
+
+# Validate schema yaml itself against meta-schema (hardcoded required keys + value constraints).
+validate_schema_yaml() {
+  local schema_path="$1"
+  VALIDATED_FILES+=("$schema_path")
+
+  local key
+  for key in name version philosophy artifacts apply template; do
+    if ! grep -q "^${key}:" "$schema_path" 2>/dev/null; then
+      add_error "${schema_path}: SCHEMA_YAML_INVALID missing required key '${key}'"
+    fi
+  done
+
+  local philosophy_value
+  philosophy_value=$(grep -E '^philosophy:[[:space:]]*' "$schema_path" 2>/dev/null | head -1 | sed -E 's/^philosophy:[[:space:]]*//;s/[[:space:]]*#.*$//;s/[[:space:]]+$//;s/^["'\'']|["'\'']$//g')
+  if [[ -n "$philosophy_value" ]] && [[ "$philosophy_value" != "strict" ]] && [[ "$philosophy_value" != "fluid" ]]; then
+    add_error "${schema_path}: SCHEMA_YAML_INVALID philosophy must be 'strict' or 'fluid', got '${philosophy_value}'"
+  fi
+
+  local version_value
+  version_value=$(grep -E '^version:[[:space:]]*' "$schema_path" 2>/dev/null | head -1 | sed -E 's/^version:[[:space:]]*//;s/[[:space:]]*#.*$//;s/[[:space:]]+$//')
+  if [[ -n "$version_value" ]] && ! [[ "$version_value" =~ ^[0-9]+$ ]]; then
+    add_warning "${schema_path}: SCHEMA_YAML_INCOMPLETE version should be integer, got '${version_value}'"
+  fi
+}
+
 # Validate task spec frontmatter against schema yaml frontmatter_fields.
 # Adds FRONTMATTER_FIELD_MISSING_REQUIRED error for missing required fields,
-# FRONTMATTER_FIELD_UNKNOWN warning for unknown fields.
+# FRONTMATTER_FIELD_UNKNOWN warning for unknown fields,
+# FRONTMATTER_FIELD_TYPE_MISMATCH warning for declared list/object 字段值类型偏离.
 validate_frontmatter_against_schema() {
   local file="$1"
   local protocol
@@ -176,6 +287,17 @@ validate_frontmatter_against_schema() {
       add_warning "${file}: FRONTMATTER_FIELD_UNKNOWN unknown field '${field}' (schema: ${protocol})"
     fi
   done <<<"$actual_fields"
+
+  if grep -q '^field_types:' "$schema_path" 2>/dev/null; then
+    local field_types_map entry field_name declared_type
+    field_types_map=$(parse_schema_field_types "$schema_path")
+    while IFS= read -r entry; do
+      [[ -n "$entry" ]] || continue
+      field_name=${entry%%=*}
+      declared_type=${entry#*=}
+      validate_field_type "$file" "$field_name" "$declared_type"
+    done <<<"$field_types_map"
+  fi
 }
 
 validate_anchor_yaml() {
@@ -391,6 +513,12 @@ collect_targets() {
     [[ -n "$file" ]] || continue
     validate_spec_file "$file"
   done < <(find .specanchor/tasks .specanchor/archive -name "*.spec.md" 2>/dev/null | sort)
+
+  local schema_path=""
+  for schema_path in "${SKILL_ROOT}"/references/schemas/*/schema.yaml; do
+    [[ -f "$schema_path" ]] || continue
+    validate_schema_yaml "$schema_path"
+  done
 
   validate_agent_docs_if_linked
   validate_generated_json_smokes
