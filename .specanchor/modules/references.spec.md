@@ -11,8 +11,8 @@ specanchor:
   created: "2026-04-02"
   updated: "2026-05-19"
   last_synced: "2026-05-19"
-  last_synced_sha: "3328e74"
-  last_change: "新增 references/commands/codemap.md —— specanchor_codemap 命令文档草稿（v0.5-followup Item 2；time-gated 到 ≥2026-06-15 才实施；含 4 个 implementation 开放问题）"
+  last_synced_sha: "8bf0772"
+  last_change: "新增 references/spec-drift-protocol.md —— spec↔spec drift 协议定义草稿（v0.5-followup Item 4；4 维度 + 静态/LLM 策略矩阵 + 4 态健康度 + doctor 集成接口提议；v0.6 候选 implementation）"
   status: active
   depends_on: []
 ---
