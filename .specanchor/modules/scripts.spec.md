@@ -9,8 +9,8 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-19"
-  last_synced_sha: "ae8b71a"
-  last_change: "doctor 加 --include-archive flag（lint_context_control 条件性扫 archive）+ 新增 specanchor-migrate.sh —— legacy task spec migrator（dry-run/apply 模式，按 doctor warning 反向 append 占位）；v0.5-followup Item 1 推进完成"
+  last_synced_sha: "53c67e1"
+  last_change: "boot/status 输出 Active Tasks 段（schema-aware：sdd-riper-one 显示 RIPER phase，fluid schema 不显示）；JSON 输出同步加 active_tasks 数组"
   depends_on: []
 ---
 
