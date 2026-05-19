@@ -4,8 +4,8 @@ specanchor:
   task_name: "Frontmatter Schema Validation + Gate Bypass"
   author: "@方壶"
   created: "2026-05-19"
-  status: "in_progress"
-  last_change: "起 task spec：schema yaml 立 frontmatter source of truth + sdd-riper-one gate.bypass_when_goal_active 字段"
+  status: "archived"
+  last_change: "归档：5 commit 落地（c94474a / 279ad51 / b0e70a4 / fc614d5 / cea9655），strict mode 全过；feat/handoff-schema 已 push origin"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
     - ".specanchor/modules/references.spec.md"
@@ -18,7 +18,7 @@ specanchor:
 
 # SDD Spec: Frontmatter Schema Validation + Gate Bypass
 
-> Current RIPER Phase: REVIEW
+> Current RIPER Phase: DONE
 
 ## 0. Open Questions
 - [ ] None (Goal-hook active：Plan auto-approved；CP-1 已记录决策；EXECUTE 直接推进)
