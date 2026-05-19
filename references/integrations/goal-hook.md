@@ -52,6 +52,32 @@
 
 无 `/goal` hook 时（普通会话）：行为完全不变——`Plan Approved` 仍是 hard gate，agent 必须停下等用户敲 phrase。
 
+## 机制化（v0.5.0-beta.2+）
+
+本协议规则现在以**声明性事实**嵌入 `sdd-riper-one` schema yaml：
+
+```yaml
+# references/schemas/sdd-riper-one/schema.yaml
+artifacts:
+  - id: plan
+    section: "## 4. Plan (Contract)"
+    gate:
+      type: approval
+      phrase: "Plan Approved"
+      blocks: [execute]
+      bypass_when_goal_active: true   # ← v0.5.0-beta.2 新增
+```
+
+`bypass_when_goal_active: true` 是 schema 层的协议事实，让 Agent 有可读取的 source of truth；本文档描述的降级规则（plan auto-approved + cp-NN redirect 录入）是该字段的运行时含义。
+
+Agent 判断是否绕过 plan gate 时，**应**按以下顺序：
+
+1. 读 task spec frontmatter 的 `writing_protocol` 字段 → 通过 `locate_schema_yaml` 找到对应 schema yaml
+2. 检查 schema 的 plan artifact `gate.bypass_when_goal_active` 字段
+3. 若为 `true` 且 `/goal` hook active → 视为 auto-approved（仍按本文档规则录 cp-NN redirect）
+
+未声明 `bypass_when_goal_active` 或值为 `false` 的 schema，gate 不绕过；fluid philosophy schema 本就无 gate，本字段无意义。
+
 ## 历史
 
 本协议规则在 `.specanchor/tasks/_cross-module/2026-05-19_handoff-schema-and-aware-enforce.spec.md` §5.2 cp-01 首次显式记录，并在 §6 Review P1#1 列为应近期解决的 dogfood 卡点。本文档把该决策固化。
