@@ -4,6 +4,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
@@ -49,6 +50,132 @@ valid_date() {
   local value="$1"
   [[ -z "$value" ]] && return 0
   [[ "$value" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]
+}
+
+# === Schema-aware frontmatter validation helpers ===
+# schema yaml 立为 task spec frontmatter 字段集 source of truth；与 doctor.sh 同名 helper 行为对齐。
+# Fallback 兼容：未声明 writing_protocol / schema 文件不存在 / schema 未声明 frontmatter_fields → 跳过校验。
+
+parse_task_writing_protocol() {
+  local task="$1"
+  awk '
+    BEGIN { in_fm=0; fm_count=0; in_specanchor=0 }
+    /^---[[:space:]]*$/ {
+      fm_count++
+      if (fm_count == 1) { in_fm=1; next }
+      if (fm_count == 2) { exit }
+    }
+    in_fm && /^specanchor:/ { in_specanchor=1; next }
+    in_fm && /^[A-Za-z_-]+:/ && !/^specanchor:/ { in_specanchor=0 }
+    in_fm && in_specanchor && /^[[:space:]]+writing_protocol:[[:space:]]*/ {
+      sub(/^[[:space:]]+writing_protocol:[[:space:]]*/, "", $0)
+      gsub(/^"|"$/, "", $0)
+      gsub(/^'\''|'\''$/, "", $0)
+      sub(/[[:space:]]*#.*$/, "", $0)
+      sub(/[[:space:]]+$/, "", $0)
+      print
+      exit
+    }
+  ' "$task" 2>/dev/null
+}
+
+locate_schema_yaml() {
+  local protocol="$1"
+  [[ -z "$protocol" ]] && return 0
+  local local_path=".specanchor/schemas/${protocol}/schema.yaml"
+  if [[ -f "$local_path" ]]; then
+    printf '%s' "$local_path"
+    return 0
+  fi
+  local skill_path="${SKILL_ROOT}/references/schemas/${protocol}/schema.yaml"
+  if [[ -f "$skill_path" ]]; then
+    printf '%s' "$skill_path"
+    return 0
+  fi
+}
+
+# Read frontmatter_fields list from schema yaml, kind=required|optional.
+# Echoes one field name per line.
+parse_schema_frontmatter_fields() {
+  local schema_path="$1" kind="$2"
+  [[ -f "$schema_path" ]] || return 0
+  awk -v target_kind="$kind" '
+    /^frontmatter_fields:/ { in_ff=1; next }
+    /^[A-Za-z_-]+:/ && in_ff && !/^[[:space:]]/ { in_ff=0 }
+    in_ff && $0 ~ "^  "target_kind":" { in_kind=1; next }
+    in_ff && $0 ~ "^  [a-z_]+:" && !($0 ~ "^  "target_kind":") { in_kind=0 }
+    in_ff && in_kind && /^[[:space:]]+-[[:space:]]+/ {
+      val=$0
+      sub(/^[[:space:]]+-[[:space:]]+/, "", val)
+      gsub(/^"|"$/, "", val)
+      gsub(/^'\''|'\''$/, "", val)
+      sub(/[[:space:]]*#.*$/, "", val)
+      sub(/[[:space:]]+$/, "", val)
+      if (val != "") print val
+    }
+  ' "$schema_path" 2>/dev/null
+}
+
+# Extract top-level field names directly under 'specanchor:' in the first frontmatter block.
+# Top-level = exactly 2-space indent (children of specanchor:). Nested keys not extracted.
+extract_frontmatter_field_names() {
+  local file="$1"
+  awk '
+    BEGIN { in_fm=0; fm_count=0; in_specanchor=0 }
+    /^---[[:space:]]*$/ {
+      fm_count++
+      if (fm_count == 1) { in_fm=1; next }
+      if (fm_count == 2) { exit }
+    }
+    in_fm && /^specanchor:/ { in_specanchor=1; next }
+    in_fm && /^[A-Za-z_-]+:/ && !/^specanchor:/ { in_specanchor=0; next }
+    in_fm && in_specanchor && /^  [a-zA-Z_-]+:/ {
+      line = $0
+      sub(/^  /, "", line)
+      sub(/:.*$/, "", line)
+      if (line != "") print line
+    }
+  ' "$file" 2>/dev/null
+}
+
+# Validate task spec frontmatter against schema yaml frontmatter_fields.
+# Adds FRONTMATTER_FIELD_MISSING_REQUIRED error for missing required fields,
+# FRONTMATTER_FIELD_UNKNOWN warning for unknown fields.
+validate_frontmatter_against_schema() {
+  local file="$1"
+  local protocol
+  protocol=$(parse_task_writing_protocol "$file")
+  [[ -z "$protocol" ]] && return 0
+
+  local schema_path
+  schema_path=$(locate_schema_yaml "$protocol")
+  [[ -z "$schema_path" ]] && return 0
+
+  if ! grep -q '^frontmatter_fields:' "$schema_path" 2>/dev/null; then
+    return 0
+  fi
+
+  local required_fields optional_fields actual_fields
+  required_fields=$(parse_schema_frontmatter_fields "$schema_path" "required")
+  optional_fields=$(parse_schema_frontmatter_fields "$schema_path" "optional")
+  actual_fields=$(extract_frontmatter_field_names "$file")
+
+  local field
+  while IFS= read -r field; do
+    [[ -n "$field" ]] || continue
+    if ! grep -qFx "$field" <<<"$actual_fields"; then
+      add_error "${file}: FRONTMATTER_FIELD_MISSING_REQUIRED missing required field '${field}' (schema: ${protocol})"
+    fi
+  done <<<"$required_fields"
+
+  local declared
+  declared=$(printf '%s\n%s' "$required_fields" "$optional_fields")
+  while IFS= read -r field; do
+    [[ -n "$field" ]] || continue
+    if ! grep -qFx "$field" <<<"$declared"; then
+      add_warning "${file}: FRONTMATTER_FIELD_UNKNOWN unknown field '${field}' (schema: ${protocol})"
+    fi
+  done <<<"$actual_fields"
 }
 
 validate_anchor_yaml() {
@@ -142,6 +269,10 @@ validate_spec_file() {
   fi
   if ! valid_date "$last_synced"; then
     add_error "${file}: DATE_INVALID last_synced=${last_synced}"
+  fi
+
+  if [[ "$expected_level" == "task" ]]; then
+    validate_frontmatter_against_schema "$file"
   fi
 }
 

@@ -24,6 +24,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
 
@@ -125,6 +126,66 @@ parse_frontmatter_field() {
     }
   ' "$file")
   normalize_scalar "$raw"
+}
+
+# ─── Schema-aware helpers (与 doctor.sh / validate.sh 同名约定) ───
+# schema yaml 立为 task spec frontmatter 字段集 source of truth。
+# generate_frontmatter 按 schema 声明字段集生成；schema 缺失 → 现有 fallback 行为。
+
+locate_schema_yaml() {
+  local protocol="$1"
+  [[ -z "$protocol" ]] && return 0
+  local local_path=".specanchor/schemas/${protocol}/schema.yaml"
+  if [[ -f "$local_path" ]]; then
+    printf '%s' "$local_path"
+    return 0
+  fi
+  local skill_path="${SKILL_ROOT}/references/schemas/${protocol}/schema.yaml"
+  if [[ -f "$skill_path" ]]; then
+    printf '%s' "$skill_path"
+    return 0
+  fi
+}
+
+parse_schema_frontmatter_fields() {
+  local schema_path="$1" kind="$2"
+  [[ -f "$schema_path" ]] || return 0
+  awk -v target_kind="$kind" '
+    /^frontmatter_fields:/ { in_ff=1; next }
+    /^[A-Za-z_-]+:/ && in_ff && !/^[[:space:]]/ { in_ff=0 }
+    in_ff && $0 ~ "^  "target_kind":" { in_kind=1; next }
+    in_ff && $0 ~ "^  [a-z_]+:" && !($0 ~ "^  "target_kind":") { in_kind=0 }
+    in_ff && in_kind && /^[[:space:]]+-[[:space:]]+/ {
+      val=$0
+      sub(/^[[:space:]]+-[[:space:]]+/, "", val)
+      gsub(/^"|"$/, "", val)
+      gsub(/^'\''|'\''$/, "", val)
+      sub(/[[:space:]]*#.*$/, "", val)
+      sub(/[[:space:]]+$/, "", val)
+      if (val != "") print val
+    }
+  ' "$schema_path" 2>/dev/null
+}
+
+load_schema_field_set() {
+  local protocol="$1"
+  [[ -z "$protocol" ]] && return 0
+  local schema_path
+  schema_path=$(locate_schema_yaml "$protocol")
+  [[ -z "$schema_path" ]] && return 0
+  if ! grep -q '^frontmatter_fields:' "$schema_path" 2>/dev/null; then
+    return 0
+  fi
+  printf '%s\n%s\n' \
+    "$(parse_schema_frontmatter_fields "$schema_path" "required")" \
+    "$(parse_schema_frontmatter_fields "$schema_path" "optional")" \
+    | grep -v '^$'
+}
+
+has_schema_field() {
+  local field_name="$1" fields_list="$2"
+  [[ -z "$fields_list" ]] && return 0
+  grep -qFx "$field_name" <<<"$fields_list"
 }
 
 # ─── 自动推断函数 ───
@@ -523,13 +584,21 @@ generate_frontmatter() {
   local related_global="$9"
   local related_modules="${10}"
 
+  # Schema-aware：仅 task level 走 schema-driven 字段集（schema yaml 立为 source of truth）。
+  # schema yaml 缺失或未声明 frontmatter_fields → schema_fields 为空 → has_schema_field 总返回 true（fallback 现有行为）。
+  # module/global level 暂不走 schema-driven，保持现有硬编码字段集（schema 系统当前仅适用 task）。
+  local schema_fields=""
+  if [[ "$level" == "task" ]]; then
+    schema_fields=$(load_schema_field_set "$protocol")
+  fi
+
   local fm=""
   fm+="specanchor:\n"
   fm+="  level: ${level}\n"
 
   case "$level" in
     task)
-      fm+="  task_name: \"${task_name}\"\n"
+      has_schema_field "task_name" "$schema_fields" && fm+="  task_name: \"${task_name}\"\n"
       ;;
     module)
       fm+="  module_name: \"${task_name}\"\n"
@@ -540,33 +609,46 @@ generate_frontmatter() {
       ;;
   esac
 
-  fm+="  author: \"${author}\"\n"
-  fm+="  created: \"${created}\"\n"
-  fm+="  status: \"${status}\"\n"
-
-  if [[ -n "$last_change" ]]; then
-    fm+="  last_change: \"${last_change}\"\n"
-  fi
-
   if [[ "$level" == "task" ]]; then
-    if [[ -n "$related_modules" ]]; then
-      fm+="  related_modules:\n"
-      fm+="${related_modules}\n"
-    else
-      fm+="  related_modules: []\n"
+    has_schema_field "author" "$schema_fields" && fm+="  author: \"${author}\"\n"
+    has_schema_field "created" "$schema_fields" && fm+="  created: \"${created}\"\n"
+    has_schema_field "status" "$schema_fields" && fm+="  status: \"${status}\"\n"
+
+    if [[ -n "$last_change" ]] && has_schema_field "last_change" "$schema_fields"; then
+      fm+="  last_change: \"${last_change}\"\n"
     fi
 
-    if [[ -n "$related_global" ]]; then
-      fm+="  related_global:\n"
-      fm+="${related_global}\n"
-    else
-      fm+="  related_global: []\n"
+    if has_schema_field "related_modules" "$schema_fields"; then
+      if [[ -n "$related_modules" ]]; then
+        fm+="  related_modules:\n"
+        fm+="${related_modules}\n"
+      else
+        fm+="  related_modules: []\n"
+      fi
     fi
 
-    fm+="  writing_protocol: \"${protocol}\"\n"
+    if has_schema_field "related_global" "$schema_fields"; then
+      if [[ -n "$related_global" ]]; then
+        fm+="  related_global:\n"
+        fm+="${related_global}\n"
+      else
+        fm+="  related_global: []\n"
+      fi
+    fi
+
+    has_schema_field "writing_protocol" "$schema_fields" && fm+="  writing_protocol: \"${protocol}\"\n"
+    has_schema_field "branch" "$schema_fields" && fm+="  branch: \"${branch}\"\n"
+  else
+    fm+="  author: \"${author}\"\n"
+    fm+="  created: \"${created}\"\n"
+    fm+="  status: \"${status}\"\n"
+
+    if [[ -n "$last_change" ]]; then
+      fm+="  last_change: \"${last_change}\"\n"
+    fi
+
+    fm+="  branch: \"${branch}\"\n"
   fi
-
-  fm+="  branch: \"${branch}\"\n"
 
   echo -e "$fm"
 }
