@@ -9,8 +9,8 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-19"
-  last_synced_sha: "fc614d5"
-  last_change: "v0.5.0-beta.2 schema-aware frontmatter validation: validate.sh + inject.sh 加 schema-aware helpers (parse_task_writing_protocol / locate_schema_yaml / parse_schema_frontmatter_fields 等) + 新错误码 FRONTMATTER_FIELD_UNKNOWN/MISSING_REQUIRED + generate_frontmatter 改为 schema-driven (fallback 保留)"
+  last_synced_sha: "6ec2463"
+  last_change: "v0.6 typed validation + dispatch loop: validate.sh 增 5 helper (parse_schema_field_types / extract_frontmatter_field_value / infer_yaml_value_type / validate_field_type / validate_schema_yaml) + 错误码 FRONTMATTER_FIELD_TYPE_MISMATCH / SCHEMA_YAML_INVALID; inject.sh generate_frontmatter 改为按 schema 字段集 iterate 的 dispatch loop + 增 generate_field_value"
   depends_on: []
 ---
 

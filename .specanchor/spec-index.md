@@ -2,7 +2,7 @@
 specanchor:
   type: spec-index
   version: 3
-  generated_at: "2026-05-19T15:00:00"
+  generated_at: "2026-05-19T15:14:01"
   spec_counts:
     globals: 3
     modules: 2
@@ -50,7 +50,7 @@ specs:
       status: "active"
       version: "1.4.0"
       last_synced: "2026-05-19"
-      last_synced_sha: "fc614d5"
+      last_synced_sha: "6ec2463"
       owner: "maintainers"
       health: "FRESH"
     - path: "scripts/"
@@ -60,7 +60,7 @@ specs:
       status: "active"
       version: "2.3.0"
       last_synced: "2026-05-19"
-      last_synced_sha: "fc614d5"
+      last_synced_sha: "6ec2463"
       owner: "maintainers"
       health: "FRESH"
   tasks:
@@ -78,8 +78,8 @@ specs:
       last_change: "起 follow-up batch task spec（simple schema dogfood）"
     - spec: ".specanchor/tasks/_cross-module/2026-05-19_inject-dispatch-and-typed-validation.spec.md"
       task_name: "Inject Dispatch Loop + Typed Validation + Schema Meta-schema"
-      status: "in_progress"
-      sdd_phase: "PLAN"
+      status: "review"
+      sdd_phase: "REVIEW"
       created: "2026-05-19"
       last_change: "起 task spec：v0.6 三项 follow-up 合并（inject schema-driven dispatch loop / 字段类型校验 / schema yaml meta-schema）"
     - spec: ".specanchor/tasks/_cross-module/2026-05-19_module-drift-detection-sha-based.spec.md"

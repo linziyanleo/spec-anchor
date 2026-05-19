@@ -11,8 +11,8 @@ specanchor:
   created: "2026-04-02"
   updated: "2026-05-19"
   last_synced: "2026-05-19"
-  last_synced_sha: "fc614d5"
-  last_change: "v0.5.0-beta.2 Frontmatter schema validation: 7 schema yaml 增 frontmatter_fields 段 (declarative 字段集 source of truth); sdd-riper-one schema 增 plan gate.bypass_when_goal_active: true; goal-hook.md 增机制化段引用该字段"
+  last_synced_sha: "6ec2463"
+  last_change: "v0.6 schema field_types: 7 schema yaml 增 field_types 段 (list/object 声明; string 默认), 与 frontmatter_fields 配对成完整字段集协议事实"
   status: active
   depends_on: []
 ---
