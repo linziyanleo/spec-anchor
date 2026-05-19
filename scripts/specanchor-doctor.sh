@@ -497,46 +497,148 @@ apply_enforce() {
   esac
 }
 
+# === Schema-aware enforce helpers (added in handoff-schema-and-aware-enforce task) ===
+# Lint 6 段对应的 sdd-riper-one v2 context_control section ids 是：
+#   hard_boundaries / allowed_freedom / checkpoints_contract /
+#   decisions_log / evidence_ledger / handoff_packet
+# 仅当 task 的 writing_protocol 对应 schema 显式声明了某 id 时，才跑该段检查；
+# 否则跳过。fallback 兼容：未声明 writing_protocol / schema 文件不存在 → 视为已声明（旧行为）。
+
+# Read writing_protocol from task spec frontmatter. Echo empty if not declared.
+parse_task_writing_protocol() {
+  local task="$1"
+  awk '
+    BEGIN { in_fm=0; fm_count=0; in_specanchor=0 }
+    /^---[[:space:]]*$/ {
+      fm_count++
+      if (fm_count == 1) { in_fm=1; next }
+      if (fm_count == 2) { exit }
+    }
+    in_fm && /^specanchor:/ { in_specanchor=1; next }
+    in_fm && /^[A-Za-z_-]+:/ && !/^specanchor:/ { in_specanchor=0 }
+    in_fm && in_specanchor && /^[[:space:]]+writing_protocol:[[:space:]]*/ {
+      sub(/^[[:space:]]+writing_protocol:[[:space:]]*/, "", $0)
+      gsub(/^"|"$/, "", $0)
+      gsub(/^'\''|'\''$/, "", $0)
+      sub(/[[:space:]]*#.*$/, "", $0)
+      sub(/[[:space:]]+$/, "", $0)
+      print
+      exit
+    }
+  ' "$task" 2>/dev/null
+}
+
+# Locate schema yaml. Search order:
+#   1. <project>/.specanchor/schemas/<name>/schema.yaml  (consumer override)
+#   2. <SKILL_ROOT>/references/schemas/<name>/schema.yaml (built-in)
+# Echo path if found, empty otherwise.
+locate_schema_yaml() {
+  local protocol="$1"
+  [[ -z "$protocol" ]] && return 0
+  local local_path=".specanchor/schemas/${protocol}/schema.yaml"
+  if [[ -f "$local_path" ]]; then
+    printf '%s' "$local_path"
+    return 0
+  fi
+  local skill_path="${SKILL_ROOT}/references/schemas/${protocol}/schema.yaml"
+  if [[ -f "$skill_path" ]]; then
+    printf '%s' "$skill_path"
+    return 0
+  fi
+}
+
+# Returns 0 if the schema declares the given context_control section id.
+# Fallback compat: empty protocol or missing schema file → 0 (legacy behavior).
+# Schema file present but no `context_control:` block → 1 (skip).
+# Schema declares `context_control:` but section_id absent → 1 (skip).
+schema_declares_section() {
+  local protocol="$1" section_id="$2"
+  if [[ -z "$protocol" ]]; then
+    return 0
+  fi
+  local schema_path
+  schema_path=$(locate_schema_yaml "$protocol")
+  if [[ -z "$schema_path" ]]; then
+    return 0
+  fi
+  if ! grep -q '^context_control:' "$schema_path" 2>/dev/null; then
+    return 1
+  fi
+  local found
+  found=$(awk -v target="$section_id" '
+    /^context_control:/ { in_cc=1; next }
+    /^[A-Za-z_-]+:/ && in_cc { in_cc=0 }
+    in_cc && /^[[:space:]]+- id:[[:space:]]*/ {
+      val=$0
+      sub(/^[[:space:]]+- id:[[:space:]]*/, "", val)
+      gsub(/^"|"$/, "", val)
+      gsub(/^'\''|'\''$/, "", val)
+      sub(/[[:space:]]*#.*$/, "", val)
+      sub(/[[:space:]]+$/, "", val)
+      if (val == target) { print "1"; exit }
+    }
+  ' "$schema_path" 2>/dev/null)
+  [[ "$found" == "1" ]]
+}
+
 lint_context_control_task() {
   local task="$1"
   local task_label
   task_label=$(basename "$task")
 
-  if ! grep -q '^## 1\.2 Hard Boundaries' "$task" 2>/dev/null; then
-    apply_enforce "$(parse_cc_enforce hard_boundaries error)" \
-      "CC_LINT_HARD_BOUNDARIES_MISSING" \
-      "${task_label}: §1.2 Hard Boundaries 缺失" \
-      "在 ${task} 的 §1 之后添加 ## 1.2 Hard Boundaries 段。"
+  # Schema-aware: read writing_protocol once; skip per-section checks
+  # the task's schema does not declare. Fallback compat preserves legacy
+  # behavior for tasks without writing_protocol or with missing schema files.
+  local protocol
+  protocol=$(parse_task_writing_protocol "$task")
+
+  if schema_declares_section "$protocol" "hard_boundaries"; then
+    if ! grep -q '^## 1\.2 Hard Boundaries' "$task" 2>/dev/null; then
+      apply_enforce "$(parse_cc_enforce hard_boundaries error)" \
+        "CC_LINT_HARD_BOUNDARIES_MISSING" \
+        "${task_label}: §1.2 Hard Boundaries 缺失" \
+        "在 ${task} 的 §1 之后添加 ## 1.2 Hard Boundaries 段。"
+    fi
   fi
-  if ! grep -q '^## 1\.3 Allowed Freedom' "$task" 2>/dev/null; then
-    apply_enforce "$(parse_cc_enforce allowed_freedom warning)" \
-      "CC_LINT_ALLOWED_FREEDOM_MISSING" \
-      "${task_label}: §1.3 Allowed Freedom 缺失" \
-      "在 ${task} 的 §1.2 之后添加 ## 1.3 Allowed Freedom 段。"
+  if schema_declares_section "$protocol" "allowed_freedom"; then
+    if ! grep -q '^## 1\.3 Allowed Freedom' "$task" 2>/dev/null; then
+      apply_enforce "$(parse_cc_enforce allowed_freedom warning)" \
+        "CC_LINT_ALLOWED_FREEDOM_MISSING" \
+        "${task_label}: §1.3 Allowed Freedom 缺失" \
+        "在 ${task} 的 §1.2 之后添加 ## 1.3 Allowed Freedom 段。"
+    fi
   fi
-  if ! grep -q '^### 4\.7 Checkpoints' "$task" 2>/dev/null; then
-    apply_enforce "$(parse_cc_enforce checkpoints_contract warning)" \
-      "CC_LINT_CHECKPOINTS_CONTRACT_MISSING" \
-      "${task_label}: §4.7 Checkpoints — Contract 缺失" \
-      "在 ${task} 的 §4 内添加 ### 4.7 Checkpoints — Contract 段。"
+  if schema_declares_section "$protocol" "checkpoints_contract"; then
+    if ! grep -q '^### 4\.7 Checkpoints' "$task" 2>/dev/null; then
+      apply_enforce "$(parse_cc_enforce checkpoints_contract warning)" \
+        "CC_LINT_CHECKPOINTS_CONTRACT_MISSING" \
+        "${task_label}: §4.7 Checkpoints — Contract 缺失" \
+        "在 ${task} 的 §4 内添加 ### 4.7 Checkpoints — Contract 段。"
+    fi
   fi
-  if ! grep -q '^## 5\.2 Checkpoint Decisions Log' "$task" 2>/dev/null; then
-    apply_enforce "$(parse_cc_enforce decisions_log warning)" \
-      "CC_LINT_DECISIONS_LOG_MISSING" \
-      "${task_label}: §5.2 Checkpoint Decisions Log 缺失" \
-      "在 ${task} 的 §5 之后添加 ## 5.2 Checkpoint Decisions Log 段。"
+  if schema_declares_section "$protocol" "decisions_log"; then
+    if ! grep -q '^## 5\.2 Checkpoint Decisions Log' "$task" 2>/dev/null; then
+      apply_enforce "$(parse_cc_enforce decisions_log warning)" \
+        "CC_LINT_DECISIONS_LOG_MISSING" \
+        "${task_label}: §5.2 Checkpoint Decisions Log 缺失" \
+        "在 ${task} 的 §5 之后添加 ## 5.2 Checkpoint Decisions Log 段。"
+    fi
   fi
-  if ! grep -q '^## 6\.2 Evidence Ledger' "$task" 2>/dev/null; then
-    apply_enforce "$(parse_cc_enforce evidence_ledger warning)" \
-      "CC_LINT_EVIDENCE_LEDGER_MISSING" \
-      "${task_label}: §6.2 Evidence Ledger 缺失" \
-      "在 ${task} 的 §6 之后添加 ## 6.2 Evidence Ledger 段。"
+  if schema_declares_section "$protocol" "evidence_ledger"; then
+    if ! grep -q '^## 6\.2 Evidence Ledger' "$task" 2>/dev/null; then
+      apply_enforce "$(parse_cc_enforce evidence_ledger warning)" \
+        "CC_LINT_EVIDENCE_LEDGER_MISSING" \
+        "${task_label}: §6.2 Evidence Ledger 缺失" \
+        "在 ${task} 的 §6 之后添加 ## 6.2 Evidence Ledger 段。"
+    fi
   fi
-  if ! grep -q '^## 7\.2 Handoff Packet' "$task" 2>/dev/null; then
-    apply_enforce "$(parse_cc_enforce handoff_packet warning)" \
-      "CC_LINT_HANDOFF_PACKET_MISSING" \
-      "${task_label}: §7.2 Handoff Packet 缺失" \
-      "在 ${task} 的 §7 之后添加 ## 7.2 Handoff Packet 段（auto-generated by specanchor_handoff）。"
+  if schema_declares_section "$protocol" "handoff_packet"; then
+    if ! grep -q '^## 7\.2 Handoff Packet' "$task" 2>/dev/null; then
+      apply_enforce "$(parse_cc_enforce handoff_packet warning)" \
+        "CC_LINT_HANDOFF_PACKET_MISSING" \
+        "${task_label}: §7.2 Handoff Packet 缺失" \
+        "在 ${task} 的 §7 之后添加 ## 7.2 Handoff Packet 段（auto-generated by specanchor_handoff）。"
+    fi
   fi
 }
 
