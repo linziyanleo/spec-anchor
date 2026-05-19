@@ -1,0 +1,55 @@
+name: handoff
+version: 1
+description: "Portfolio / cross-session handoff spec —— 给下一会话的 entry point。承载 deferred items / outstanding TODOs / cross-task roadmap，是独立 spec 物种，不是某个 task 的 §7.2 packet（task-internal handoff packet 仍由 specanchor_handoff 命令生成）。"
+
+# fluid = 无门禁；handoff 是 author-driven entry point，不需要 RIPER 阶段门禁
+philosophy: fluid
+
+match:
+  when:
+    - "需要把当前会话工作交接给下一会话 / new chat / 另一位维护者"
+    - "包含 deferred 项矩阵 / outstanding TODOs / cross-task roadmap"
+    - "release 后的 deferred follow-up；版本间承上启下"
+    - "用户明确说：'接力包' / 'handoff' / '下次会话' / 'deferred follow-up' / '交接给新 chat' / 'portfolio task'"
+    - "不适用于：单 task 内部的 cross-session 接力（用 sdd-riper-one §7.2 + specanchor_handoff 命令）"
+    - "不适用于：有 EXECUTE 阶段、需要 Hard Boundaries / Decisions Log / Evidence Ledger 的真实工作 task（用 sdd-riper-one）"
+
+artifacts:
+  - id: goal
+    section: "## 目标"
+    description: "这次 handoff 想让下次会话推进到哪里"
+    requires: []
+
+  - id: context_snapshot
+    section: "## Context Snapshot"
+    description: "时间戳 / commit / repo state / 健康度 —— 给下次会话恢复初始坐标"
+    requires: [goal]
+
+  - id: items
+    section: "## Items"
+    description: "deferred / outstanding 项的矩阵：现状 / 阻塞 / 预估 / 入口 / 完成判据"
+    requires: [goal]
+
+  - id: pointers
+    section: "## 关键文件指针"
+    description: "下次会话需要查的文件路径表（可选）"
+    requires: []
+    optional: true
+
+  - id: next_session_checklist
+    section: "## 下次会话开场顺序"
+    description: "推荐的开场 checklist —— 让下次会话第一句话开始就有坐标"
+    requires: [items]
+
+# 显式不声明 context_control —— 让 schema-aware enforce 跳过 §1.2/§1.3/§4.7/§5.2/§6.2/§7.2 六段
+# 设计判断：handoff spec 不是 EXECUTE 任务，没有：
+#   - Hard Boundaries 语义（无实施动作要约束）
+#   - Decisions Log 语义（决策已经在子 task spec 内沉淀）
+#   - Evidence Ledger 语义（无验证命令；items 完成判据指向子 task 的 evidence）
+#   - §7.2 Handoff Packet 语义（本 spec 自身即 handoff，不需要再嵌入一个 packet）
+
+apply:
+  requires: [next_session_checklist]
+  tracks: "## 下次会话开场顺序"
+
+template: template.md
