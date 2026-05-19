@@ -2,7 +2,7 @@
 specanchor:
   type: spec-index
   version: 3
-  generated_at: "2026-05-19T19:41:12"
+  generated_at: "2026-05-19T20:01:15"
   spec_counts:
     globals: 3
     modules: 2
@@ -60,7 +60,7 @@ specs:
       status: "active"
       version: "2.3.0"
       last_synced: "2026-05-19"
-      last_synced_sha: "6ec2463"
+      last_synced_sha: "e23418b"
       owner: "maintainers"
       health: "FRESH"
   tasks:

@@ -9,8 +9,8 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-19"
-  last_synced_sha: "6ec2463"
-  last_change: "v0.6 typed validation + dispatch loop: validate.sh 增 5 helper (parse_schema_field_types / extract_frontmatter_field_value / infer_yaml_value_type / validate_field_type / validate_schema_yaml) + 错误码 FRONTMATTER_FIELD_TYPE_MISMATCH / SCHEMA_YAML_INVALID; inject.sh generate_frontmatter 改为按 schema 字段集 iterate 的 dispatch loop + 增 generate_field_value"
+  last_synced_sha: "e23418b"
+  last_change: "新增 specanchor-corpus.sh —— Checkpoint Decisions corpus collector，复用 lib/decision-filter.sh::sa_parse_decisions，三 format（summary/json/details）+ 双轨 dedupe + 可配 threshold；首次 dogfood 验证 corpus=29 / verdict=below（v0.5-followup Item 3 CP-3 redirect 输入）"
   depends_on: []
 ---
 
