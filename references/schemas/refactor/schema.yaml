@@ -46,4 +46,23 @@ apply:
   requires: [plan]
   tracks: "## 3.1 Refactor Checklist"
 
+# Frontmatter 字段集 —— task spec frontmatter 协议事实声明
+frontmatter_fields:
+  required:
+    - level
+    - task_name
+    - author
+    - created
+    - status
+  optional:
+    - last_change
+    - related_modules
+    - related_global
+    - branch
+    - writing_protocol
+    - assignee
+    - reviewer
+    - flow_type
+    - updated
+
 template: template.md

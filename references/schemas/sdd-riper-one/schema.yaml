@@ -34,6 +34,7 @@ artifacts:
       type: approval
       phrase: "Plan Approved"
       blocks: [execute]
+      bypass_when_goal_active: true  # /goal hook active 时视为 auto-approved；CP §4.7 仍触发 stop。详见 references/integrations/goal-hook.md
 
   - id: execute
     section: "## 5. Execute Log"
@@ -48,6 +49,33 @@ artifacts:
 apply:
   requires: [plan]
   tracks: "## 4.3 Implementation Checklist"
+
+# Frontmatter 字段集 —— task spec frontmatter 协议事实声明
+# validate.sh 按此校验 unknown / missing required；inject.sh 按此注入字段
+frontmatter_fields:
+  required:
+    - level
+    - task_name
+    - author
+    - created
+    - status
+  optional:
+    - last_change
+    - related_modules
+    - related_global
+    - branch
+    - writing_protocol
+    - assignee
+    - reviewer
+    - flow_type
+    - updated
+    - decision_log
+    - evidence_log
+    # legacy / 演进期可选字段（archive 中曾使用过的合法字段）
+    - target_milestone
+    - base_branch
+    - scope
+    - non_goals
 
 # Harness Context Control —— sdd-riper-one v2 起声明 6 个 Context 区段
 # 仅声明协议事实（区段位置 / kind / writer），不放调参（hot_window 等调参在 anchor.yaml.context_control 与 task frontmatter）

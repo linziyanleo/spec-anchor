@@ -46,4 +46,25 @@ apply:
   requires: [conclusion]
   tracks: "## 5.1 Action Items"
 
+# Frontmatter 字段集 —— task spec frontmatter 协议事实声明
+frontmatter_fields:
+  required:
+    - level
+    - task_name
+    - author
+    - created
+    - status
+  optional:
+    - last_change
+    - related_modules
+    - related_global
+    - branch
+    - writing_protocol
+    - assignee
+    - reviewer
+    - flow_type
+    - updated
+    # legacy / 演进期可选字段
+    - research_phase
+
 template: template.md

@@ -52,4 +52,25 @@ apply:
   requires: [next_session_checklist]
   tracks: "## 下次会话开场顺序"
 
+# Frontmatter 字段集 —— handoff portfolio spec frontmatter 协议事实声明
+# target_session_window / target_release 为 handoff 独有 optional（指向下次会话上下文）
+frontmatter_fields:
+  required:
+    - level
+    - task_name
+    - author
+    - created
+    - status
+  optional:
+    - last_change
+    - related_modules
+    - related_global
+    - branch
+    - writing_protocol
+    - assignee
+    - reviewer
+    - target_session_window
+    - target_release
+    - updated
+
 template: template.md
