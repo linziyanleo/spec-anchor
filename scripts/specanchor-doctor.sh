@@ -14,6 +14,7 @@ PROFILE="default"
 ALLOW_DIRTY="false"
 LINT_CONTEXT_CONTROL="false"
 LINT_IGNORE_PATTERN=""
+LINT_INCLUDE_ARCHIVE="false"
 
 declare -a BLOCKING_ISSUES=()
 declare -a WARNING_ISSUES=()
@@ -665,14 +666,21 @@ lint_context_control() {
   fi
 
   local task_file
-  local find_args=(-name "*.spec.md" -not -path "*/archive/*")
+  local find_args=(-name "*.spec.md")
+  if [[ "$LINT_INCLUDE_ARCHIVE" != "true" ]]; then
+    find_args+=(-not -path "*/archive/*")
+  fi
   if [[ -n "$LINT_IGNORE_PATTERN" ]]; then
     find_args+=(-not -name "$LINT_IGNORE_PATTERN")
+  fi
+  local -a find_paths=(.specanchor/tasks)
+  if [[ "$LINT_INCLUDE_ARCHIVE" == "true" ]] && [[ -d .specanchor/archive ]]; then
+    find_paths+=(.specanchor/archive)
   fi
   while IFS= read -r task_file; do
     [[ -z "$task_file" ]] && continue
     lint_context_control_task "$task_file"
-  done < <(find .specanchor/tasks "${find_args[@]}" 2>/dev/null | sort)
+  done < <(find "${find_paths[@]}" "${find_args[@]}" 2>/dev/null | sort)
 }
 
 usage() {
@@ -723,6 +731,7 @@ main() {
         [[ $# -gt 0 ]] || sa_die "--ignore-pattern requires a value" 64
         LINT_IGNORE_PATTERN="$1"
         ;;
+      --include-archive) LINT_INCLUDE_ARCHIVE="true" ;;
       --help|-h) usage ;;
       *) sa_die "invalid argument: $1" 64 ;;
     esac
