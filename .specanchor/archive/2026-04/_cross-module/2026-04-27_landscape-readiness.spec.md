@@ -6,8 +6,8 @@ specanchor:
   assignee: "@fanghu"
   reviewer: "@fanghu"
   created: "2026-04-27"
-  status: "review"
-  last_change: "Execute 完成，进入 Review"
+  status: "done"
+  last_change: "归档：02a3d21 feat: add Landscape Readiness 已随 v0.5.0-beta.1 发布"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
     - ".specanchor/modules/references.spec.md"

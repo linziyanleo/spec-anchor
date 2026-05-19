@@ -2,7 +2,7 @@
 specanchor:
   level: task
   type: roadmap-implementation
-  status: draft
+  status: "done"
   schema: simple
   id: TASK-SPECANCHOR-BETA-AGENT-RELIABILITY-001
   title: SpecAnchor v0.4.0-beta — Agent Reliability

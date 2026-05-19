@@ -6,8 +6,8 @@ specanchor:
   assignee: "@fanghu"
   reviewer: "@fanghu"
   created: "2026-05-18"
-  status: "review"
-  last_change: "Steps 1-15 完成；32/32 tests pass；handoff packet 已 dogfood --write-back；ready for v0.5.0-beta.1 release"
+  status: "done"
+  last_change: "归档：v0.5.0-beta.1 已发布（GitHub Release + tag pushed）"
   related_modules:
     - ".specanchor/modules/references.spec.md"
     - ".specanchor/modules/scripts.spec.md"

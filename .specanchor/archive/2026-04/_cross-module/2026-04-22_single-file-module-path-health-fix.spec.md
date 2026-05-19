@@ -4,8 +4,8 @@ specanchor:
   task_name: "单文件 module_path 健康度误判修复"
   author: "方壶"
   created: "2026-04-22"
-  status: "draft"
-  last_change: "根据 research spec 收敛实现范围，修复单文件 module_path 在 index/check/status 中的误判，并同步文档与测试。"
+  status: "done"
+  last_change: "归档：41afecc fix(scripts) 已合入"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
     - ".specanchor/modules/references.spec.md"

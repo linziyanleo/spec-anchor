@@ -6,8 +6,8 @@ specanchor:
   assignee: "@fanghu"
   reviewer: "@fanghu"
   created: "2026-04-27"
-  status: "review"
-  last_change: "Execute 完成，进入 Review"
+  status: "done"
+  last_change: "归档：5e8452a docs(protocol) formalize SpecAnchor as spec control plane 已合入"
   related_modules: []
   related_global:
     - ".specanchor/global/coding-standards.spec.md"

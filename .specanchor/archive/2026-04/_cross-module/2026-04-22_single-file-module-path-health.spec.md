@@ -4,8 +4,8 @@ specanchor:
   task_name: "单文件 module_path 健康度误判与 module 定义调研"
   author: "方壶"
   created: "2026-04-22"
-  status: "draft"
-  last_change: "记录单文件 module_path 被误判为 STALE 的问题、复现证据、协议冲突与后续建议。"
+  status: "done"
+  last_change: "归档：research 已交付；41afecc fix 已落地"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
     - ".specanchor/modules/references.spec.md"

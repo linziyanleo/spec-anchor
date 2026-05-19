@@ -6,8 +6,8 @@ specanchor:
   assignee: "@fanghu"
   reviewer: "@fanghu"
   created: "2026-04-27"
-  status: "review"
-  last_change: "Execute 完成，进入 Review"
+  status: "done"
+  last_change: "归档：控制平面术语已落地（5e8452a/847584b）"
   related_modules:
     - ".specanchor/modules/references.spec.md"
   related_global:
