@@ -4,8 +4,8 @@ specanchor:
   task_name: "Inject Dispatch Loop + Typed Validation + Schema Meta-schema"
   author: "@方壶"
   created: "2026-05-19"
-  status: "in_progress"
-  last_change: "起 task spec：v0.6 三项 follow-up 合并（inject schema-driven dispatch loop / 字段类型校验 / schema yaml meta-schema）"
+  status: "archived"
+  last_change: "归档：5 commit 落地（schemas / scripts / spec / module bump）+ 已 push origin。strict mode 全过；29 files validated；module 🟢2 FRESH"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
     - ".specanchor/modules/references.spec.md"
@@ -18,7 +18,7 @@ specanchor:
 
 # SDD Spec: Inject Dispatch Loop + Typed Validation + Schema Meta-schema
 
-> Current RIPER Phase: REVIEW
+> Current RIPER Phase: DONE
 
 ## 0. Open Questions
 - [ ] None（goal-hook active：plan auto-approved；CP-1 cp-01 redirect 已录；CP-2/3 仍停）
