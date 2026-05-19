@@ -7,7 +7,8 @@
 # Usage:
 #   specanchor-boot.sh                    # 精简摘要（默认）
 #   specanchor-boot.sh --format=summary   # 同上
-#   specanchor-boot.sh --with-schemas      # 在摘要中附带 schema 列表
+#   specanchor-boot.sh --with-schemas      # 默认开启；显式声明用于兼容
+#   specanchor-boot.sh --no-schemas        # 关闭 Available Schemas 段（精简输出）
 #   specanchor-boot.sh --format=full      # 含 Global Spec 内容
 #   specanchor-boot.sh --format=json      # JSON 机器可读
 #
@@ -94,7 +95,7 @@ declare -a B_SCH_NAMES=()
 declare -a B_SCH_SOURCES=()     # custom | builtin
 declare -a B_SCH_PHILOSOPHIES=()
 declare -a B_SCH_DESCS=()
-SHOW_SCHEMAS=false
+SHOW_SCHEMAS=true
 
 # ─── 工具函数 ───
 
@@ -756,7 +757,8 @@ usage() {
   echo "Usage:"
   echo "  specanchor-boot.sh                      # 精简摘要（默认）"
   echo "  specanchor-boot.sh --format=summary      # 同上"
-  echo "  specanchor-boot.sh --with-schemas        # 摘要附带 schema 列表"
+  echo "  specanchor-boot.sh --with-schemas        # 默认开启；显式声明用于向后兼容"
+  echo "  specanchor-boot.sh --no-schemas          # 关闭 Available Schemas（精简输出）"
   echo "  specanchor-boot.sh --format=full         # 含 Global Spec 内容"
   echo "  specanchor-boot.sh --format=json         # JSON 机器可读"
   echo ""
@@ -777,6 +779,7 @@ main() {
     case "$arg" in
       --format=*) format="${arg#--format=}" ;;
       --with-schemas) SHOW_SCHEMAS=true ;;
+      --no-schemas) SHOW_SCHEMAS=false ;;
       --help|-h) usage ;;
       *) die "未知参数: $arg" ;;
     esac

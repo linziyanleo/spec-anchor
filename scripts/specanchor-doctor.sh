@@ -13,6 +13,7 @@ STRICT_MODE="false"
 PROFILE="default"
 ALLOW_DIRTY="false"
 LINT_CONTEXT_CONTROL="false"
+LINT_IGNORE_PATTERN=""
 
 declare -a BLOCKING_ISSUES=()
 declare -a WARNING_ISSUES=()
@@ -592,6 +593,15 @@ lint_context_control_task() {
   local protocol
   protocol=$(parse_task_writing_protocol "$task")
 
+  # If writing_protocol is declared but schema file is missing, surface a warning
+  # once per task instead of silently falling back. Lint still falls back to
+  # legacy behavior so the 6-section checks below proceed.
+  if [[ -n "$protocol" ]] && [[ -z "$(locate_schema_yaml "$protocol")" ]]; then
+    add_warning "CC_LINT_SCHEMA_NOT_FOUND" \
+      "${task_label}: writing_protocol=\"${protocol}\" 但找不到 schema 文件（lint 回退到旧行为）" \
+      "确认 .specanchor/schemas/${protocol}/schema.yaml 或 references/schemas/${protocol}/schema.yaml 存在；或修正 task spec 的 writing_protocol 字段。"
+  fi
+
   if schema_declares_section "$protocol" "hard_boundaries"; then
     if ! grep -q '^## 1\.2 Hard Boundaries' "$task" 2>/dev/null; then
       apply_enforce "$(parse_cc_enforce hard_boundaries error)" \
@@ -655,10 +665,14 @@ lint_context_control() {
   fi
 
   local task_file
+  local find_args=(-name "*.spec.md" -not -path "*/archive/*")
+  if [[ -n "$LINT_IGNORE_PATTERN" ]]; then
+    find_args+=(-not -name "$LINT_IGNORE_PATTERN")
+  fi
   while IFS= read -r task_file; do
     [[ -z "$task_file" ]] && continue
     lint_context_control_task "$task_file"
-  done < <(find .specanchor/tasks -name "*.spec.md" -not -path "*/archive/*" 2>/dev/null | sort)
+  done < <(find .specanchor/tasks "${find_args[@]}" 2>/dev/null | sort)
 }
 
 usage() {
@@ -671,6 +685,7 @@ Usage:
   bash scripts/specanchor-doctor.sh --strict --profile=agent
   bash scripts/specanchor-doctor.sh --profile=maintainer --allow-dirty
   bash scripts/specanchor-doctor.sh --lint=context-control
+  bash scripts/specanchor-doctor.sh --lint=context-control --ignore-pattern='_fixture_*.spec.md'
 EOF
   exit 0
 }
@@ -701,6 +716,12 @@ main() {
         [[ $# -gt 0 ]] || sa_die "--lint requires a value" 64
         [[ "$1" == "context-control" ]] || sa_die "unknown lint target: $1 (use: context-control)" 64
         LINT_CONTEXT_CONTROL="true"
+        ;;
+      --ignore-pattern=*) LINT_IGNORE_PATTERN="${1#--ignore-pattern=}" ;;
+      --ignore-pattern)
+        shift
+        [[ $# -gt 0 ]] || sa_die "--ignore-pattern requires a value" 64
+        LINT_IGNORE_PATTERN="$1"
         ;;
       --help|-h) usage ;;
       *) sa_die "invalid argument: $1" 64 ;;
