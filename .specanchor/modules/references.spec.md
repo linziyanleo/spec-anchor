@@ -9,10 +9,10 @@ specanchor:
   author: "maintainers"
   reviewers: []
   created: "2026-04-02"
-  updated: "2026-05-18"
-  last_synced: "2026-05-18"
-  last_synced_sha: "0280dc6"
-  last_change: "v0.5.0-beta.1 Harness Context Control：commands/ 加 handoff.md（specanchor_handoff），schema sdd-riper-one v2 加 6 区段 + context_control 节"
+  updated: "2026-05-19"
+  last_synced: "2026-05-19"
+  last_synced_sha: "cbf4cab"
+  last_change: "v0.5.0-beta.2 Handoff schema rollout: 新增 handoff schema (schemas/handoff/); commands/handoff.md 加两类 handoff 概念区分; commands/task.md 加 schema 选择速查; commands-quickref 扩展; integrations/goal-hook.md 新增"
   status: active
   depends_on: []
 ---

@@ -8,9 +8,9 @@ specanchor:
   owner: "maintainers"
   created: "2026-04-02"
   status: active
-  last_synced: "2026-05-18"
-  last_synced_sha: "0280dc6"
-  last_change: "v0.5.0-beta.1 Harness Context Control：新增 lib/{decision,evidence}-filter.sh、specanchor-doctor --lint=context-control、specanchor-assemble --mode=handoff、.githooks/pre-commit 集成 lint"
+  last_synced: "2026-05-19"
+  last_synced_sha: "cbf4cab"
+  last_change: "v0.5.0-beta.2 Schema-aware enforce: doctor.sh 加 schema_declares_section helper 链 + CC_LINT_SCHEMA_NOT_FOUND warning + --ignore-pattern; boot.sh Available Schemas 默认开 + --no-schemas 反向开关"
   depends_on: []
 ---
 
