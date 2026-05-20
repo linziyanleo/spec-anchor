@@ -159,6 +159,11 @@ specanchor:
 
 > 验收证据链。auto-pin acceptance criteria 对应证据；hot 触发条件由 anchor.yaml `context_control.evidence_log` + 任务 frontmatter `evidence_log` 决定。
 
+### Evidence Writing Rule
+
+- Contract evidence: 可重复验证的协议事实（例如 JSON 字段存在、命令输出格式、测试断言）。这类证据应有自动化 test/assert 支撑。
+- Snapshot evidence: 某一时刻的状态快照（例如 active task 数量、当前分支、当前 warning 数）。这类证据必须写明命令 + 时间戳，不能升级为长期 spec 事实。
+
 ### Commands Run
 
 | Command | Status | Output ref |
@@ -182,6 +187,14 @@ specanchor:
 ### Rollback / Follow-up Handle
 
 - <回滚方式>
+
+## 6.3 Capability Drift Check
+
+> 检查本 spec（或被本 spec 引用的其他 spec）中描述的「工具能力 / 系统现状 / audit finding / 已知约束」是否仍然准确。Spec 文本被后续代码进展超越称为 Capability Drift——影响**计划决策**，比 Spec-Code Drift 更隐蔽。概念定义见 `references/concepts/capability-drift.md`。
+
+- [ ] 本 spec 中描述的「现状 / 缺口 / 已知约束」是否仍然准确？
+- [ ] 是否有「X 不感知 Y」/「需要 Step A/B/C」/「audit finding」类陈述已被后续代码超越？
+- 发现 stale claim：在被超越段落原文后追加 `[stale: superseded by <commit-sha / spec-path>]`，并在 §6 Spec Sediment 的「值得记录的反模式」记录漂移轨迹。
 
 ## 7. Plan-Execution Diff
 - Any deviation from plan: ...
