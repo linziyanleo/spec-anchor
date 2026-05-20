@@ -72,6 +72,8 @@ frontmatter_fields:
     - target_session_window
     - target_release
     - updated
+    - archived
+    - archive_reason
 
 # Frontmatter 字段类型 —— 仅声明 list / object 字段（string 默认）
 field_types:

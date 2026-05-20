@@ -111,6 +111,8 @@ specanchor:
 | `related_global` | 否 | 引用的 Global Spec 路径列表 |
 | `writing_protocol` | 否 | 固定为 `"handoff"` |
 | `branch` | 否 | 关联 git 分支名 |
+| `archived` | 否 | 归档日期；仅归档后的 handoff spec 使用 |
+| `archive_reason` | 否 | 归档原因；仅归档后的 handoff spec 使用 |
 
 ## 与其他 schema 的关系
 
