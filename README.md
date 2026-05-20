@@ -17,7 +17,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.5.0--beta.1-brightgreen.svg" alt="Version 0.4.0-beta.2" />
+  <img src="https://img.shields.io/badge/version-0.5.0--beta.1-brightgreen.svg" alt="Version 0.5.0-beta.1" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -37,11 +37,11 @@
 
 ## What SpecAnchor Is
 
-**SpecAnchor is a three-tier spec system that loads itself.** It keeps your team's coding rules, module contracts, and task intents in `.specanchor/`, then automatically loads the relevant ones into your AI's context before any code is generated — and checks later whether the code still matches.
+**SpecAnchor is a three-tier spec system that agents load on boot.** It keeps your team's coding rules, module contracts, and task intents in `.specanchor/`, then agents load the relevant ones into context before any code is generated — and check later whether the code still matches.
 
 Think of it as a **Harness Context Control plane** for delegated agentic engineering: it organizes context across three categories — **Spec / Decision / Evidence** — assembles a *Spec Landscape* that every agent reads before acting, gates progress through *Schema Gates*, detects drift through an *Alignment Surface*, sediments checkpoint decisions and verification evidence into the Task Spec, and exports a *handoff packet* for cross-session continuity. You delegate work to agents; SpecAnchor makes sure they stay anchored.
 
-It ships a complete **spec-driven development** (SDD) authoring toolkit out of the box — the default `sdd-riper-one` schema gives you Research → Plan → Execute → Review gates — so **you don't need Spec-Kit or OpenSpec to use SpecAnchor**. If you already have an OpenSpec or custom spec directory, `parasitic` mode wraps it without migration. Keep your existing authoring, add SpecAnchor as the loader and anti-decay layer.
+It ships a bundled **spec-driven development** (SDD) workflow preset out of the box — the default `sdd-riper-one` schema gives you Research → Plan → Execute → Review gates — so **you don't need Spec-Kit or OpenSpec to use SpecAnchor**. If you already have an OpenSpec or custom spec directory, `parasitic` mode wraps it without migration. Keep your existing authoring, add SpecAnchor as the loader and anti-decay layer.
 
 ### What Counts as Context
 
@@ -51,7 +51,7 @@ It ships a complete **spec-driven development** (SDD) authoring toolkit out of t
 | **Decision Context** | Checkpoint inputs from human reviewers | Task Spec §5.2 Checkpoint Decisions Log; hot/cold filter | Dynamic — sediments per checkpoint, hot view auto-pruned |
 | **Evidence Context** | Verification outputs and acceptance proofs | Task Spec §6.2 Evidence Ledger; auto-pinned acceptance criteria | Dynamic — handoff packet exposes verification status |
 
-All three live inside the Task Spec (single source of truth), assembled into bounded views by `specanchor_handoff`.
+Decision and Evidence context live inside the Task Spec (single source of truth); Spec Context is assembled from Global, Module, and Task tiers. All three are assembled into bounded views by `specanchor_handoff`.
 
 > **→ Curious about the design philosophy? Read [WHY.md](WHY.md).**
 
@@ -71,8 +71,8 @@ You: Create task: refactor order module to support multi-address split shipping
 Claude: [routes to specanchor_task → specanchor-check.sh coverage]
   ✅ covered:   src/orders/    (modules/orders.spec.md)
   ✅ covered:   src/shipping/  (modules/shipping.spec.md)
-  ⚠️  uncovered: src/inventory/ → auto-inferring Module Spec draft
-  [runs specanchor_infer]
+  ⚠️  uncovered: src/inventory/ → agent drafts Module Spec via specanchor_infer protocol
+  [agent executes specanchor_infer — scans code, writes draft]
   ✓ modules/inventory.spec.md  (status=draft, needs human review)
 
   ✓ .specanchor/tasks/_cross-module/2026-04-23_split-shipping.spec.md
@@ -90,18 +90,17 @@ Claude: [routes to specanchor_task → specanchor-check.sh coverage]
 You: Check spec-code alignment
 
 Claude: [runs specanchor-check.sh alignment]
-  ✅ orders.spec.md    — aligned
-  ⚠️  shipping.spec.md  — drift detected:
-      ShipmentPolicy.split() signature ≠ code (code adds `region` param)
-      → update spec or revert code
-  ✅ inventory.spec.md (draft) — drift tolerated at draft stage
+  ✅ orders.spec.md    — aligned (sha current)
+  ⚠️  shipping.spec.md  — stale: module modified since last spec sync
+      → review spec against current code, update if needed
+  ✅ inventory.spec.md  — aligned (sha current, just created)
 ```
 
 Three things happened that vanilla AI coding, Spec-Kit, and OpenSpec cannot do together:
 
 1. **Relevant specs loaded before coding** — Global + three Module Specs resolved from file paths, reported as an Assembly Trace
-2. **Coverage gap auto-filled** — the uncovered `inventory/` module triggered `specanchor_infer` to draft a Module Spec, keeping the system honest
-3. **Spec ↔ code drift caught post-hoc** — `shipping.spec.md` flagged the signature mismatch, not against another spec file, but against actual source code
+2. **Coverage gap filled by agent** — the uncovered `inventory/` module triggered the `specanchor_infer` protocol; the agent scanned code and drafted a Module Spec
+3. **Module freshness drift caught post-hoc** — `shipping.spec.md` was flagged as stale because the module's code changed since the last spec sync — triggering a review prompt
 
 ---
 
@@ -126,7 +125,7 @@ Each tier is a persistent, reviewable, git-versioned `.spec.md` file — not a r
 | **Global tier as first-class spec files** | — | ✅ `constitution.md` (single file) | ⚠️ only a `context:` string in `config.yaml` | ✅ multiple `global/*.spec.md`, each independently reviewed |
 | **Persistent module tier** | — | ❌ features are branch-scoped and archived | ✅ `specs/<domain>/spec.md` | ✅ `modules/*.spec.md` + indexed via `spec-index.md` |
 | Task / change tier | ❌ | ✅ per-feature directory | ✅ `changes/<id>/` | ✅ `tasks/<module>/YYYY-MM-DD_*.spec.md` |
-| Spec ↔ source-code drift detection | ❌ | ⚠️ `/speckit.analyze` compares spec↔plan↔tasks, not code | ⚠️ `/opsx:verify` is one-shot, optional | ✅ `specanchor-check` runs continuously against real files |
+| Spec ↔ source-code drift detection | ❌ | ⚠️ `/speckit.analyze` compares spec↔plan↔tasks, not code | ⚠️ `/opsx:verify` is one-shot, optional | ✅ `specanchor-check` — command-triggered module freshness, file-change alignment, coverage |
 | Module coverage tracking | ❌ | ❌ | ❌ | ✅ `specanchor-check coverage` |
 | **Checkpoint decisions captured & filtered** | ❌ | ❌ | ❌ | ✅ Decision Log §5.2 + hot/cold lazy view |
 | **Evidence ledger as first-class** | ❌ | ❌ | ❌ | ✅ Evidence Ledger §6.2 + auto-pin acceptance criteria |
@@ -158,7 +157,7 @@ Assembly Trace:
   - Module: none (nothing touched yet)
 ```
 
-**3. From now on, talk to it in natural language** — "Create task: …", "Check spec-code alignment", "Generate coding standards from this codebase". No shell commands.
+**3. From now on, talk to it in natural language** — "Create task: …", "Check spec-code alignment", "Generate coding standards from this codebase". The agent handles script invocation internally.
 
 For manual install via `rsync`, symlink-based dev setups, or tool-specific skill paths, see [`docs/INSTALL.md`](docs/INSTALL.md).
 
@@ -180,10 +179,6 @@ anchor.yaml
 ├── archive/                         # completed tasks move here
 ├── spec-index.md                  # path → module spec lookup
 └── project-codemap.md               # high-level code map
-
-mydocs/                              # auto-generated views (when v0.5.0+ context_control enabled)
-├── evidence/                        # per-task verification logs
-└── handoff/                         # auto-generated handoff packets (specanchor_handoff)
 ```
 
 The starter Global Specs are intentionally generic; your first real use-case is refining them against your actual codebase. See [examples/minimal-full-project/](examples/minimal-full-project/) for the full expected layout.

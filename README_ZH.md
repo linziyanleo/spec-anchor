@@ -17,7 +17,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.5.0--beta.1-brightgreen.svg" alt="Version 0.4.0-beta.2" />
+  <img src="https://img.shields.io/badge/version-0.5.0--beta.1-brightgreen.svg" alt="Version 0.5.0-beta.1" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -37,11 +37,11 @@
 
 ## SpecAnchor 是什么
 
-**SpecAnchor 是一套会自己加载自己的三层 Spec 系统**。它把团队的编码规则、模块契约、任务意图都放在 `.specanchor/` 下，在 AI 写代码之前自动把相关的那些加载进上下文；等代码写完，再回头检查代码是否还跟 Spec 对得上。
+**SpecAnchor 是一套 Agent 在 boot 时加载的三层 Spec 系统**。它把团队的编码规则、模块契约、任务意图都放在 `.specanchor/` 下，Agent 在写代码之前把相关的那些加载进上下文；等代码写完，再回头检查代码是否还跟 Spec 对得上。
 
 它更像是面向 Agent 化工程交付的 **Harness Context Control plane**（Harness 上下文控制面）：把上下文显式分为三类——**Spec / Decision / Evidence**——用 *Spec Landscape*（规格地形）组装每个 Agent 都要读取的规格上下文，用 *Schema Gate*（门禁）在关键节点控盘，用 *Alignment Surface*（对齐面）检测 Spec 与代码的漂移，把 checkpoint 决策与验收证据沉淀回 Task Spec，并通过 *handoff packet* 支持跨 session 接手。你把任务交给 Agent；SpecAnchor 确保它们始终锚定在正确的规格上。
 
-它**自带一整套 SDD（Spec-Driven Development，规范驱动开发）写作工具链**——默认 `sdd-riper-one` schema 提供 Research → Plan → Execute → Review 四段门禁——**所以你不需要先装 Spec-Kit 或 OpenSpec 才能用 SpecAnchor**。如果你的项目里已经有 OpenSpec 或自建的 spec 目录，`parasitic` 模式可以直接套上去不用迁移，让已有的写作流程保持原样，SpecAnchor 只补加载器和防腐层。
+它**自带一套 SDD（Spec-Driven Development，规范驱动开发）工作流预设**——默认 `sdd-riper-one` schema 提供 Research → Plan → Execute → Review 四段门禁——**所以你不需要先装 Spec-Kit 或 OpenSpec 才能用 SpecAnchor**。如果你的项目里已经有 OpenSpec 或自建的 spec 目录，`parasitic` 模式可以直接套上去不用迁移，让已有的写作流程保持原样，SpecAnchor 只补加载器和防腐层。
 
 ### 三类 Context（v0.5.0-beta.1 显式化）
 
@@ -51,7 +51,7 @@
 | **Decision Context** | checkpoint 上的人工反馈 | Task Spec §5.2 Checkpoint Decisions Log；hot/cold 视图 | 动态——每个 checkpoint 沉淀，hot 段自动收敛 |
 | **Evidence Context** | 验收证据与命令输出 | Task Spec §6.2 Evidence Ledger；acceptance criteria 自动 pin | 动态——通过 handoff packet 暴露验收状态 |
 
-三者都内嵌 Task Spec（single source of truth），由 `specanchor_handoff` 装配出有界视图。
+Decision 和 Evidence 沉淀在 Task Spec（single source of truth）；Spec Context 由 Global/Module/Task 三层组装。三者由 `specanchor_handoff` 装配出有界视图。
 
 > **→ 想看设计思路和演进路线？读 [WHY_ZH.md](WHY_ZH.md)**
 
@@ -70,8 +70,8 @@ You: 创建任务：重构订单模块，支持多地址分批发货（涉及 or
 Claude: [routes to specanchor_task → specanchor-check.sh coverage]
   ✅ 已覆盖：src/orders/    (modules/orders.spec.md)
   ✅ 已覆盖：src/shipping/  (modules/shipping.spec.md)
-  ⚠️  未覆盖：src/inventory/ → 自动推断 Module Spec 草稿
-  [runs specanchor_infer]
+  ⚠️  未覆盖：src/inventory/ → agent 按 specanchor_infer 协议推断 Module Spec 草稿
+  [agent 执行 specanchor_infer — 扫描代码，写出草稿]
   ✓ modules/inventory.spec.md  (status=draft，需人工 review)
 
   ✓ .specanchor/tasks/_cross-module/2026-04-23_split-shipping.spec.md
@@ -89,18 +89,17 @@ Claude: [routes to specanchor_task → specanchor-check.sh coverage]
 You: 检查 Spec 和代码对齐
 
 Claude: [runs specanchor-check.sh alignment]
-  ✅ orders.spec.md    — 对齐
-  ⚠️  shipping.spec.md  — 检测到 drift：
-      ShipmentPolicy.split() 签名 ≠ 代码（代码新增 `region` 参数）
-      → 更新 spec 或 revert 代码
-  ✅ inventory.spec.md (draft) — 草稿阶段允许 drift
+  ✅ orders.spec.md    — 对齐（sha 最新）
+  ⚠️  shipping.spec.md  — 陈旧：模块代码在上次 spec 同步后有变更
+      → 对照当前代码审查 spec，必要时更新
+  ✅ inventory.spec.md  — 对齐（sha 最新，刚创建）
 ```
 
 这里发生的三件事，裸上 AI、Spec-Kit、OpenSpec 加起来也做不到：
 
 1. **AI 动手前相关 Spec 就位** ——Global + 三份 Module Spec 按文件路径自动 resolve，以 Assembly Trace 形式汇报
-2. **覆盖度缺口自动补** ——没覆盖的 `inventory/` 触发 `specanchor_infer` 生成草稿，系统不让自己掉队
-3. **事后抓 Spec ↔ 代码 drift** ——`shipping.spec.md` 标出签名不一致，比较的对象不是另一份 spec 文件，而是真实源码
+2. **覆盖度缺口由 agent 按协议补** ——没覆盖的 `inventory/` 触发 `specanchor_infer` 协议，agent 扫描代码写出 Module Spec 草稿
+3. **事后抓模块新鲜度漂移** ——`shipping.spec.md` 被标为陈旧，因为模块代码在上次 spec 同步后有变更——触发审查提示
 
 ---
 
@@ -125,7 +124,7 @@ Claude: [runs specanchor-check.sh alignment]
 | **Global 层是独立 spec 文件** | — | ✅ `constitution.md`（单份） | ⚠️ 只是 `config.yaml` 里的 `context:` 字符串 | ✅ `global/*.spec.md`（多份：architecture / coding-standards / project-setup，各自独立 review） |
 | **持久化的 Module 层** | — | ❌ feature 是分支级瞬时概念，归档即消失 | ✅ `specs/<domain>/spec.md` | ✅ `modules/*.spec.md` + `spec-index.md` 索引 |
 | Task / Change 层 | ❌ | ✅ 每 feature 一个目录 | ✅ `changes/<id>/` | ✅ `tasks/<module>/YYYY-MM-DD_*.spec.md`（按模块归档） |
-| Spec ↔ 源代码 drift 检测 | ❌ | ⚠️ `/speckit.analyze` 只比 spec↔plan↔tasks，不看代码 | ⚠️ `/opsx:verify` 是一次性可选检查 | ✅ `specanchor-check` 按目标文件持续检测 |
+| Spec ↔ 源代码 drift 检测 | ❌ | ⚠️ `/speckit.analyze` 只比 spec↔plan↔tasks，不看代码 | ⚠️ `/opsx:verify` 是一次性可选检查 | ✅ `specanchor-check` — 命令触发的模块新鲜度 + 文件变更对齐 + 覆盖度检查 |
 | 模块覆盖度追踪 | ❌ | ❌ | ❌ | ✅ `specanchor-check coverage` |
 | **Checkpoint 决策捕获 & hot/cold 过滤** | ❌ | ❌ | ❌ | ✅ Decision Log §5.2 + 懒计算 hot/cold 视图 |
 | **Evidence Ledger 一等公民** | ❌ | ❌ | ❌ | ✅ Evidence Ledger §6.2 + acceptance criteria 自动 pin |
@@ -157,7 +156,7 @@ Assembly Trace:
   - Module: none (nothing touched yet)
 ```
 
-**3. 从现在开始用自然语言对话**——"创建任务：…"、"检查 Spec 和代码对齐"、"从当前代码推断编码规范"。不用再敲 shell 命令。
+**3. 从现在开始用自然语言对话**——"创建任务：…"、"检查 Spec 和代码对齐"、"从当前代码推断编码规范"。Agent 在内部处理脚本调用。
 
 手动 `rsync` 安装、symlink 开发环境、各 agent 独有的 skill 目录约定，见 [`docs/INSTALL.md`](docs/INSTALL.md)。
 
@@ -179,10 +178,6 @@ anchor.yaml
 ├── archive/                         # 完成的任务挪到这里
 ├── spec-index.md                  # 路径 → module spec 查询表
 └── project-codemap.md               # 高层代码地图
-
-mydocs/                              # 自动生成视图（v0.5.0+ context_control 启用后）
-├── evidence/                        # 单任务的验证日志
-└── handoff/                         # 自动生成的 handoff packet（specanchor_handoff）
 ```
 
 初始的 Global Spec 内容是刻意写得通用的——你第一个真正的用例就是拿实际代码去打磨它们。完整期望结构见 [`examples/minimal-full-project/`](examples/minimal-full-project/)。

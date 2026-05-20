@@ -56,7 +56,7 @@ LLM 上下文很贵——长上下文中段腐烂、recency bias 主导、自动
 
 ---
 
-## 两类 Handoff（v0.5.0-beta.2+ 显式化）
+## 两类 Handoff（v0.5.0+）
 
 "Handoff"看似一个概念，实际是两种不同物种。混用会产生"placeholder hack"反模式——把 portfolio 文档硬塞进 task schema。SpecAnchor 给它们各自命名：
 
@@ -65,7 +65,7 @@ LLM 上下文很贵——长上下文中段腐烂、recency bias 主导、自动
 | **Task-internal handoff packet** | 单个 Task Spec 内的 `sdd-riper-one §7.2` 段 | tool（`assemble.sh --mode=handoff`） | 同一任务，换 chat 继续 —— 保留 hot decisions / next step / read-next | `specanchor_handoff` 命令 |
 | **Portfolio handoff spec** | 独立 spec 文件（用 `handoff` schema） | author（手写） | 跨任务 / 跨 release roadmap；deferred-items 矩阵；下次会话 entry point | `specanchor_task` 选 `writing_protocol: handoff` |
 
-Packet 是 tool 对单个 task 渲染的 hot view；portfolio spec 是跨 task 的人工策展 entry point。两者不替代彼此。Schema-aware enforce（lint）仅在 schema 显式声明 6 段的情况下才要求 sdd-riper-one v2 的 6 段（`§1.2 / §1.3 / §4.7 / §5.2 / §6.2 / §7.2`）—— 所以 portfolio handoff spec 不会被迫假装自己有 Hard Boundaries 和 Evidence Ledger。
+Packet 是 tool 对单个 task 渲染的 hot view；portfolio spec 是跨 task 的人工策展 entry point。两者不替代彼此。Task-internal handoff 在 v0.5.0-beta.1 发布；两类 handoff 的框架划分与 portfolio handoff schema 随后在 main 上引入。Schema-aware enforce（lint）仅在 schema 显式声明 6 段的情况下才要求 sdd-riper-one v2 的 6 段（`§1.2 / §1.3 / §4.7 / §5.2 / §6.2 / §7.2`）—— 所以 portfolio handoff spec 不会被迫假装自己有 Hard Boundaries 和 Evidence Ledger。
 
 ---
 

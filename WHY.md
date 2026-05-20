@@ -56,7 +56,7 @@ Why this matters: most prior tools (Spec-Kit, OpenSpec, plain Cursor rules) only
 
 ---
 
-## Two Species of Handoff (v0.5.0-beta.2+)
+## Two Species of Handoff (v0.5.0+)
 
 "Handoff" looks like one concept but is actually two distinct artifacts. Conflating them produces the "placeholder hack" anti-pattern (forcing a portfolio doc into a task schema). SpecAnchor names them explicitly:
 
@@ -65,7 +65,7 @@ Why this matters: most prior tools (Spec-Kit, OpenSpec, plain Cursor rules) only
 | **Task-internal handoff packet** | `sdd-riper-one §7.2` section inside one Task Spec | tool (`assemble.sh --mode=handoff`) | Same task, new chat — preserve hot decisions / next step / read-next | `specanchor_handoff` command |
 | **Portfolio handoff spec** | Standalone spec file using `handoff` schema | author (hand-written) | Cross-task / cross-release roadmap; deferred-items matrix; next-session entry point | `specanchor_task` with `writing_protocol: handoff` |
 
-The packet is a tool-rendered hot view *of* a single task; the portfolio spec is a hand-curated entry point *across* tasks. They do not replace each other. Schema-aware enforce (lint) only requires the 6 sdd-riper-one v2 sections (`§1.2 / §1.3 / §4.7 / §5.2 / §6.2 / §7.2`) on schemas that explicitly declare them — so a portfolio handoff spec is not pressured into pretending it has Hard Boundaries and Evidence Ledger.
+The packet is a tool-rendered hot view *of* a single task; the portfolio spec is a hand-curated entry point *across* tasks. They do not replace each other. Task-internal handoff shipped in v0.5.0-beta.1; the portfolio handoff schema and two-species framing were introduced on main afterwards. Schema-aware enforce (lint) only requires the 6 sdd-riper-one v2 sections (`§1.2 / §1.3 / §4.7 / §5.2 / §6.2 / §7.2`) on schemas that explicitly declare them — so a portfolio handoff spec is not pressured into pretending it has Hard Boundaries and Evidence Ledger.
 
 ---
 

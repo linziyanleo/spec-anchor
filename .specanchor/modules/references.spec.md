@@ -12,7 +12,7 @@ specanchor:
   updated: "2026-05-20"
   last_synced: "2026-05-20"
   last_synced_sha: "b55f56c"
-  last_change: "新增 Capability Drift 概念、sdd-riper-one Evidence Writing Rule / Capability Drift Check、handoff archive metadata 字段，以及 spec-anchor-prelude skill 草稿"
+  last_change: "§3.1 加 codemap (draft/deferred)、§3.2 加 handoff schema、§7 修命令文件计数 12"
   status: active
   depends_on: []
 ---
@@ -48,6 +48,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | `index.md` | `specanchor_index` | full |
 | `import.md` | `specanchor_import` | 均可 |
 | `handoff.md` | `specanchor_handoff` | 均可 |
+| `codemap.md` | `specanchor_codemap` | full (draft/deferred, time-gated ≥ 2026-06-15) |
 
 ### 3.2 Schema 系统（schemas/）
 
@@ -59,6 +60,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | `research` | strict | 调研任务 |
 | `simple` | fluid | 简单变更 |
 | `openspec-compat` | fluid | OpenSpec 兼容 |
+| `handoff` | fluid | 跨任务/跨版本 portfolio handoff |
 
 ### 3.3 模板文件
 
@@ -104,8 +106,8 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 
 | 路径 | 文件数 | 职责 |
 |------|--------|------|
-| `commands/` | 11 个 .md | 各命令的详细定义（含 v0.5.0-beta.1 的 `handoff.md`） |
-| `schemas/` | 7 个子目录（各含 2 文件） | Schema 系统（sdd-riper-one v2 起含 `context_control` 节，声明 6 区段协议事实） |
+| `commands/` | 12 个 .md | 各命令的详细定义（含 `handoff.md`；`codemap.md` 为 draft/deferred） |
+| `schemas/` | 7 个子目录（各含 2 文件） | Schema 系统（含 `handoff` schema；sdd-riper-one v2 起含 `context_control` 节，声明 6 区段协议事实） |
 | 根级 .md | 10 个 | 协议、模板、快速参考 |
 | `integrations/` | 3 个 .md | 外部工作流集成说明 |
 | `agents/` | 5 个 .md | Agent 工作循环契约 + 各 Agent 入口适配 |

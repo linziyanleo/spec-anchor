@@ -83,7 +83,7 @@ flowchart TD
     A["'创建任务：登录页增加验证码'"] -->|specanchor_task| B[扫描 modules/ 的 module_path<br/>判断覆盖度]
     B --> B2{任务路径被 Module Spec 覆盖?}
     B2 -->|已覆盖| C[On-Demand 加载 Module Spec]
-    B2 -->|未覆盖| D["自动执行 specanchor_infer<br/>生成 Module Spec 草稿"]
+    B2 -->|未覆盖| D["agent 执行 specanchor_infer 协议<br/>生成 Module Spec 草稿"]
     D --> D2["告知用户: 草稿已生成（status=draft）"]
     D2 --> C
 
@@ -183,7 +183,7 @@ graph TB
         O2[global/*.spec.md<br/>包含 project-setup.spec.md]
         O3[modules/*.spec.md]
         O4[tasks/**/*.spec.md]
-        O5[module-index.md]
+        O5[spec-index.md]
     end
 
     subgraph "脚本层"

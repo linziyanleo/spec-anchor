@@ -92,8 +92,13 @@ boot 输出已嵌入紧凑意图映射；命中后直接读对应命令定义文
 - `references/script-contract.md`：脚本清单、调用契约、输出边界
 - `references/assembly-trace.md`：Assembly Trace 格式与刷新时机
 - `references/agents/agent-contract.md`：AI 代理启动、装载、验证的统一 contract
-- `references/agents/claude-code.md` / `codex.md` / `cursor.md`：常见代理入口的使用说明
+- `references/agents/claude-code.md` / `codex.md` / `cursor.md` / `gemini.md`：常见代理入口的使用说明
 - `references/workflow-gates.md`：`⚡ lightweight` / `standard Task Spec workflow` 选择与严格门禁规则
 - `references/external-sources-protocol.md`：外部 sources 治理与 frontmatter 注入
 - `references/integrations/sdd-riper-one.md`：默认写作协议的接入方式
 - `references/integrations/superpowers.md`：与 superpowers 的协作和降级规则
+- `references/integrations/goal-hook.md`：goal-hook 与 Schema Gate 的交互
+- `references/concepts/capability-drift.md`：Capability Drift 概念定义（spec 描述被后续代码超越）
+- `references/skills/spec-anchor-prelude/SKILL.md`：superpowers 流程的 Spec Landscape 预加载 skill
+
+Additional draft command protocols may exist under `references/commands/` (e.g. `codemap.md`); these are not yet routable and are excluded from the Command Routing table above.
