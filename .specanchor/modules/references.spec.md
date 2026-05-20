@@ -11,7 +11,7 @@ specanchor:
   created: "2026-04-02"
   updated: "2026-05-20"
   last_synced: "2026-05-20"
-  last_synced_sha: "b55f56c"
+  last_synced_sha: "43ddb61"
   last_change: "§3.4 agents/ 加 Boot Activation 描述；init.md 新增 Q1/Q2 交互点 + --scan-sources 边界修正"
   status: active
   depends_on: []
