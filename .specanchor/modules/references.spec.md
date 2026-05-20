@@ -12,7 +12,7 @@ specanchor:
   updated: "2026-05-20"
   last_synced: "2026-05-20"
   last_synced_sha: "b55f56c"
-  last_change: "§3.1 加 codemap (draft/deferred)、§3.2 加 handoff schema、§7 修命令文件计数 12"
+  last_change: "§3.4 agents/ 加 Boot Activation 描述；init.md 新增 Q1/Q2 交互点 + --scan-sources 边界修正"
   status: active
   depends_on: []
 ---
@@ -82,7 +82,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | `workflow-gates.md` | `⚡/📋` 选择与严格门禁规则 |
 | `integrations/*.md` | 与 SDD-RIPER-ONE / superpowers 的集成说明 |
 | `agents/agent-contract.md` | Agent 标准工作循环（7 步：boot → resolve → workflow → execute → check → sediment → archive） |
-| `agents/{claude-code,codex,cursor,gemini}.md` | 各 Agent 工具的入口适配说明 |
+| `agents/{claude-code,codex,cursor,gemini}.md` | 各 Agent 工具的入口适配说明 + Boot Activation 模板 |
 | `concepts/*.md` | 可被 schema / template 引用的稳定概念说明 |
 | `skills/*.md` | 可外置安装或桥接其他 workflow 的 skill 草稿 |
 
@@ -110,7 +110,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | `schemas/` | 7 个子目录（各含 2 文件） | Schema 系统（含 `handoff` schema；sdd-riper-one v2 起含 `context_control` 节，声明 6 区段协议事实） |
 | 根级 .md | 10 个 | 协议、模板、快速参考 |
 | `integrations/` | 3 个 .md | 外部工作流集成说明 |
-| `agents/` | 5 个 .md | Agent 工作循环契约 + 各 Agent 入口适配 |
+| `agents/` | 5 个 .md | Agent 工作循环契约 + 各 Agent 入口适配 + Boot Activation 模板 |
 | `concepts/` | 1 个 .md | Capability Drift 等稳定概念说明 |
 | `skills/` | 1 个 skill | 外部 workflow 桥接 skill 草稿 |
 

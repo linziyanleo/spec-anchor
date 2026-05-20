@@ -46,6 +46,42 @@ For a focused shell-script fix:
 4. Apply the code change.
 5. Run tests, then doctor / validate if specs changed.
 
+## Boot Activation
+
+To ensure SpecAnchor boots automatically on every new session, configure one of the following.
+
+**Option A: SessionStart hook** (recommended)
+
+Add to `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SPECANCHOR_SKILL_DIR=.claude/skills/specanchor bash .claude/skills/specanchor/scripts/specanchor-boot.sh --format=summary"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Option B: CLAUDE.md instruction** (fallback if hooks are not available)
+
+Add to project `CLAUDE.md`:
+
+```markdown
+## SpecAnchor Boot
+At session start, run:
+SPECANCHOR_SKILL_DIR=.claude/skills/specanchor bash .claude/skills/specanchor/scripts/specanchor-boot.sh --format=summary
+Then read SKILL.md and follow the SpecAnchor workflow.
+```
+
 ## Full Agent Loop
 
 For the complete seven-step loop including Alignment Check and Spec Sediment, see `agent-contract.md`.

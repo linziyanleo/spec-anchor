@@ -39,6 +39,32 @@ For a multi-file change:
 3. If assemble reports missing coverage, stop and create a Task Spec.
 4. Otherwise read the listed specs, edit code, and run verification.
 
+## Boot Activation
+
+To ensure SpecAnchor boots automatically on every new session, configure one of the following.
+
+**Option A: SessionStart hook** (recommended)
+
+Add a SessionStart hook that runs the boot script:
+
+```yaml
+# codex hooks configuration
+hooks:
+  session_start:
+    - command: "SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary"
+```
+
+**Option B: AGENTS.md instruction** (fallback)
+
+Add to project `AGENTS.md`:
+
+```markdown
+## SpecAnchor Boot
+At session start, run:
+SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary
+Then read SKILL.md and follow the SpecAnchor workflow.
+```
+
 ## Full Agent Loop
 
 For the complete seven-step loop including Alignment Check and Spec Sediment, see `agent-contract.md`.

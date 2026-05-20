@@ -15,14 +15,14 @@
 
 ```bash
 # 步骤 1: 脚本完成目录和配置初始化
-bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name> [--scan-sources]
+bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name>
 
 # 步骤 2: Agent 扫描代码生成 Global Spec（需要代码语义分析）
 # 由 Agent 执行 specanchor_global 命令
 ```
 
-**脚本处理的部分**（步骤 1, 4-6）：检查已初始化、目录结构创建、anchor.yaml 生成、spec-index.md 初始化、外部来源检测。
-**Agent 处理的部分**（步骤 2-3, 7-12）：来源治理策略确认、模式选择（需交互）、scan.sh 生成、git hook 配置、Global Spec 生成、Frontmatter 注入。
+**脚本处理的部分**（步骤 1, 4-6）：检查已初始化、目录结构创建、anchor.yaml 生成、spec-index.md 初始化。
+**Agent 处理的部分**（步骤 2-3, 7-14）：外部来源检测与治理策略确认、模式选择（需交互）、scan.sh 生成、git hook 配置、Global Spec 生成、Module Spec 候选推荐、Frontmatter 注入、boot 激活配置。
 
 ### 详细步骤
 
@@ -129,7 +129,28 @@ bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name> [--scan-s
    - 检查所有 Global Spec 合计是否 ≤ 200 行，超出则警告并建议精简
    - 提示用户 Review 生成的内容
 
-10. **可选：Frontmatter 注入**（仅当 sources 中有 `frontmatter_inject: true` 的来源时）：
+10. **可选：推荐核心模块并生成 Module Spec 草稿**（仅 mode: full）：
+
+    Agent 扫描 `anchor.yaml` 中 `coverage.scan_paths` 匹配的顶层子目录，排除已有 Module Spec 的目录，按混合排序推荐 2-3 个候选：
+
+    - 代码量：`find <dir> -type f \( -name "*.ts" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" \) | wc -l`
+    - 变更频率：`git log --oneline --since=3.months -- <dir> | wc -l`
+    - 混合排序：代码量 × 0.4 + 变更频率 × 0.6（归一化后加权）
+    - **git history 不可用时**（非 git repo、浅克隆、无提交历史）：显式标注 `(git history unavailable)`，仅按代码量排序；代码量也无法获取则跳过推荐
+
+    ```
+    以下目录可能是核心模块，推荐生成 Module Spec 草稿：
+      [1] src/orders/     (120 files, 45 recent commits)
+      [2] src/auth/       (35 files, 30 recent commits)
+      [3] src/shipping/   (28 files, 22 recent commits)
+
+    为哪些目录生成 Module Spec 草稿？(输入编号，逗号分隔；n 跳过)
+    ```
+
+    - 用户选择后，对每个选中路径运行 `specanchor_infer` 协议，产出 `status: draft` 的 Module Spec
+    - 无可推荐目录（项目太小或 scan_paths 无匹配）→ 跳过此步
+
+11. **可选：Frontmatter 注入**（仅当 sources 中有 `frontmatter_inject: true` 的来源时）：
 
     使用 frontmatter-inject.sh 脚本自动注入（`$SA_SKILL_DIR` 定义见 SKILL.md「脚本调用约定」）。对每个启用了 frontmatter_inject 的来源：
 
@@ -150,7 +171,7 @@ bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name> [--scan-s
 
     注入完成后自动输出摘要（N injected / M skipped / K failed）。
 
-11. **可选：注入后新鲜度检测**：
+12. **可选：注入后新鲜度检测**：
 
     使用 frontmatter-inject-and-check.sh（Layer 2）可一步完成注入 + 检测：
 
@@ -164,13 +185,40 @@ bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name> [--scan-s
 
     检测结果展示各 spec 文件的新鲜度状态（FRESH / STALE / OUTDATED），Agent 根据检测结果向用户报告需要关注的腐化 spec。
 
-12. **输出完成信息**：
+13. **可选：配置 boot 激活**：
+
+    Agent 检测当前工作环境的平台标志文件：
+
+    | 标志 | 判定平台 |
+    |------|---------|
+    | `.claude/` 目录存在 | Claude Code |
+    | `.cursor/` 目录存在 | Cursor |
+    | `AGENTS.md` 存在且含 codex 标记，或运行环境为 Codex | Codex |
+    | `GEMINI.md` 存在 | Gemini |
+
+    - 多个同时存在 → 列出所有检测到的平台
+    - 都不存在 → 输出通用指引："请根据你的 Agent 平台，参考 `references/agents/` 下对应文件配置 boot 激活"，跳过此步
+
+    ```
+    检测到当前环境可能使用 <platform>。
+    是否配置 SpecAnchor boot 激活，使每次 session 自动加载 Spec？(Y/n)
+
+    [Y] → 生成对应平台的最小配置片段
+    [n] → 跳过，输出手动配置指引
+    ```
+
+    - 用户确认 → 按 `references/agents/<platform>.md` 中 `## Boot Activation` 段的模板生成配置文件或输出片段
+    - 用户拒绝 → 跳过，输出：`⏭️ 可随时参考 references/agents/ 手动配置 boot 激活。`
+
+14. **输出完成信息**：
 
     ```
     ✅ SpecAnchor 初始化完成 [<mode>]
       配置: anchor.yaml
       目录: .specanchor/ (仅 full 模式显示)
       来源: <N> 个外部 spec 体系已纳入治理
+      Module Spec: <M> 个草稿已生成 (仅有生成时显示)
       脚本: $SA_SKILL_DIR/scripts/ (见 SKILL.md「脚本调用约定」)
       Git Hook: 已配置 / 未配置
+      Boot 激活: 已配置 (<platform>) / 未配置
     ```

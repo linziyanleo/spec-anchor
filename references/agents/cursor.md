@@ -31,6 +31,39 @@ For a known module path:
 3. Read the listed specs.
 4. Apply the edit and report drift or missing anchors.
 
+## Boot Activation
+
+To ensure SpecAnchor boots automatically, create a Cursor project rule.
+
+**Option A: Project rule file** (recommended)
+
+Create `.cursor/rules/specanchor.mdc`:
+
+```markdown
+---
+description: SpecAnchor boot — load specs before any code change
+globs:
+alwaysApply: true
+---
+
+At session start, run:
+SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary
+
+Then read SKILL.md and follow the SpecAnchor workflow.
+Before editing code, run specanchor-assemble.sh for the target files and intent.
+```
+
+**Option B: AGENTS.md instruction** (fallback)
+
+Add to project `AGENTS.md`:
+
+```markdown
+## SpecAnchor Boot
+At session start, run:
+SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary
+Then read SKILL.md and follow the SpecAnchor workflow.
+```
+
 ## Full Agent Loop
 
 For the complete seven-step loop including Alignment Check and Spec Sediment, see `agent-contract.md`.
