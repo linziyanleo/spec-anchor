@@ -5,7 +5,7 @@
 Common project-local path:
 
 ```text
-.cursor/skills/specanchor/
+.codex/skills/specanchor/
 ```
 
 Codex can also consume another tool-specific skill directory if the project wires it explicitly.
@@ -13,13 +13,13 @@ Codex can also consume another tool-specific skill directory if the project wire
 ## Manual Invocation
 
 ```bash
-SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor \
-  bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary
+SPECANCHOR_SKILL_DIR=.codex/skills/specanchor \
+  bash .codex/skills/specanchor/scripts/specanchor-boot.sh --format=summary
 ```
 
 ## Recommended Prompt
 
-Use the SpecAnchor skill installed at `.cursor/skills/specanchor`.
+Use the SpecAnchor skill installed at `.codex/skills/specanchor`.
 
 Before making changes:
 1. Run SpecAnchor boot.
@@ -51,7 +51,7 @@ Add a SessionStart hook that runs the boot script:
 # codex hooks configuration
 hooks:
   session_start:
-    - command: "SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary"
+    - command: "SPECANCHOR_SKILL_DIR=.codex/skills/specanchor bash .codex/skills/specanchor/scripts/specanchor-boot.sh --format=summary"
 ```
 
 **Option B: AGENTS.md instruction** (fallback)
@@ -61,7 +61,7 @@ Add to project `AGENTS.md`:
 ```markdown
 ## SpecAnchor Boot
 At session start, run:
-SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary
+SPECANCHOR_SKILL_DIR=.codex/skills/specanchor bash .codex/skills/specanchor/scripts/specanchor-boot.sh --format=summary
 Then read SKILL.md and follow the SpecAnchor workflow.
 ```
 
