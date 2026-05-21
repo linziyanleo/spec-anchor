@@ -4,8 +4,8 @@ specanchor:
   task_name: "Dogfood Followups Batch (F3-F10)"
   author: "@方壶"
   created: "2026-05-20"
-  status: "draft"
-  last_change: "起 spec：聚合 dogfood-notes-2026-05-19 §F3-F10 八个 finding"
+  status: "in_progress"
+  last_change: "Research 完成：8 个 finding 代码定位 + Open Questions 全关闭 + Plan 可执行"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
   related_global:
@@ -22,8 +22,8 @@ specanchor:
 
 - [x] 八个 finding 拆 8 个 spec 还是聚一个？— 聚一个：避免任务碎片化；按修复轴线分四组实施，每组独立 commit。
 - [x] 是否包含 F2 (Capability Drift) 与 F1 (Active Tasks 段)？— 否，已分别落在 [[2026-05-19_boot-active-tasks-and-capability-drift]] 与 sdd-riper-one schema §6.3。
-- [ ] F6 (assemble intent 解析) 涉及 codemap 推荐逻辑改造，是否单独抽出 task？— 在 Research 阶段评估改动深度后定。
-- [ ] F9 (specanchor-check.sh task 输出引导) 是否依赖 §4.1 File Changes 模板稳定？— 是。需先确认 sdd-riper-one template.md §4.1 表头不再变化。
+- [x] F6 (assemble intent 解析) 涉及 codemap 推荐逻辑改造，是否单独抽出 task？— 不拆。resolve.sh 仅两处推荐 codemap：路径前缀匹配 (L485) 和 no-module-match fallback (L604)。F6 只需在 fallback 路径加 intent 关键词过滤条件，不需要重写 resolver 优先级模型。
+- [x] F9 (specanchor-check.sh task 输出引导) 是否依赖 §4.1 File Changes 模板稳定？— 是，已稳定。sdd-riper-one schema v2 template.md §4.1 表头 `| File | Change | Lines (est.) |` 已定型。
 
 ## 1. Requirements (Context)
 
@@ -59,14 +59,29 @@ specanchor:
 
 ## 2. Research Findings
 
-(待 Research 阶段填充)
+### 2.1 各 Finding 代码定位
 
-预期重点：
-- `scripts/specanchor-status.sh` 是否 source `specanchor-boot.sh` 的 emit_* 函数？若已 source，F3 可直接复用。
-- `scripts/specanchor-assemble.sh` 中 trace 输出函数 (F4/F5 共同改造点)
-- `scripts/specanchor-resolve.sh:681+` codemap 推荐逻辑 (F6)
-- `scripts/specanchor-check.sh` task 模式输出函数 (F9)
-- `scripts/specanchor-doctor.sh` summary 输出 (F10)
+| Finding | 脚本 | 现状 | 改动深度 |
+|---|---|---|---|
+| F3 | `specanchor-status.sh` | 无 Available Commands 输出；boot.sh 有但 status.sh 未复用 | Low — 新增一段输出或引导行 |
+| F4 | `specanchor-assemble.sh` | trace 系统完整（L70-84 trace_mode_rank/merge_trace_mode），路径输出在 print_json/print_markdown 中 | Low — 路径前缀统一 |
+| F5 | `specanchor-assemble.sh` | Module trace 有 full/summary 状态（L281-287），但 markdown 输出不分别标注 | Low — markdown 输出加 [summary]/[full] 标注 |
+| F6 | `specanchor-resolve.sh` | 两处推荐 codemap：路径前缀匹配 (L485 `codemap_area`) 和 no-module-match fallback (L604)。信心分 0.70。无 intent 过滤 | Medium — 在 fallback 路径加 intent 关键词相关性检查 |
+| F7 | `specanchor-boot.sh` | 无 Next Suggested Action 逻辑；Active Tasks 段已有 (L553+)，可基于其数据推断 next action | Medium — 新增 next action 推断逻辑 |
+| F8 | `specanchor-boot.sh` | Available Schemas 段 (L664)，描述从 schema.yaml 读取；summary/full 模式输出相同 | Low — summary 模式截断描述 |
+| F9 | `specanchor-check.sh` | L202 有 "未找到 File Changes" warning，但无引导文案 | Low — 追加 Tip 行 |
+| F10 | `specanchor-doctor.sh` | 默认 mode 无 scanned/ok/issues 计数 | Low — 在 emit_summary 加计数行 |
+
+### 2.2 关键依赖关系
+
+- F3 可独立实现（status.sh 仅输出一行引导即可，不需要 source boot 的 emit 函数）
+- F4/F5 共享 assemble.sh 改造点，应同步实施
+- F7 依赖 Active Tasks 段数据（boot.sh 已有），逻辑顺序自然
+- F6 是唯一 Medium 深度且改动 resolver 核心路径的 finding，但不需要重写优先级模型
+
+### 2.3 Research 结论
+
+8 个 finding 均可在本 task 中完成，无需拆分。F6 不需要重写 resolver 优先级模型（仅在 no-module-match fallback 路径加 intent 关键词过滤条件）。§0 Open Questions 全部关闭。Plan 可执行。
 
 ## 4. Plan (Contract)
 
