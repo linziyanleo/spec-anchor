@@ -494,6 +494,40 @@ test_decision_filter_supersede_classification() {
   assert_not_contains "$CAPTURE_OUTPUT" 'cp-04'
 }
 
+test_init_scan_sources_no_external() {
+  local workdir
+  workdir=$(make_temp_dir)
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-init.sh" --project=probe --scan-sources
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'no existing spec systems detected'
+}
+
+test_init_scan_sources_with_external() {
+  local workdir
+  workdir=$(make_temp_dir)
+  mkdir -p "${workdir}/openspec" "${workdir}/specs"
+  echo "# spec" > "${workdir}/openspec/api.md"
+  echo "# spec" > "${workdir}/specs/auth.md"
+  echo "ver: 1" > "${workdir}/specs/auth.yaml"
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-init.sh" --project=probe --scan-sources
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'openspec/'
+  assert_contains "$CAPTURE_OUTPUT" '[openspec]'
+  assert_contains "$CAPTURE_OUTPUT" 'specs/'
+  assert_contains "$CAPTURE_OUTPUT" '[spec-kit]'
+  assert_contains "$CAPTURE_OUTPUT" '1 files'
+  assert_contains "$CAPTURE_OUTPUT" '2 files'
+}
+
+test_agent_boot_activation_completeness() {
+  local agents_dir="${REPO_ROOT}/references/agents"
+  for agent_file in claude-code.md codex.md cursor.md gemini.md; do
+    assert_file_exists "${agents_dir}/${agent_file}"
+    assert_contains "$(cat "${agents_dir}/${agent_file}")" '## Boot Activation'
+    assert_contains "$(cat "${agents_dir}/${agent_file}")" 'specanchor-boot.sh'
+  done
+}
+
 echo "=== SpecAnchor Public Shell Tests ==="
 
 run_test test_repo_boot_json
@@ -528,6 +562,9 @@ run_test test_agent_reliability_suite
 run_test test_handoff_supersede_text
 run_test test_handoff_supersede_json
 run_test test_decision_filter_supersede_classification
+run_test test_init_scan_sources_no_external
+run_test test_init_scan_sources_with_external
+run_test test_agent_boot_activation_completeness
 
 echo ""
 echo "Summary: ${PASS_COUNT} passed, ${FAIL_COUNT} failed"
