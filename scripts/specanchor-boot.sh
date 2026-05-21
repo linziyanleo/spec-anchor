@@ -288,6 +288,45 @@ emit_active_tasks() {
   done
 }
 
+emit_next_action() {
+  local next=""
+  local i
+  for i in "${!B_TASK_STATUSES[@]}"; do
+    if [[ "${B_TASK_STATUSES[$i]}" == "in_progress" ]]; then
+      local phase_hint=""
+      [[ -n "${B_TASK_PHASES[$i]}" ]] && phase_hint="，当前 ${B_TASK_PHASES[$i]}"
+      next="继续执行 ${B_TASK_NAMES[$i]}${phase_hint}"
+      break
+    fi
+  done
+  if [[ -z "$next" ]]; then
+    for i in "${!B_TASK_STATUSES[@]}"; do
+      if [[ "${B_TASK_STATUSES[$i]}" == "review" ]]; then
+        next="完成 ${B_TASK_NAMES[$i]} Review"
+        break
+      fi
+    done
+  fi
+  if [[ -z "$next" ]]; then
+    for i in "${!B_TASK_STATUSES[@]}"; do
+      if [[ "${B_TASK_STATUSES[$i]}" == "draft" ]]; then
+        next="推进 ${B_TASK_NAMES[$i]} 到 PLAN"
+        break
+      fi
+    done
+  fi
+  if [[ -z "$next" ]]; then
+    compute_landscape_readiness
+    if [[ "$B_READINESS_STATUS" == "NOT_READY" ]] || [[ "$B_READINESS_STATUS" == "ATTENTION" ]]; then
+      next="处理 Landscape 健康度问题（${B_READINESS_REASONS[0]}）"
+    fi
+  fi
+  if [[ -z "$next" ]] && [[ ${#B_TASK_NAMES[@]} -eq 0 ]]; then
+    next="用 specanchor_task 创建新任务"
+  fi
+  [[ -n "$next" ]] && echo -e "  ${BOLD}Next:${RESET} ${next}"
+}
+
 emit_assembly_trace() {
   local global_mode="$1"
   local i
@@ -677,6 +716,8 @@ output_summary() {
         echo -e "    ${DIM}(none — fallback to sdd-riper-one)${RESET}"
       fi
     fi
+
+    emit_next_action
 
   elif [[ "$B_MODE" == "parasitic" ]]; then
     if [[ $B_SOURCES_COUNT -gt 0 ]]; then

@@ -200,6 +200,7 @@ check_task() {
 
   if [[ ${#planned_files[@]} -eq 0 ]]; then
     echo -e "${YELLOW}warning:${RESET} Spec 中未找到 File Changes（§4.1），跳过 Plan Coverage 检测"
+    echo -e "  ${DIM}Tip: 在 §4.1 添加 | File | Change | Lines (est.) | 表格行；模板见 references/schemas/sdd-riper-one/template.md${RESET}"
     echo ""
     return
   fi
