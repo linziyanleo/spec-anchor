@@ -4,8 +4,8 @@ specanchor:
   task_name: "Handoff Schema Rollout Follow-ups"
   author: "@maintainer"
   created: "2026-05-19"
-  status: "in_progress"
-  last_change: "起 follow-up batch task spec（simple schema dogfood）"
+  status: "done"
+  last_change: "全部 Phase 完成并提交；关闭 task"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
     - ".specanchor/modules/references.spec.md"
@@ -50,22 +50,22 @@ specanchor:
 
 ## Checklist
 
-- [ ] Phase 1: 写 `references/integrations/goal-hook.md`
-- [ ] Phase 2: WHY.md / WHY_ZH.md 加"两类 handoff"术语段
-- [ ] Phase 3a: doctor.sh 加 `CC_LINT_SCHEMA_NOT_FOUND` warning
-- [ ] Phase 3b: doctor.sh 加 `--ignore-pattern` 选项
-- [ ] Phase 3c: boot 加 Available Schemas 段
-- [ ] Phase 4: 4 schema fixture（research / refactor / bug-fix / openspec-compat）跑 schema-aware lint，验证 0 issue
-- [ ] Phase 5: frontmatter audit（grep + 阅读 validate.sh / frontmatter-inject-and-check.sh），findings 录本 spec §备注
-- [ ] Phase 6: bump module `last_synced_sha`（references + scripts）
-- [ ] 收尾: 跑 lint 0 issue + spec-index 重生 + commit 拆分
+- [x] Phase 1: 写 `references/integrations/goal-hook.md`
+- [x] Phase 2: WHY.md / WHY_ZH.md 加"两类 handoff"术语段
+- [x] Phase 3a: doctor.sh 加 `CC_LINT_SCHEMA_NOT_FOUND` warning
+- [x] Phase 3b: doctor.sh 加 `--ignore-pattern` 选项
+- [x] Phase 3c: boot 加 Available Schemas 段
+- [x] Phase 4: 4 schema fixture（research / refactor / bug-fix / openspec-compat）跑 schema-aware lint，验证 0 issue
+- [x] Phase 5: frontmatter audit（grep + 阅读 validate.sh / frontmatter-inject-and-check.sh），findings 录本 spec §备注
+- [x] Phase 6: bump module `last_synced_sha`（references + scripts）
+- [x] 收尾: 跑 lint 0 issue + spec-index 重生 + commit 拆分
 
 ## 完成确认
 
-- [ ] 代码符合 Global Spec
-- [ ] Module Spec 已同步更新（last_synced_sha bump）
-- [ ] 测试覆盖（4 schema fixture + lint warning 单测）
-- [ ] commit 按 scope 白名单拆
+- [x] 代码符合 Global Spec
+- [x] Module Spec 已同步更新（last_synced_sha bump）
+- [x] 测试覆盖（4 schema fixture + lint warning 单测）
+- [x] commit 按 scope 白名单拆
 
 ## 备注
 

@@ -5,7 +5,7 @@ specanchor:
   author: "@maintainer"
   created: "2026-05-20"
   status: "in_progress"
-  last_change: "Steps 1-6 完成：各平台 Boot Activation 模板 + init.md Q1/Q2 插入 + Q3 微调 + --scan-sources 边界闭合 + refs.spec 同步 + 验证全绿"
+  last_change: "Steps 1-7 全部完成并提交（含 SHA bump）；Execute phase 完成"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
     - ".specanchor/modules/references.spec.md"
@@ -217,13 +217,13 @@ Research 完成。三问设计、平台机制、infer 复用、sources governanc
 
 ### 4.3 Implementation Checklist
 
-- [ ] Step 1: 各平台 boot 激活模板 — 写 claude-code.md / codex.md / cursor.md / gemini.md 的 `## Boot Activation` 段
-- [ ] Step 2: init.md Q2 插入 — 步骤 9 后新增 Module Spec 候选推荐 + infer dispatch 交互流程
-- [ ] Step 3: init.md Q1 插入 — 步骤 11 后新增平台检测 + boot 激活配置生成交互流程
-- [ ] Step 4: init.md Q3 微调 + `--scan-sources` 边界闭合 — 步骤 3-4 确保措辞为 governance adoption；命令示例去掉 `[--scan-sources]` 推荐路径（加注释说明 bugfix 前由 Agent 侧检测）；职责拆分描述修正（外部来源检测从"脚本处理"移到"Agent 处理"）
-- [ ] Step 5: references.spec.md 全量同步 — agent 适配文件变更后更新 §3.1 summary/行数、§3.4 接口变更（若有）、§7 计数 + metadata 同步（`last_synced` / `last_synced_sha` / `last_change`）
-- [ ] Step 6: 验证 — doctor --strict + validate --strict + tests/run.sh + golden fixture 行数检查
-- [ ] Step 7: commit
+- [x] Step 1: 各平台 boot 激活模板 — 写 claude-code.md / codex.md / cursor.md / gemini.md 的 `## Boot Activation` 段
+- [x] Step 2: init.md Q2 插入 — 步骤 9 后新增 Module Spec 候选推荐 + infer dispatch 交互流程
+- [x] Step 3: init.md Q1 插入 — 步骤 11 后新增平台检测 + boot 激活配置生成交互流程
+- [x] Step 4: init.md Q3 微调 + `--scan-sources` 边界闭合 — 步骤 3-4 确保措辞为 governance adoption；命令示例去掉 `[--scan-sources]` 推荐路径（加注释说明 bugfix 前由 Agent 侧检测）；职责拆分描述修正（外部来源检测从"脚本处理"移到"Agent 处理"）
+- [x] Step 5: references.spec.md 全量同步 — agent 适配文件变更后更新 §3.1 summary/行数、§3.4 接口变更（若有）、§7 计数 + metadata 同步（`last_synced` / `last_synced_sha` / `last_change`）
+- [x] Step 6: 验证 — doctor --strict + validate --strict + tests/run.sh + golden fixture 行数检查
+- [x] Step 7: commit
 
 ### 4.5 Design Decisions
 
@@ -258,6 +258,7 @@ Research 完成。三问设计、平台机制、infer 复用、sources governanc
 - [x] Step 4: init.md Q3 微调 + --scan-sources 边界闭合 — 命令示例去掉 [--scan-sources]、职责拆分修正（外部来源检测从脚本侧移到 Agent 侧）、步骤总数 12→14
 - [x] Step 5: references.spec.md 全量同步 — §3.4 agents/ 描述加 Boot Activation、§7 agents/ 描述同步、last_change 更新（行数不变，golden fixture 不需要更新）
 - [x] Step 6: 验证 — doctor ok + validate ok (38 files) + tests 32/32 + golden fixture estimated_lines 不变 (342)
+- [x] Step 7: commit — `feat(spec): add boot activation templates and init interactive prompts` + `chore(spec): bump references module sha`
 
 ## 5.2 Checkpoint Decisions Log
 

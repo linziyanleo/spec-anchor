@@ -4,8 +4,8 @@ specanchor:
   task_name: "顶层文档能力准确性清理"
   author: "@maintainer"
   created: "2026-05-20"
-  status: "in_progress"
-  last_change: "PLAN review 后修正：codemap 不进 SKILL 主表、handoff 版本拆语义、FLOWCHART 落定局部修、风险调 Medium、加负向 grep 验收"
+  status: "done"
+  last_change: "全部完成并提交；关闭 task"
   related_modules:
     - ".specanchor/modules/references.spec.md"
   related_global:
@@ -109,7 +109,7 @@ specanchor:
 - [ ] Step 7: README_ZH.md + WHY_ZH.md 中文版同步
 - [ ] Step 8: 验证 — doctor --strict + validate --strict + tests/run.sh
 - [ ] Step 9: bump references module last_synced_sha（若 references/ 有变更）
-- [ ] Step 10: commit（按轴拆分 or 单 commit，视变更量定）
+- [x] Step 10: commit（按轴拆分 or 单 commit，视变更量定）
 
 ### 4.7 Checkpoints — Contract
 
@@ -135,7 +135,7 @@ specanchor:
 - [x] Step 7: README_ZH.md + WHY_ZH.md 全部同步（badge/loads/toolkit/Context/infer/check/mydocs/对比表/shell commands/handoff version）
 - [x] Step 8: 验证 — doctor ok + validate ok (36) + tests 32/32 + 负向 grep 0 匹配（golden fixture 行数同步更新 340→342）
 - [x] Step 9: 不需要 — references/ 目录无新 commit，last_synced_sha 保持 b55f56c
-- [ ] Step 10: commit
+- [x] Step 10: commit — 单 commit `docs(spec): correct 14 capability overclaims across README/WHY/SKILL/FLOWCHART`
 
 ## 5.2 Checkpoint Decisions Log
 
