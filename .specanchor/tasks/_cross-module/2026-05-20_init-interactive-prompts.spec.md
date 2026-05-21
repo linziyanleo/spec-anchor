@@ -4,8 +4,8 @@ specanchor:
   task_name: "Init 交互式三问改造"
   author: "@maintainer"
   created: "2026-05-20"
-  status: "in_progress"
-  last_change: "Steps 1-7 全部完成并提交（含 SHA bump）；Execute phase 完成"
+  status: "review"
+  last_change: "REVIEW: acceptance criteria 全部验证通过，follow-ups 3/4 已关闭"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
     - ".specanchor/modules/references.spec.md"
@@ -17,7 +17,7 @@ specanchor:
 
 # SDD Spec: Init 交互式三问改造
 
-> Current RIPER Phase: EXECUTE
+> Current RIPER Phase: REVIEW
 
 ## 0. Open Questions
 - [x] Hook 模板是内嵌 init.md 还是拆到 `references/hooks/` 独立目录？→ 先放在 `references/agents/{claude-code,codex,cursor,gemini}.md`；`init.md` 只路由和引用。除非模板膨胀到难维护，否则不新增 `references/hooks/`。
@@ -285,15 +285,15 @@ Research 完成。三问设计、平台机制、infer 复用、sources governanc
 - (none)
 
 ## 6. Review Verdict
-- Spec coverage: pending
-- Behavior check: pending
-- Regression risk: Medium（init.md 是用户 Day-1 入口，改动影响首次体验）
-- Module Spec 需更新: pending
+- Spec coverage: pass — 9/9 acceptance criteria 全部通过
+- Behavior check: pass — 35 tests passed, doctor/validate ok
+- Regression risk: Low（init.md 变更为纯协议层改动，不影响 shell 脚本）
+- Module Spec 需更新: Done — references.spec.md 已同步
 - Follow-ups:
-  - 迁移工具（从 OpenSpec/Spec-Kit 内容转换）作为独立 task
-  - `specanchor-init.sh --scan-sources` Bash 3.2 unbound variable bug 作为独立 fix task（`local -A` 不兼容）
-  - `codex.md` install path 疑似 copy-paste 错误（写成 `.cursor/skills/specanchor/`），需独立修正
-  - Hook 自动测试
+  - 迁移工具（从 OpenSpec/Spec-Kit 内容转换）— 仍为独立 task（未启动）
+  - ~~`specanchor-init.sh --scan-sources` Bash 3.2 bug~~ — 已修复（`24b1587`）
+  - ~~`codex.md` install path copy-paste 错误~~ — 已修复（`faf77c0`）
+  - ~~Hook 自动测试~~ — 已实现（`00c9e95`）
 
 ## 6.2 Evidence Ledger
 
@@ -309,15 +309,15 @@ Research 完成。三问设计、平台机制、infer 复用、sources governanc
 
 | Criterion | Evidence | Status |
 |---|---|---|
-| init.md 含 3 个交互确认点 | init.md diff | pending |
-| init.md 命令示例不含 `[--scan-sources]` 推荐路径 | init.md diff + `grep scan-sources init.md` | pending |
-| init.md 职责拆分：外部来源检测在 Agent 处理部分 | init.md diff | pending |
-| 各平台 boot 激活模板存在 | agent 适配文件 diff | pending |
-| Q2 用户确认后 dispatch `specanchor_infer` | init.md 流程描述 | pending |
-| Q2 git history 不可用时显式标注退化 | init.md 流程描述 | pending |
-| Q3 检测无果默认 full 跳过；检测到 sources 时只做 governance adoption | init.md 流程描述 | pending |
-| references.spec.md metadata 同步（last_synced/sha/last_change + §3.1/§7） | refs.spec diff | pending |
-| 现有 CLI 兼容性不破坏 | tests 结果 | pending |
+| init.md 含 3 个交互确认点 | init.md 步骤 10 (Q2), 13 (Q1), 2-3 (Q3) | pass |
+| init.md 命令示例不含 `[--scan-sources]` 推荐路径 | grep 无匹配 | pass |
+| init.md 职责拆分：外部来源检测在 Agent 处理部分 | L25 "Agent 处理的部分" 含"外部来源检测" | pass |
+| 各平台 boot 激活模板存在 | 4 个 agent 文件均含 Boot Activation | pass |
+| Q2 用户确认后 dispatch `specanchor_infer` | init.md L150 "运行 specanchor_infer" | pass |
+| Q2 git history 不可用时显式标注退化 | init.md L139 "git history unavailable" | pass |
+| Q3 检测无果默认 full 跳过；检测到 sources 时只做 governance adoption | init.md 步骤 2-3 措辞 | pass |
+| references.spec.md metadata 同步（last_synced/sha/last_change + §3.1/§7） | refs.spec 已更新 | pass |
+| 现有 CLI 兼容性不破坏 | tests 35/35 passed | pass |
 
 ### Unverified Risks
 
@@ -335,11 +335,11 @@ Research 完成。三问设计、平台机制、infer 复用、sources governanc
 
 ## 6.3 Capability Drift Check
 
-- [ ] 本 spec 中描述的「现状 / 缺口 / 已知约束」是否仍然准确？
-- [ ] 是否有「X 不感知 Y」/「需要 Step A/B/C」/「audit finding」类陈述已被后续代码超越？
+- [x] 本 spec 中描述的「现状 / 缺口 / 已知约束」是否仍然准确？— 是。§2.5 中的 3 个额外发现（codex.md path / Bash 3.2 bug / hook 测试）已在同 session 修复，不再是缺口
+- [x] 是否有「X 不感知 Y」/「需要 Step A/B/C」/「audit finding」类陈述已被后续代码超越？— §2.5 scan_external_sources Bash 3.2 bug 已修复（commit 24b1587），不再阻塞 --scan-sources
 
 ## 7. Plan-Execution Diff
-- Any deviation from plan: pending
+- Any deviation from plan: None — Steps 1-7 按 §4.3 checklist 顺序执行，无偏差
 
 ## 7.2 Handoff Packet
 
