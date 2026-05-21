@@ -298,7 +298,7 @@ emit_assembly_trace() {
     if [[ "$B_GLOBAL_COUNT" -gt 0 ]]; then
       local global_files=()
       for i in "${!B_GLOBAL_NAMES[@]}"; do
-        global_files+=("${B_GLOBAL_NAMES[$i]}.spec.md")
+        global_files+=(".specanchor/global/${B_GLOBAL_NAMES[$i]}.spec.md")
       done
       echo -e "    - Global: ${CYAN}${global_mode}${RESET} -> $(join_by ", " "${global_files[@]}")"
     else

@@ -209,9 +209,9 @@ join_paths_for_trace() {
         ;;
     esac
     if [[ -n "$out" ]]; then
-      out="${out}, ${path}"
+      out="${out}, ${path} [${FILES_TO_READ_LOADS[$i]}]"
     else
-      out="$path"
+      out="${path} [${FILES_TO_READ_LOADS[$i]}]"
     fi
     i=$((i + 1))
   done

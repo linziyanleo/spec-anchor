@@ -230,7 +230,11 @@ output_summary() {
 
   echo -e "  Assembly Trace:"
   if [[ ${#S_GLOBAL_FILES[@]} -gt 0 ]]; then
-    echo -e "    - Global: ${CYAN}summary${RESET} -> $(join_by ", " "${S_GLOBAL_FILES[@]}")"
+    local global_display=()
+    for _gf in "${S_GLOBAL_FILES[@]}"; do
+      global_display+=(".specanchor/global/${_gf}")
+    done
+    echo -e "    - Global: ${CYAN}summary${RESET} -> $(join_by ", " "${global_display[@]}")"
   else
     echo -e "    - Global: ${YELLOW}none${RESET} -> .specanchor/global/ has no loadable spec"
   fi
@@ -298,6 +302,9 @@ output_summary() {
       echo -e "    ${CYAN}${name}${RESET} (${mp:-?}) — v${version}, synced ${ls:-unknown}, ${status}"
     done
   fi
+
+  echo ""
+  echo -e "  ${DIM}Available Commands: run specanchor-boot.sh --format=summary to see full command routing${RESET}"
 }
 
 output_json() {
