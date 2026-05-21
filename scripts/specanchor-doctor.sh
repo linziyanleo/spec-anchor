@@ -389,6 +389,14 @@ print_text() {
       echo "  - ${fix}"
     done
   fi
+
+  local scanned=0 _ck
+  for _ck in CHECK_ANCHOR_YAML CHECK_SPECANCHOR_DIR CHECK_GLOBAL_SPECS CHECK_SPEC_INDEX CHECK_SOURCES CHECK_FRONTMATTER CHECK_COVERAGE CHECK_SCRIPTS CHECK_PROFILE; do
+    [[ "${!_ck}" == "true" ]] && scanned=$((scanned + 1))
+  done
+  local total_issues=$(( ${#BLOCKING_ISSUES[@]} + ${#WARNING_ISSUES[@]} ))
+  echo ""
+  echo "  scanned: ${scanned}, ok: $((scanned - total_issues)), issues: ${total_issues}"
 }
 
 print_markdown() {

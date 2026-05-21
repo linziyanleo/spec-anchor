@@ -667,7 +667,11 @@ output_summary() {
           local tag=""
           [[ "${B_SCH_SOURCES[$i]}" == "custom" ]] && tag=" ${CYAN}[custom]${RESET}"
           [[ "${B_SCH_NAMES[$i]}" == "$B_DEFAULT_SCHEMA" ]] && tag="${tag} ${DIM}(default)${RESET}"
-          echo -e "    ${B_SCH_NAMES[$i]}${tag} [${B_SCH_PHILOSOPHIES[$i]}]: ${B_SCH_DESCS[$i]}"
+          local desc="${B_SCH_DESCS[$i]}"
+          if [[ "$global_mode" == "summary" ]] && [[ ${#desc} -gt 60 ]]; then
+            desc="${desc:0:57}..."
+          fi
+          echo -e "    ${B_SCH_NAMES[$i]}${tag} [${B_SCH_PHILOSOPHIES[$i]}]: ${desc}"
         done
       else
         echo -e "    ${DIM}(none — fallback to sdd-riper-one)${RESET}"
