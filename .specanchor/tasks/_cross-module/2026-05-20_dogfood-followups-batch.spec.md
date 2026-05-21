@@ -4,8 +4,8 @@ specanchor:
   task_name: "Dogfood Followups Batch (F3-F10)"
   author: "@方壶"
   created: "2026-05-20"
-  status: "in_progress"
-  last_change: "Research 完成：8 个 finding 代码定位 + Open Questions 全关闭 + Plan 可执行"
+  status: "review"
+  last_change: "Execute 完成：F3-F10 全部实施，4 轴线 4 commit + SHA bump"
   related_modules:
     - ".specanchor/modules/scripts.spec.md"
   related_global:
@@ -16,7 +16,7 @@ specanchor:
 
 # SDD Spec: Dogfood Followups Batch (F3-F10)
 
-> Current RIPER Phase: PLAN
+> Current RIPER Phase: REVIEW
 
 ## 0. Open Questions
 
@@ -101,20 +101,20 @@ specanchor:
 
 ### 4.3 Implementation Checklist
 
-- [ ] Axis-A Step 1: F3 status 一致化
-- [ ] Axis-A Step 2: F4 assemble 路径前缀
-- [ ] Axis-A Step 3: F5 Module 段 mixed 标注
-- [ ] Axis-A Step 4: 跑 boot/status/assemble 验证输出对齐 → commit "feat(scripts): align boot/status/assemble output (F3 F4 F5)"
-- [ ] Axis-B Step 5: F8 schema 描述精简
-- [ ] Axis-B Step 6: F10 doctor 默认 mode 计数输出
-- [ ] Axis-B Step 7: 验证 → commit "feat(scripts): trim noise & add scan counters (F8 F10)"
-- [ ] Axis-C Step 8: F7 boot Next Suggested Action
-- [ ] Axis-C Step 9: F9 check.sh 引导文案
-- [ ] Axis-C Step 10: 验证 → commit "feat(scripts): next-action hints (F7 F9)"
-- [ ] Axis-D Step 11: F6 intent-codemap 相关性过滤（先 Research 评估深度）
-- [ ] Axis-D Step 12: 验证 → commit "feat(scripts): intent-aware codemap filter (F6)" 或转独立 task
-- [ ] Final: bump scripts.spec.md last_synced_sha
-- [ ] Final: 跑 doctor/validate --strict 全绿
+- [x] Axis-A Step 1: F3 status 一致化
+- [x] Axis-A Step 2: F4 assemble 路径前缀
+- [x] Axis-A Step 3: F5 Module 段 mixed 标注
+- [x] Axis-A Step 4: 跑 boot/status/assemble 验证输出对齐 → commit "feat(scripts): align boot/status/assemble output (F3 F4 F5)"
+- [x] Axis-B Step 5: F8 schema 描述精简
+- [x] Axis-B Step 6: F10 doctor 默认 mode 计数输出
+- [x] Axis-B Step 7: 验证 → commit "feat(scripts): trim noise & add scan counters (F8 F10)"
+- [x] Axis-C Step 8: F7 boot Next Suggested Action
+- [x] Axis-C Step 9: F9 check.sh 引导文案
+- [x] Axis-C Step 10: 验证 → commit "feat(scripts): next-action hints (F7 F9)"
+- [x] Axis-D Step 11: F6 intent-codemap 相关性过滤（先 Research 评估深度）
+- [x] Axis-D Step 12: 验证 → commit "feat(scripts): intent-aware codemap filter (F6)"
+- [x] Final: bump scripts.spec.md last_synced_sha
+- [x] Final: 跑 doctor/validate --strict 全绿
 
 ### 4.7 Checkpoints — Contract
 
@@ -136,7 +136,11 @@ specanchor:
 
 ## 5. Execute Log
 
-- [ ] (待 Execute 阶段填充)
+- [x] Axis-A: `7212ad3` feat(scripts): align boot/status/assemble output (F3 F4 F5)
+- [x] Axis-B: `766b481` feat(scripts): trim noise & add scan counters (F8 F10)
+- [x] Axis-C: `e36747d` feat(scripts): next-action hints (F7 F9)
+- [x] Axis-D: `7790dbf` feat(scripts): intent-aware codemap filter (F6)
+- [x] Final: `54b9c2c` chore(spec): bump scripts module sha
 
 ## 5.2 Checkpoint Decisions Log
 
@@ -168,25 +172,25 @@ specanchor:
 
 | Command | Status | Output ref |
 |---|---|---|
-| `bash scripts/specanchor-boot.sh --format=summary` | pending | (待跑) |
-| `bash scripts/specanchor-status.sh` | pending | (待跑) |
-| `bash scripts/specanchor-assemble.sh --files=...` | pending | (待跑) |
-| `bash scripts/specanchor-doctor.sh` | pending | (待跑) |
-| `bash scripts/specanchor-check.sh task <spec>` | pending | (待跑) |
-| `bash scripts/specanchor-validate.sh --strict` | pending | (待跑) |
+| `bash scripts/specanchor-boot.sh --format=summary` | pass | Next: 行输出正确 |
+| `bash scripts/specanchor-status.sh` | pass | Available Commands 引导行 + 路径前缀一致 |
+| `bash scripts/specanchor-assemble.sh --files=...` | pass | [summary]/[full] 标注生效 |
+| `bash scripts/specanchor-doctor.sh` | pass | scanned: 8, ok: 8, issues: 0 |
+| `bash scripts/specanchor-check.sh task <spec>` | pass | Tip 行输出 |
+| `bash scripts/specanchor-validate.sh --strict` | pass | 38 files ok |
 
 ### Acceptance Criteria Mapping
 
 | Criterion | Evidence | Status |
 |---|---|---|
-| F3: status 输出 Available Commands 段（或显式指引） | status 输出 | pending |
-| F4: boot 与 assemble 的 Global file 路径前缀一致 | 输出对照 | pending |
-| F5: assemble Module 段在 mixed 时分别标 [summary]/[full] | assemble 输出 | pending |
-| F6: assemble intent 不再推荐与意图无关的 codemap | dogfood 重跑场景 | pending |
-| F7: boot 末尾出现 Next Suggested Action 一行 | boot 输出 | pending |
-| F8: boot Available Schemas summary 模式每行 ≤120 字符 | boot 输出 | pending |
-| F9: check.sh task warning 含「在 §4.1 添加」引导 | check.sh 输出 | pending |
-| F10: doctor 默认 mode 含 `scanned/ok/issues` 计数 | doctor 输出 | pending |
+| F3: status 输出 Available Commands 段（或显式指引） | status 输出 | pass |
+| F4: boot 与 assemble 的 Global file 路径前缀一致 | 输出对照 | pass |
+| F5: assemble Module 段在 mixed 时分别标 [summary]/[full] | assemble 输出 | pass |
+| F6: assemble intent 不再推荐与意图无关的 codemap | resolve 无关 intent 测试 | pass |
+| F7: boot 末尾出现 Next Suggested Action 一行 | boot 输出 | pass |
+| F8: boot Available Schemas summary 模式每行 ≤120 字符 | boot 输出 | pass |
+| F9: check.sh task warning 含「在 §4.1 添加」引导 | check.sh 输出 | pass |
+| F10: doctor 默认 mode 含 `scanned/ok/issues` 计数 | doctor 输出 | pass |
 
 ### Unverified Risks
 
