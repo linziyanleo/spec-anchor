@@ -8,9 +8,9 @@ specanchor:
   owner: "maintainers"
   created: "2026-04-02"
   status: active
-  last_synced: "2026-05-19"
-  last_synced_sha: "53c67e1"
-  last_change: "boot/status 输出 Active Tasks 段（schema-aware：sdd-riper-one 显示 RIPER phase，fluid schema 不显示）；JSON 输出同步加 active_tasks 数组"
+  last_synced: "2026-05-21"
+  last_synced_sha: "00c9e95"
+  last_change: "init.sh scan_external_sources Bash 3.2 兼容修复（associative array → 普通数组）+ scan-sources / boot activation hook 测试"
   depends_on: []
 ---
 
