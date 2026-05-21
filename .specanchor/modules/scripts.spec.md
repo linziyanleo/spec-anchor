@@ -9,8 +9,8 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-21"
-  last_synced_sha: "00c9e95"
-  last_change: "init.sh scan_external_sources Bash 3.2 兼容修复（associative array → 普通数组）+ scan-sources / boot activation hook 测试"
+  last_synced_sha: "7790dbf"
+  last_change: "Dogfood F3-F10: 输出一致性/信息密度/Next-Action/intent-codemap 过滤"
   depends_on: []
 ---
 
