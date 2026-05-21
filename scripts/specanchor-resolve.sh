@@ -601,8 +601,22 @@ add_fallback_anchor_if_needed() {
   done
 
   if [[ "$non_global_count" -eq 0 ]] && [[ "$MODE" == "full" ]] && [[ -f "$CODEMAP_PATH" ]]; then
-    add_or_update_anchor "codemap" "$CODEMAP_PATH" "fallback_global_only" "No module anchor matched; fall back to global specs plus project codemap."
-    add_warning "GLOBAL_ONLY" "No module anchor matched. The plan falls back to global specs and codemap guidance."
+    local should_add=true
+    if [[ -n "$INTENT" ]]; then
+      local _kw _matched=false
+      for _kw in $INTENT; do
+        [[ ${#_kw} -lt 3 ]] && continue
+        if grep -qi "$_kw" "$CODEMAP_PATH" 2>/dev/null; then
+          _matched=true
+          break
+        fi
+      done
+      [[ "$_matched" == "false" ]] && should_add=false
+    fi
+    if [[ "$should_add" == "true" ]]; then
+      add_or_update_anchor "codemap" "$CODEMAP_PATH" "fallback_global_only" "No module anchor matched; fall back to global specs plus project codemap."
+      add_warning "GLOBAL_ONLY" "No module anchor matched. The plan falls back to global specs and codemap guidance."
+    fi
   fi
 }
 
