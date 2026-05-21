@@ -229,21 +229,22 @@ EOF
 scan_external_sources() {
   echo -e "\n${BOLD}Scanning for existing spec systems...${RESET}"
 
-  local -A type_registry=(
-    ["openspec/"]="openspec"
-    ["specs/"]="spec-kit"
-    ["mydocs/specs/"]="mydocs"
-    [".qoder/specs/"]="qoder"
-    ["docs/specs/"]="generic"
+  local registry=(
+    "openspec/:openspec"
+    "specs/:spec-kit"
+    "mydocs/specs/:mydocs"
+    ".qoder/specs/:qoder"
+    "docs/specs/:generic"
   )
 
   local found=0
 
-  for dir in "${!type_registry[@]}"; do
+  for entry in "${registry[@]}"; do
+    local dir="${entry%%:*}"
+    local type="${entry#*:}"
     if [[ -d "$dir" ]]; then
-      local type="${type_registry[$dir]}"
       local count
-      count=$(find "$dir" -name "*.md" -o -name "*.yaml" 2>/dev/null | wc -l | tr -d ' ')
+      count=$(find "$dir" \( -name "*.md" -o -name "*.yaml" \) 2>/dev/null | wc -l | tr -d ' ')
       echo -e "  ${CYAN}📂${RESET} ${dir} [${type}] — ${count} files"
       found=$((found + 1))
     fi
