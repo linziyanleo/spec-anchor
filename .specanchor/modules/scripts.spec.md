@@ -9,8 +9,8 @@ specanchor:
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-21"
-  last_synced_sha: "7790dbf"
-  last_change: "Dogfood F3-F10: 输出一致性/信息密度/Next-Action/intent-codemap 过滤"
+  last_synced_sha: "5805e6d"
+  last_change: "boot CLI parser accepts split long-option typo and documents argv constraint"
   depends_on: []
 ---
 
@@ -76,7 +76,7 @@ specanchor:
 | `--with-schemas` | summary/full 中显式输出 schema 摘要（默认开启；保留 flag 用于向后兼容） |
 | `--no-schemas` | 关闭 Available Schemas 段（精简输出场景） |
 
-环境变量 `SPECANCHOR_SKILL_DIR` 指向 Skill 安装目录，用于查找内置 schemas。无论 `summary` 还是 `full`，都显式输出本轮 Assembly Trace；`summary` 默认输出 `Available Commands:`、`Available Modules:` 与 `Available Schemas:`，把 quickref/module/schema lookup 降为 fallback；`full` 额外附带 Global Spec 正文。
+环境变量 `SPECANCHOR_SKILL_DIR` 指向 Skill 安装目录，用于查找内置 schemas。长参数应作为单个 shell 参数传入；`boot` 兼容误拆成 `-- format=summary` 的常见启动配置错误。无论 `summary` 还是 `full`，都显式输出本轮 Assembly Trace；`summary` 默认输出 `Available Commands:`、`Available Modules:` 与 `Available Schemas:`，把 quickref/module/schema lookup 降为 fallback；`full` 额外附带 Global Spec 正文。
 
 ### specanchor-check.sh
 

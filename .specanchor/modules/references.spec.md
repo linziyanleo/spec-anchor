@@ -11,8 +11,8 @@ specanchor:
   created: "2026-04-02"
   updated: "2026-05-21"
   last_synced: "2026-05-21"
-  last_synced_sha: "faf77c0"
-  last_change: "codex.md install path 修正（.cursor/ → .codex/）"
+  last_synced_sha: "5805e6d"
+  last_change: "script invocation docs clarify long options must stay in one argv"
   status: active
   depends_on: []
 ---
