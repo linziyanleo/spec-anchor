@@ -100,6 +100,12 @@ test_repo_boot_summary_has_no_missing_sources() {
   assert_not_contains "$CAPTURE_OUTPUT" '✗'
 }
 
+test_repo_boot_accepts_split_long_option() {
+  capture_cmd "$REPO_ROOT" env SPECANCHOR_SKILL_DIR="$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-boot.sh" -- format=summary
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" 'SpecAnchor Boot [full]'
+}
+
 test_repo_doctor_strict_ok() {
   capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-doctor.sh" --strict
   assert_eq "$CAPTURE_STATUS" "0"
@@ -532,6 +538,7 @@ echo "=== SpecAnchor Public Shell Tests ==="
 
 run_test test_repo_boot_json
 run_test test_repo_boot_summary_has_no_missing_sources
+run_test test_repo_boot_accepts_split_long_option
 run_test test_repo_doctor_strict_ok
 run_test test_fixture_boot_full_summary
 run_test test_full_mode_missing_specanchor_fails

@@ -887,13 +887,23 @@ usage() {
   echo "示例:"
   echo "  cd /path/to/project && bash /path/to/skill/scripts/specanchor-boot.sh"
   echo "  SPECANCHOR_SKILL_DIR=/path/to/skill bash scripts/specanchor-boot.sh --format=json"
+  echo ""
+  echo "注意:"
+  echo "  长参数必须作为单个 shell 参数传入，例如 --format=summary。"
   exit 0
 }
 
 main() {
   local format="summary"
 
-  for arg in "$@"; do
+  while [[ $# -gt 0 ]]; do
+    local arg="$1"
+    shift
+    if [[ "$arg" == "--" ]]; then
+      [[ $# -gt 0 ]] || die "未知参数: -- (did you mean --format=summary?)"
+      arg="--$1"
+      shift
+    fi
     case "$arg" in
       --format=*) format="${arg#--format=}" ;;
       --with-schemas) SHOW_SCHEMAS=true ;;
