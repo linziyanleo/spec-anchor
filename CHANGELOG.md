@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.7.0-alpha.1 — Agent Mode + Stop Triggers + Tool Bootloader (UNRELEASED)
+
+> 在 v0.6 基础上加 agent-facing 入口与 advisory 风险检测，并提供第一份 cross-tool bootloader（Claude Code）。同时把 README / WHY 主叙事切换为 Context Construction System。
+
+### Highlights
+
+- **`specanchor-boot.sh --agent --intent="..."`**：v0.6 plan 里规划但未实现的 agent 入口。等价于直接调用 `specanchor-assemble.sh --intent=... --format=json --bundle-schema=context_bundle.v1`，让 agent 在 session 起步一步拿到 preflight context bundle。可选透传 `--files=` 与 `--bundle-schema=` 参数。
+- **`scripts/specanchor-stop-triggers.sh`**（新脚本）：检测 staged 或 diff-against 文件是否命中 advisory stop trigger 路径模式（public_api_change / schema_change / dependency_change / security_path_change）。输出 text 或 JSON（JSON 可被 Context Bundle v1 集成）。**严格 advisory**——不阻断执行；硬阻断由外部 hook / CI 承担。
+- **`references/adapters/claude-code-bootloader.md`**（新文档）：第一份 cross-tool bootloader——展示如何在项目 `CLAUDE.md` 中添加最小 SpecAnchor 引导。短小（< 50 行复制片段），把详细协议留给 skill 自身的 references/。Codex AGENTS.md bootloader 留 v0.7+ 候选。
+- **README / README_ZH / WHY / WHY_ZH 主叙事切换**：从 "Harness Context Control plane" 改为 "Context Construction System"——明确 SpecAnchor 不拥有 agent execution loop，`sdd-riper-one` 是 opt-in integration。Context 分类从三类扩展为四类（新增 Finding Context）。
+- **`mydocs/idea.md` 附录 F**（v0.6 已写）作为本次叙事改写的思想锚点继续保留（gitignored 私有笔记）。
+
+### Compatibility
+
+- 零破坏：所有 v0.6 行为保留（assembly.v1 默认输出 / sdd-riper-one schema / agent-contract.md deprecated alias）
+- 新参数（`--agent` / `--intent` / `--files` / `--bundle-schema`）全部 optional
+- 老 `specanchor-boot.sh --format=summary|full|json` 行为不变
+- README 版本 badge 仍标 0.5.0-beta.1（发布版本号留独立 PR 升）
+
+### Not in v0.7
+
+- Codex `AGENTS.md` bootloader（与 Claude Code bootloader 同结构，留下一批做）
+- Cursor / Kiro / Gemini adapter（v1.0+）
+- `specanchor-finding.sh list / promote / archive`
+- `specanchor-sediment.sh apply`（spec patch 应用逻辑）
+- 跨 repo 共享 spec 协议（v1.0+）
+- Code freshness / evidence freshness 的完整实现（Bundle v1 只用 time + git mtime）
+
+---
+
 ## v0.6.0-alpha.1 — Context Construction System (UNRELEASED)
 
 > 定位回归：从"Harness Context Control plane"改为"Context Construction System"。SpecAnchor 不拥有 agent execution loop。详见 `mydocs/idea.md` 附录 F 与 `.specanchor/tasks/_cross-module/2026-05-24_context-system-construction.spec.md`。

@@ -880,6 +880,11 @@ usage() {
   echo "  specanchor-boot.sh --format=full         # 含 Global Spec 内容"
   echo "  specanchor-boot.sh --format=json         # JSON 机器可读"
   echo ""
+  echo "  # v0.7 新增：agent 模式——直接输出 preflight context bundle JSON v1"
+  echo "  specanchor-boot.sh --agent --intent=\"add Google OAuth\""
+  echo "  specanchor-boot.sh --agent --intent=\"...\" --files=src/auth/session.ts"
+  echo "  specanchor-boot.sh --agent --intent=\"...\" --bundle-schema=assembly.v1  # 切回老 schema"
+  echo ""
   echo "环境变量:"
   echo "  SPECANCHOR_SKILL_DIR   Skill 安装目录（用于查找内置 schemas）"
   echo "                          默认: 脚本自身上级目录"
@@ -895,6 +900,11 @@ usage() {
 
 main() {
   local format="summary"
+  # v0.7 新增：agent 模式相关参数
+  local agent_mode="false"
+  local intent=""
+  local files=""
+  local bundle_schema="context_bundle.v1"
 
   while [[ $# -gt 0 ]]; do
     local arg="$1"
@@ -908,10 +918,41 @@ main() {
       --format=*) format="${arg#--format=}" ;;
       --with-schemas) SHOW_SCHEMAS=true ;;
       --no-schemas) SHOW_SCHEMAS=false ;;
+      --agent) agent_mode="true" ;;
+      --intent=*) intent="${arg#--intent=}" ;;
+      --intent)
+        [[ $# -gt 0 ]] || die "--intent requires a value"
+        intent="$1"
+        shift
+        ;;
+      --files=*) files="${arg#--files=}" ;;
+      --files)
+        [[ $# -gt 0 ]] || die "--files requires a value"
+        files="$1"
+        shift
+        ;;
+      --bundle-schema=*) bundle_schema="${arg#--bundle-schema=}" ;;
+      --bundle-schema)
+        [[ $# -gt 0 ]] || die "--bundle-schema requires a value"
+        bundle_schema="$1"
+        shift
+        ;;
       --help|-h) usage ;;
       *) die "未知参数: $arg" ;;
     esac
   done
+
+  # v0.7 新增：--agent --intent 模式直接产 preflight context bundle
+  # 等价于 specanchor-assemble.sh --intent=... --format=json --bundle-schema=context_bundle.v1
+  if [[ "$agent_mode" == "true" ]]; then
+    [[ -n "$intent" ]] || die "--agent 模式要求 --intent=\"<task intent>\""
+    local assemble_cmd=(bash "$SCRIPT_DIR/specanchor-assemble.sh"
+      "--intent=$intent"
+      "--format=json"
+      "--bundle-schema=$bundle_schema")
+    [[ -n "$files" ]] && assemble_cmd+=("--files=$files")
+    exec "${assemble_cmd[@]}"
+  fi
 
   case "$format" in
     summary) output_summary ;;

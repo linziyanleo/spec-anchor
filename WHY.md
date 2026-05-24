@@ -42,17 +42,20 @@ The difference: LLM Wiki pursues breadth of knowledge (richer over time), SpecAn
 
 ---
 
-## Three Categories of Context (v0.5.0+)
+## Four Categories of Context (v0.5.0 → v0.6)
 
-LLM context is precious — long context rots in the middle, recency bias dominates, automatic compaction loses precision. SpecAnchor does not try to extend the window; it organizes what *deserves* to be in it. Starting from v0.5.0-beta.1 the framing is explicit: there are three kinds of context worth persisting.
+LLM context is precious — long context rots in the middle, recency bias dominates, automatic compaction loses precision. SpecAnchor does not try to extend the window; it organizes what *deserves* to be in it. Starting from v0.5.0-beta.1 the framing was explicit (Spec / Decision / Evidence); v0.6 adds **Finding** as the fourth first-class context category — agent discoveries during execution that previously vanished into chat history.
 
 | Category | What it is | Lifecycle | Anti-decay tool |
 |---|---|---|---|
-| **Spec Context** | Static contracts: team rules, module interfaces, task intent | Versioned in git; rarely changes per turn | Assembly Trace + Schema Gate |
-| **Decision Context** | What humans said at each checkpoint (~47% "add-spec", ~25% "clarify" — the bulk of per-turn signal) | Sediments into Task Spec §5.2 per checkpoint; hot/cold lazy view auto-prunes | `decision_log` config + lazy filter |
-| **Evidence Context** | Verification proofs: command outputs, acceptance criteria, unverified risks | Appended to Task Spec §6.2 as work progresses; auto-pinned for acceptance criteria | `evidence_log` config + auto-pin |
+| **Spec Context (cold)** | Static contracts: team rules, module interfaces, task intent | Versioned in git; rarely changes per turn | Assembly Trace + (opt-in) Schema Gate |
+| **Decision Context (hot)** | What humans said at each checkpoint (~47% "add-spec", ~25% "clarify" — the bulk of per-turn signal) | Sediments into Task Spec §5.2 per checkpoint; hot/cold lazy view auto-prunes | `decision_log` config + lazy filter |
+| **Evidence Context (hot)** | Verification proofs: command outputs, acceptance criteria, unverified risks | Appended to Task Spec §6.2 as work progresses; auto-pinned for acceptance criteria | `evidence_log` config + auto-pin |
+| **Finding Context (hot, v0.6+)** | Agent discoveries during execute / review: facts, contradictions, stale claims, reuse opportunities | Standalone `.specanchor/findings/F-*.md` files; `visibility` field controls review cost; sediment via human-curated **Sediment Proposal** (never auto-applied to Spec) | `specanchor-finding.sh new` + `specanchor-doctor.sh` long-pending check |
 
-Why this matters: most prior tools (Spec-Kit, OpenSpec, plain Cursor rules) only model **Spec Context**. The 47% of human signal that lands as a checkpoint correction or addition was thrown away every turn. SpecAnchor v0.5.0 makes Decision and Evidence first-class so that every chat turn — and every new chat — can read a coherent record of "what specs apply, what has been decided, what has been verified" without re-deriving it from chat history.
+Why this matters: most prior tools (Spec-Kit, OpenSpec, plain Cursor rules) only model **Spec Context**. The 47% of human signal that lands as a checkpoint correction or addition was thrown away every turn. SpecAnchor v0.5.0 made Decision and Evidence first-class; **v0.6 closes the loop by making agent-side discoveries (Finding) first-class too** — so cross-session, cross-task engineering memory finally has a home outside chat history.
+
+**Repositioning in v0.6**: SpecAnchor stops calling itself a "Harness Context Control plane" and instead clarifies its scope as a **Context Construction System** — it compiles bounded, auditable, sedimentable context bundles for coding agents, but does not own the agent execution loop. Workflow schemas like `sdd-riper-one` move from default identity to opt-in integration. See the appendix F in private design notes for the full diagnosis.
 
 ---
 

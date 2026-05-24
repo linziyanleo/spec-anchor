@@ -42,17 +42,20 @@ SpecAnchor 是这个模式在**AI 辅助开发**领域的实例：
 
 ---
 
-## 三类 Context（v0.5.0+ 显式化）
+## 四类 Context（v0.5.0 → v0.6）
 
-LLM 上下文很贵——长上下文中段腐烂、recency bias 主导、自动总结无法挽回精度。SpecAnchor 不试图扩窗口，而是组织"值得"放进上下文的内容。从 v0.5.0-beta.1 起，框架明确把要持久化的上下文分成三类。
+LLM 上下文很贵——长上下文中段腐烂、recency bias 主导、自动总结无法挽回精度。SpecAnchor 不试图扩窗口，而是组织"值得"放进上下文的内容。v0.5.0-beta.1 起框架明确分三类（Spec / Decision / Evidence）；**v0.6 把 Finding 也升级为第四类一等 context**——agent 在执行中的发现，之前会消失在聊天历史里，现在有了独立 artifact。
 
 | 类别 | 是什么 | 生命周期 | 抗腐化工具 |
 |---|---|---|---|
-| **Spec Context** | 静态契约：团队规则、模块接口、任务意图 | git 版本化；每轮基本不变 | Assembly Trace + Schema Gate |
-| **Decision Context** | 每个 checkpoint 上人类说了什么（约 47% 是"加料"，约 25% 是"追问"——单轮人工信号的主体） | 每个 checkpoint 沉淀进 Task Spec §5.2；hot/cold 懒计算视图自动收敛 | `decision_log` 配置 + lazy filter |
-| **Evidence Context** | 验收证据：命令输出、acceptance criteria、unverified-risk | 实施过程中追加进 Task Spec §6.2；acceptance criteria 自动 pin | `evidence_log` 配置 + auto-pin |
+| **Spec Context (cold)** | 静态契约：团队规则、模块接口、任务意图 | git 版本化；每轮基本不变 | Assembly Trace + (opt-in) Schema Gate |
+| **Decision Context (hot)** | 每个 checkpoint 上人类说了什么（约 47% 是"加料"，约 25% 是"追问"——单轮人工信号的主体） | 每个 checkpoint 沉淀进 Task Spec §5.2；hot/cold 懒计算视图自动收敛 | `decision_log` 配置 + lazy filter |
+| **Evidence Context (hot)** | 验收证据：命令输出、acceptance criteria、unverified-risk | 实施过程中追加进 Task Spec §6.2；acceptance criteria 自动 pin | `evidence_log` 配置 + auto-pin |
+| **Finding Context (hot, v0.6+)** | agent 执行中的发现：事实、矛盾、stale-claim、复用机会 | 独立 `.specanchor/findings/F-*.md`；`visibility` 字段控制 review 成本；通过人审的 **Sediment Proposal** 沉淀（**永不自动 apply** 到 Spec） | `specanchor-finding.sh new` + `specanchor-doctor.sh` 长期 pending 检测 |
 
-为什么重要：之前的工具（Spec-Kit、OpenSpec、纯 Cursor rules）大多只建模 **Spec Context**。Checkpoint 上 47% 的人工信号——加料、追问、纠偏——每轮都被对话腐烂吃掉。SpecAnchor v0.5.0 把 Decision 和 Evidence 提升为一等公民，让每一轮（以及每一个新 chat）都能读到一份连贯的"哪些 spec 适用 / 已经决策了什么 / 已经验证了什么"的记录，而不必从聊天历史里反推。
+为什么重要：之前的工具（Spec-Kit、OpenSpec、纯 Cursor rules）大多只建模 **Spec Context**。Checkpoint 上 47% 的人工信号——加料、追问、纠偏——每轮都被对话腐烂吃掉。SpecAnchor v0.5.0 把 Decision 和 Evidence 提升为一等公民；**v0.6 把 agent 端的发现（Finding）也提升为一等公民，闭环了跨会话、跨任务的工程记忆**——这些原本散落在聊天里的发现，终于在聊天历史之外有了家。
+
+**v0.6 重定位**：SpecAnchor 不再自称 "Harness Context Control plane"，而把产品边界明确为 **Context Construction System**——它编译有边界、可审计、可沉淀的 context bundle 给 coding agent，但**不拥有 agent 执行循环**。`sdd-riper-one` 等 workflow schema 从默认骨架降级为 opt-in 集成。详见私有设计笔记 mydocs/idea.md 附录 F。
 
 ---
 

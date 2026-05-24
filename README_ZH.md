@@ -39,19 +39,20 @@
 
 **SpecAnchor 是一套 Agent 在 boot 时加载的三层 Spec 系统**。它把团队的编码规则、模块契约、任务意图都放在 `.specanchor/` 下，Agent 在写代码之前把相关的那些加载进上下文；等代码写完，再回头检查代码是否还跟 Spec 对得上。
 
-它更像是面向 Agent 化工程交付的 **Harness Context Control plane**（Harness 上下文控制面）：把上下文显式分为三类——**Spec / Decision / Evidence**——用 *Spec Landscape*（规格地形）组装每个 Agent 都要读取的规格上下文，用 *Schema Gate*（门禁）在关键节点控盘，用 *Alignment Surface*（对齐面）检测 Spec 与代码的漂移，把 checkpoint 决策与验收证据沉淀回 Task Spec，并通过 *handoff packet* 支持跨 session 接手。你把任务交给 Agent；SpecAnchor 确保它们始终锚定在正确的规格上。
+它更像是面向 AI coding agent 的 **Context Construction System**（上下文构建系统）：把工程上下文显式分为四类——**Spec / Decision / Evidence / Finding**——编译成有边界、可审计、可沉淀的 *Context Bundle*，每个 Agent 在写代码前装载；用 *Alignment Surface*（对齐面）检测 Spec 与代码的漂移；通过 *Sediment Proposal*（沉淀提案）把高价值 finding 在人 review 后沉淀回长期 Spec（**永不自动 apply**）；并通过 *handoff packet* 支持跨 session 接手。**SpecAnchor 不拥有 agent 执行循环**——`sdd-riper-one` 等 workflow schema 是 opt-in integration，不是默认骨架。
 
-它**自带一套 SDD（Spec-Driven Development，规范驱动开发）工作流预设**——默认 `sdd-riper-one` schema 提供 Research → Plan → Execute → Review 四段门禁——**所以你不需要先装 Spec-Kit 或 OpenSpec 才能用 SpecAnchor**。如果你的项目里已经有 OpenSpec 或自建的 spec 目录，`parasitic` 模式可以直接套上去不用迁移，让已有的写作流程保持原样，SpecAnchor 只补加载器和防腐层。
+它**自带一套 SDD（Spec-Driven Development，规范驱动开发）工作流作为 opt-in 集成**——`sdd-riper-one` schema 提供 Research → Plan → Execute → Review 四段门禁，需要严格 workflow 时启用——**所以你不需要先装 Spec-Kit 或 OpenSpec 才能用 SpecAnchor**。如果你的项目里已经有 OpenSpec 或自建的 spec 目录，`parasitic` 模式可以直接套上去不用迁移，让已有的写作流程保持原样，SpecAnchor 只补加载器和防腐层。
 
-### 三类 Context（v0.5.0-beta.1 显式化）
+### 四类 Context（v0.6 新增 Finding）
 
 | 类别 | 来源 | 典型工件 | 生命周期 |
 |---|---|---|---|
-| **Spec Context** | 团队/模块/任务的契约 | `.specanchor/global/`、`modules/`、`tasks/`、Assembly Trace | 静态——git 版本化 |
-| **Decision Context** | checkpoint 上的人工反馈 | Task Spec §5.2 Checkpoint Decisions Log；hot/cold 视图 | 动态——每个 checkpoint 沉淀，hot 段自动收敛 |
-| **Evidence Context** | 验收证据与命令输出 | Task Spec §6.2 Evidence Ledger；acceptance criteria 自动 pin | 动态——通过 handoff packet 暴露验收状态 |
+| **Spec Context (cold)** | 团队/模块/任务的契约 | `.specanchor/global/`、`modules/`、`tasks/`、Assembly Trace | 静态——git 版本化 |
+| **Decision Context (hot)** | checkpoint 上的人工反馈 | Task Spec §5.2 Checkpoint Decisions Log；hot/cold 视图 | 动态——每个 checkpoint 沉淀，hot 段自动收敛 |
+| **Evidence Context (hot)** | 验收证据与命令输出 | Task Spec §6.2 Evidence Ledger；acceptance criteria 自动 pin | 动态——通过 handoff packet 暴露验收状态 |
+| **Finding Context (hot, v0.6+)** | agent 在 execute / review 中的发现 | `.specanchor/findings/F-*.md`，含 `visibility` 字段 | 动态——跨任务/跨会话；通过 Sediment Proposal 人审后沉淀 |
 
-Decision 和 Evidence 沉淀在 Task Spec（single source of truth）；Spec Context 由 Global/Module/Task 三层组装。三者由 `specanchor_handoff` 装配出有界视图。
+Decision 和 Evidence 沉淀在 Task Spec；Finding 是独立 artifact（跨任务可复用）。四者由 `specanchor-assemble.sh --bundle-schema=context_bundle.v1` 或 `specanchor-boot.sh --agent --intent="..."` 装配成 **Context Bundle v1** JSON（`specanchor.context_bundle.v1`）。
 
 > **→ 想看设计思路和演进路线？读 [WHY_ZH.md](WHY_ZH.md)**
 

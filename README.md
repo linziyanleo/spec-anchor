@@ -39,19 +39,20 @@
 
 **SpecAnchor is a three-tier spec system that agents load on boot.** It keeps your team's coding rules, module contracts, and task intents in `.specanchor/`, then agents load the relevant ones into context before any code is generated — and check later whether the code still matches.
 
-Think of it as a **Harness Context Control plane** for delegated agentic engineering: it organizes context across three categories — **Spec / Decision / Evidence** — assembles a *Spec Landscape* that every agent reads before acting, gates progress through *Schema Gates*, detects drift through an *Alignment Surface*, sediments checkpoint decisions and verification evidence into the Task Spec, and exports a *handoff packet* for cross-session continuity. You delegate work to agents; SpecAnchor makes sure they stay anchored.
+Think of it as a **Context Construction System** for AI coding agents: it compiles bounded, auditable, sedimentable engineering context across four categories — **Spec / Decision / Evidence / Finding** — into a *Context Bundle* that every agent reads before acting, detects drift through an *Alignment Surface*, sediments accepted findings into long-term Spec through *Sediment Proposal* (human-curated, never auto-applied), and exports a *handoff packet* for cross-session continuity. **SpecAnchor does not own the agent execution loop** — workflow schemas like `sdd-riper-one` are opt-in integrations, not the default identity.
 
-It ships a bundled **spec-driven development** (SDD) workflow preset out of the box — the default `sdd-riper-one` schema gives you Research → Plan → Execute → Review gates — so **you don't need Spec-Kit or OpenSpec to use SpecAnchor**. If you already have an OpenSpec or custom spec directory, `parasitic` mode wraps it without migration. Keep your existing authoring, add SpecAnchor as the loader and anti-decay layer.
+It ships a bundled **spec-driven development** (SDD) workflow as an opt-in integration — the `sdd-riper-one` schema gives you Research → Plan → Execute → Review gates when you need strict workflow — so **you don't need Spec-Kit or OpenSpec to use SpecAnchor**. If you already have an OpenSpec or custom spec directory, `parasitic` mode wraps it without migration. Keep your existing authoring, add SpecAnchor as the loader and anti-decay layer.
 
 ### What Counts as Context
 
 | Category | Source | Typical artifact | Lifecycle |
 |---|---|---|---|
-| **Spec Context** | Team / module / task contracts | `.specanchor/global/`, `modules/`, `tasks/`, Assembly Trace | Static — versioned in git |
-| **Decision Context** | Checkpoint inputs from human reviewers | Task Spec §5.2 Checkpoint Decisions Log; hot/cold filter | Dynamic — sediments per checkpoint, hot view auto-pruned |
-| **Evidence Context** | Verification outputs and acceptance proofs | Task Spec §6.2 Evidence Ledger; auto-pinned acceptance criteria | Dynamic — handoff packet exposes verification status |
+| **Spec Context (cold)** | Team / module / task contracts | `.specanchor/global/`, `modules/`, `tasks/`, Assembly Trace | Static — versioned in git |
+| **Decision Context (hot)** | Checkpoint inputs from human reviewers | Task Spec §5.2 Checkpoint Decisions Log; hot/cold filter | Dynamic — sediments per checkpoint, hot view auto-pruned |
+| **Evidence Context (hot)** | Verification outputs and acceptance proofs | Task Spec §6.2 Evidence Ledger; auto-pinned acceptance criteria | Dynamic — handoff packet exposes verification status |
+| **Finding Context (hot, v0.6+)** | Agent discoveries during execute / review | `.specanchor/findings/F-*.md` with `visibility` field | Dynamic — cross-task / cross-session; sediment via human-reviewed proposal |
 
-Decision and Evidence context live inside the Task Spec (single source of truth); Spec Context is assembled from Global, Module, and Task tiers. All three are assembled into bounded views by `specanchor_handoff`.
+Decision and Evidence context live inside the Task Spec; Finding context lives in standalone `.specanchor/findings/` files (cross-task reusable). All four are assembled into bounded **Context Bundle v1** JSON (`specanchor.context_bundle.v1`) by `specanchor-assemble.sh --bundle-schema=context_bundle.v1` or `specanchor-boot.sh --agent --intent="..."`.
 
 > **→ Curious about the design philosophy? Read [WHY.md](WHY.md).**
 

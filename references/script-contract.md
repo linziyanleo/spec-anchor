@@ -28,6 +28,7 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/<script-name>.s
 | `specanchor-hygiene.sh` | 只读 spec hygiene / dead-link / duplicate-module 检查 | no |
 | `specanchor-finding.sh` | **v0.6 新增** — Hot context 写回入口（`new` 子命令生成 finding 骨架） | yes |
 | `specanchor-sediment.sh` | **v0.6 新增** — Hot→Cold 安全回流（`propose` 子命令生成 sediment proposal 骨架） | yes |
+| `specanchor-stop-triggers.sh` | **v0.7 新增** — advisory 风险路径检测（public_api / schema / dependency / security_path） | no |
 
 ## Behavior Notes
 
@@ -38,6 +39,8 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/<script-name>.s
 - `specanchor-hygiene.sh` 默认只读；只有 `--fix-generated` 才允许修复生成物。
 - `specanchor-finding.sh new`（v0.6）：生成 finding 骨架——自动赋 id（F-YYYYMMDD-NNN）、自动派生 visibility、写入 `.specanchor/findings/`；不消费现有 finding。
 - `specanchor-sediment.sh propose`（v0.6）：从一个或多个 finding 生成 sediment proposal 骨架；校验 source findings 存在；不自动 apply 到 spec。
+- `specanchor-boot.sh --agent --intent="<intent>"`（v0.7）：包装 assemble 直接输出 preflight Context Bundle v1 JSON 给 agent；可选 `--files=` / `--bundle-schema=` 透传。
+- `specanchor-stop-triggers.sh --staged|--against=<ref> [--format=json]`（v0.7）：检测 changed/staged 文件命中的 advisory stop trigger；JSON 输出可被 Bundle v1 集成；**仅 advisory**，不阻断。
 
 ## Output Rules
 
