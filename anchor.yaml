@@ -16,6 +16,8 @@ specanchor:
     spec_index: ".specanchor/spec-index.md"
     module_index: ".specanchor/module-index.md"  # DEPRECATED: v0.5 删除；迁移期仅作 fallback
     project_codemap: ".specanchor/project-codemap.md"
+    findings: ".specanchor/findings/"                       # v0.6 新增：hot context 写回入口
+    sediment_proposals: ".specanchor/sediment/proposals/"   # v0.6 新增：hot→cold 安全回流
 
   # === 外部来源 ===
   # 公开仓库默认不声明 maintainer-local sources；

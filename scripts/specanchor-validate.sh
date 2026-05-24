@@ -398,6 +398,107 @@ validate_spec_file() {
   fi
 }
 
+## v0.6 新增：Findings Ledger frontmatter 校验 (references/concepts/findings-ledger.md)
+validate_finding_file() {
+  local file="$1"
+  VALIDATED_FILES+=("$file")
+  # 跳过 template / .gitkeep
+  case "$(basename "$file")" in
+    finding-template.md|.gitkeep) return ;;
+  esac
+
+  local frontmatter=""
+  frontmatter=$(awk '/^---$/ { count++; if (count==1) { in_ff=1; next } else { in_ff=0; exit } } in_ff' "$file")
+  if [[ -z "$frontmatter" ]]; then
+    add_error "${file}: FINDING_MISSING_FRONTMATTER"
+    return
+  fi
+
+  local field val
+  for field in id type status confidence impact visibility; do
+    val=$(printf '%s\n' "$frontmatter" | awk -v k="$field" '$1==k":" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+    [[ -n "$val" ]] || add_error "${file}: FINDING_MISSING_FIELD ${field}"
+  done
+
+  # 枚举校验
+  local v_type v_status v_conf v_impact v_vis
+  v_type=$(printf '%s\n' "$frontmatter" | awk '$1=="type:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+  v_status=$(printf '%s\n' "$frontmatter" | awk '$1=="status:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+  v_conf=$(printf '%s\n' "$frontmatter" | awk '$1=="confidence:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+  v_impact=$(printf '%s\n' "$frontmatter" | awk '$1=="impact:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+  v_vis=$(printf '%s\n' "$frontmatter" | awk '$1=="visibility:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+
+  case "$v_type" in fact|contradiction|stale-claim|risk|reuse-opportunity|pattern|"") ;; *) add_error "${file}: FINDING_INVALID_TYPE ${v_type}" ;; esac
+  case "$v_status" in candidate|accepted|rejected|superseded|archived|"") ;; *) add_error "${file}: FINDING_INVALID_STATUS ${v_status}" ;; esac
+  case "$v_conf" in low|medium|high|"") ;; *) add_error "${file}: FINDING_INVALID_CONFIDENCE ${v_conf}" ;; esac
+  case "$v_impact" in low|medium|high|"") ;; *) add_error "${file}: FINDING_INVALID_IMPACT ${v_impact}" ;; esac
+  case "$v_vis" in hidden|handoff|sediment_queue|immediate|"") ;; *) add_error "${file}: FINDING_INVALID_VISIBILITY ${v_vis}" ;; esac
+
+  # accepted finding 必须有 evidence_ref
+  if [[ "$v_status" == "accepted" ]]; then
+    if ! printf '%s\n' "$frontmatter" | grep -q '^evidence_ref:'; then
+      add_error "${file}: FINDING_ACCEPTED_REQUIRES_EVIDENCE_REF"
+    fi
+  fi
+}
+
+## v0.6 新增：Sediment Proposal frontmatter 校验 (references/concepts/sediment-proposal.md)
+validate_sediment_proposal_file() {
+  local file="$1"
+  VALIDATED_FILES+=("$file")
+  case "$(basename "$file")" in
+    sediment-proposal-template.md|.gitkeep) return ;;
+  esac
+
+  local frontmatter=""
+  frontmatter=$(awk '/^---$/ { count++; if (count==1) { in_ff=1; next } else { in_ff=0; exit } } in_ff' "$file")
+  if [[ -z "$frontmatter" ]]; then
+    add_error "${file}: PROPOSAL_MISSING_FRONTMATTER"
+    return
+  fi
+
+  local field val
+  for field in id source_findings target operation status; do
+    val=$(printf '%s\n' "$frontmatter" | awk -v k="$field" '$1==k":" { print; exit }')
+    [[ -n "$val" ]] || add_error "${file}: PROPOSAL_MISSING_FIELD ${field}"
+  done
+
+  local v_op v_status
+  v_op=$(printf '%s\n' "$frontmatter" | awk '$1=="operation:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+  v_status=$(printf '%s\n' "$frontmatter" | awk '$1=="status:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+
+  case "$v_op" in append|replace|supersede|deprecate|delete|merge|"") ;; *) add_error "${file}: PROPOSAL_INVALID_OPERATION ${v_op}" ;; esac
+  case "$v_status" in proposed|accepted|rejected|deferred|"") ;; *) add_error "${file}: PROPOSAL_INVALID_STATUS ${v_status}" ;; esac
+
+  # source_findings 文件必须存在
+  local sf_line found_findings=0 sf_path
+  while IFS= read -r sf_line; do
+    sf_path=$(printf '%s' "$sf_line" | sed -E 's/^[[:space:]]*-[[:space:]]*//')
+    [[ -z "$sf_path" ]] && continue
+    found_findings=1
+    # source_findings 通常是 finding id（F-YYYYMMDD-NNN）；如果是路径则按路径检查
+    if [[ "$sf_path" == F-* ]]; then
+      # 查找匹配的 finding 文件
+      if ! ls .specanchor/findings/${sf_path}-*.md >/dev/null 2>&1; then
+        add_warning "${file}: PROPOSAL_SOURCE_FINDING_NOT_FOUND ${sf_path}"
+      fi
+    elif [[ "$sf_path" == *.md ]]; then
+      [[ -f "$sf_path" ]] || add_warning "${file}: PROPOSAL_SOURCE_FINDING_FILE_MISSING ${sf_path}"
+    fi
+  done < <(printf '%s\n' "$frontmatter" | awk '/^source_findings:/ {in_sf=1; next} /^[a-zA-Z_]+:/ {in_sf=0} in_sf')
+
+  if [[ $found_findings -eq 0 ]]; then
+    add_error "${file}: PROPOSAL_EMPTY_SOURCE_FINDINGS"
+  fi
+
+  # operation=supersede 时 supersedes 不能空
+  if [[ "$v_op" == "supersede" ]]; then
+    if ! printf '%s\n' "$frontmatter" | awk '/^supersedes:/ {in_sup=1; next} /^[a-zA-Z_]+:/ {in_sup=0} in_sup && /^[[:space:]]*-/' | grep -q .; then
+      add_error "${file}: PROPOSAL_SUPERSEDE_REQUIRES_SUPERSEDES_LIST"
+    fi
+  fi
+}
+
 validate_json_shape_file() {
   local file="$1"
   VALIDATED_FILES+=("$file")
@@ -486,6 +587,8 @@ collect_targets() {
       anchor.yaml|.specanchor/config.yaml) validate_anchor_yaml "$TARGET_PATH" ;;
       anchor.local.yaml) validate_overlay_yaml "$TARGET_PATH" ;;
       *.json) validate_json_shape_file "$TARGET_PATH" ;;
+      .specanchor/findings/*.md) validate_finding_file "$TARGET_PATH" ;;
+      .specanchor/sediment/proposals/*.md) validate_sediment_proposal_file "$TARGET_PATH" ;;
       *.md) validate_spec_file "$TARGET_PATH" ;;
       *) add_warning "${TARGET_PATH}: UNSUPPORTED_TARGET skipped" ;;
     esac
@@ -513,6 +616,17 @@ collect_targets() {
     [[ -n "$file" ]] || continue
     validate_spec_file "$file"
   done < <(find .specanchor/tasks .specanchor/archive -name "*.spec.md" 2>/dev/null | sort)
+
+  # v0.6 新增：findings + sediment proposals
+  local fmd=""
+  for fmd in .specanchor/findings/*.md; do
+    [[ -f "$fmd" ]] || continue
+    validate_finding_file "$fmd"
+  done
+  for fmd in .specanchor/sediment/proposals/*.md; do
+    [[ -f "$fmd" ]] || continue
+    validate_sediment_proposal_file "$fmd"
+  done
 
   local schema_path=""
   for schema_path in "${SKILL_ROOT}"/references/schemas/*/schema.yaml; do

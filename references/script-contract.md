@@ -24,16 +24,20 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/<script-name>.s
 | `specanchor-doctor.sh` | 只读健康检查 | no |
 | `specanchor-resolve.sh` | 解析本轮应加载的锚点 | no |
 | `specanchor-assemble.sh` | 把 resolver 结果转成 agent read plan | no |
-| `specanchor-validate.sh` | 基础 schema/frontmatter + JSON contract 校验 | no |
+| `specanchor-validate.sh` | 基础 schema/frontmatter + JSON contract 校验（v0.6 含 findings + sediment proposals） | no |
 | `specanchor-hygiene.sh` | 只读 spec hygiene / dead-link / duplicate-module 检查 | no |
+| `specanchor-finding.sh` | **v0.6 新增** — Hot context 写回入口（`new` 子命令生成 finding 骨架） | yes |
+| `specanchor-sediment.sh` | **v0.6 新增** — Hot→Cold 安全回流（`propose` 子命令生成 sediment proposal 骨架） | yes |
 
 ## Behavior Notes
 
 - `specanchor-init.sh` 在 `full` 模式下会创建 `.specanchor/` 基线，并种下 3 份 starter Global Specs；在 `parasitic` 模式下只写配置，不接管外部 spec 目录。
 - `specanchor-resolve.sh` 现在输出 `specanchor.resolve.v2`，包含 `budget`、`missing`、`warnings` 和 `trace`；它保持 deterministic-first，不是 semantic RAG。
-- `specanchor-assemble.sh` 消费 resolver 结果，给 agent 一个 bounded read plan 和 Assembly Trace。
-- `specanchor-validate.sh` 支持 `--format=text|summary|json`，其中 `summary` 是 `text` 的兼容别名；默认还会校验 resolve / assembly JSON shape。
+- `specanchor-assemble.sh` 消费 resolver 结果，给 agent 一个 bounded read plan 和 Assembly Trace。**v0.6 新增 `--bundle-schema=context_bundle.v1`** 输出 layers / freshness / source_type / confidence；默认仍 `assembly.v1`（向后兼容）。
+- `specanchor-validate.sh` 支持 `--format=text|summary|json`，其中 `summary` 是 `text` 的兼容别名；默认还会校验 resolve / assembly JSON shape。**v0.6 新增 findings + sediment proposals frontmatter 校验**。
 - `specanchor-hygiene.sh` 默认只读；只有 `--fix-generated` 才允许修复生成物。
+- `specanchor-finding.sh new`（v0.6）：生成 finding 骨架——自动赋 id（F-YYYYMMDD-NNN）、自动派生 visibility、写入 `.specanchor/findings/`；不消费现有 finding。
+- `specanchor-sediment.sh propose`（v0.6）：从一个或多个 finding 生成 sediment proposal 骨架；校验 source findings 存在；不自动 apply 到 spec。
 
 ## Output Rules
 

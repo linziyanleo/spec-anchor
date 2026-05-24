@@ -295,6 +295,78 @@ run_base_checks() {
   if [[ "$schema_count" -eq 0 ]]; then
     add_blocking "SCHEMA_MISSING" "references/schemas 下未发现 schema.yaml" "恢复 references/schemas/*/schema.yaml。"
   fi
+
+  ## v0.6 新增：Findings Ledger 健康检查
+  check_findings_health
+  check_sediment_proposals_health
+}
+
+## v0.6 新增：long-pending sediment_queue findings + hidden 过期建议归档
+check_findings_health() {
+  [[ -d ".specanchor/findings" ]] || return 0
+  local now=$(date +%s)
+  local file mtime age_days vis status
+  local pending_queue=0 stale_hidden=0
+  local pending_queue_max_days=14    # sediment_queue 超过 14 天未处理 → warn
+  local stale_hidden_max_days=60     # hidden 超过 60 天 → 建议归档
+
+  for file in .specanchor/findings/*.md; do
+    [[ -f "$file" ]] || continue
+    case "$(basename "$file")" in finding-template.md|.gitkeep) continue ;; esac
+
+    vis=$(awk -F'[[:space:]]*:[[:space:]]*' '/^---$/{c++; next} c==1 && $1=="visibility"{print $2; exit}' "$file" | tr -d '"' | tr -d "'")
+    status=$(awk -F'[[:space:]]*:[[:space:]]*' '/^---$/{c++; next} c==1 && $1=="status"{print $2; exit}' "$file" | tr -d '"' | tr -d "'")
+    mtime=$(git log -1 --format=%ct -- "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo "")
+    [[ -n "$mtime" ]] || continue
+    age_days=$(( (now - mtime) / 86400 ))
+
+    if [[ "$vis" == "sediment_queue" && "$status" != "rejected" && "$status" != "archived" && "$status" != "superseded" && $age_days -gt $pending_queue_max_days ]]; then
+      pending_queue=$((pending_queue + 1))
+    fi
+    if [[ "$vis" == "hidden" && "$status" != "archived" && $age_days -gt $stale_hidden_max_days ]]; then
+      stale_hidden=$((stale_hidden + 1))
+    fi
+  done
+
+  if [[ $pending_queue -gt 0 ]]; then
+    add_warning "FINDINGS_SEDIMENT_QUEUE_STALE" \
+      "${pending_queue} 个 visibility=sediment_queue finding 超过 ${pending_queue_max_days} 天未处理" \
+      "运行 batch review 生成 Sediment Proposal 或调整 visibility。"
+  fi
+  if [[ $stale_hidden -gt 0 ]]; then
+    add_warning "FINDINGS_HIDDEN_AGED" \
+      "${stale_hidden} 个 visibility=hidden finding 超过 ${stale_hidden_max_days} 天未更新" \
+      "考虑将其 status 改为 archived（不自动归档）。"
+  fi
+}
+
+## v0.6 新增：sediment proposal 健康检查
+check_sediment_proposals_health() {
+  [[ -d ".specanchor/sediment/proposals" ]] || return 0
+  local now=$(date +%s)
+  local file mtime age_days status
+  local pending_proposals=0
+  local pending_max_days=14
+
+  for file in .specanchor/sediment/proposals/*.md; do
+    [[ -f "$file" ]] || continue
+    case "$(basename "$file")" in sediment-proposal-template.md|.gitkeep) continue ;; esac
+
+    status=$(awk -F'[[:space:]]*:[[:space:]]*' '/^---$/{c++; next} c==1 && $1=="status"{print $2; exit}' "$file" | tr -d '"' | tr -d "'")
+    mtime=$(git log -1 --format=%ct -- "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo "")
+    [[ -n "$mtime" ]] || continue
+    age_days=$(( (now - mtime) / 86400 ))
+
+    if [[ "$status" == "proposed" && $age_days -gt $pending_max_days ]]; then
+      pending_proposals=$((pending_proposals + 1))
+    fi
+  done
+
+  if [[ $pending_proposals -gt 0 ]]; then
+    add_warning "SEDIMENT_PROPOSALS_PENDING" \
+      "${pending_proposals} 个 status=proposed sediment proposal 超过 ${pending_max_days} 天未 review" \
+      "运行 batch review 决定 accept/reject/defer/merge-with-edit。"
+  fi
 }
 
 run_agent_profile_checks() {

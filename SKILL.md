@@ -1,11 +1,22 @@
 ---
 name: spec-anchor
-description: Harness Context Control plane——三类 Context（Spec/Decision/Evidence）合一的规格控制平面，在 AI 生成代码前装配 Spec Landscape，运行中沉淀 Checkpoint 决策（§5.2），验收时输出 Evidence Ledger（§6.2），跨 session 通过 handoff packet 重启上下文。三级 Spec（Global/Module/Task）+ Schema Gate 控盘 + Alignment Surface 检测漂移 + Spec Sediment 回收经验。只要项目中有 anchor.yaml 或 .specanchor/ 目录，或者正在生成 Spec 文档，就应该使用此 Skill。自然语言是主入口，`SA:` 仅是高级 shorthand；中英文关键词触发：规范、约定、对齐、覆盖率、spec、handoff、checkpoint、决策、证据。
+description: Context Construction System for AI coding agents——为 agent 编译有边界、可审计、可沉淀的工程上下文。三类工作记忆产物（Spec / Decision / Evidence + Finding）经过 inclusion / budget / freshness 装配成 Context Bundle，跨 session 通过 handoff packet 重启。三级 Spec（Global/Module/Task）是 cold context 来源；Findings 是 hot context 写回入口；Sediment Proposal 是 hot→cold 安全回流。Workflow schema（sdd-riper-one 等）是 optional integration，不是默认骨架。只要项目中有 anchor.yaml 或 .specanchor/ 目录，或者正在生成 Spec / 装配上下文，就应该使用此 Skill。自然语言是主入口，`SA:` 仅是高级 shorthand；中英文关键词触发：规范、约定、对齐、覆盖率、spec、context、bundle、handoff、finding、sediment、checkpoint、决策、证据。
 ---
 
 # SpecAnchor
 
-Spec 是锚，代码是船。SpecAnchor 是面向 Agent 化工程交付的 **Harness Context Control plane**——把上下文显式分为三类（Spec / Decision / Evidence），管理 Global → Module → Task 三层 Spec，在 AI 动手前组装 Spec Landscape，动手中沉淀 Checkpoint 决策（§5.2）+ 验收证据（§6.2），跨 session 通过 `specanchor_handoff` 导出 handoff packet 重启上下文。主 `SKILL.md` 只负责入口、路由、工作流选择和门禁；详细协议统一下沉到 `references/`；完整 Agent 循环见 `references/agents/agent-contract.md`。
+> SpecAnchor compiles bounded, auditable, sedimentable engineering context for coding agents. It does not own the agent loop.
+>
+> SpecAnchor 为 AI coding agent 编译有边界、可审计、可沉淀的工程上下文。它不拥有 agent 执行循环。
+
+Spec 是 cold context 来源之一，代码是船，**Context Bundle 是 SpecAnchor 的核心交付物**。SpecAnchor 把工作记忆显式分为四类产物——Spec / Decision / Evidence / Finding——按 inclusion / budget / freshness / staleness 装配成 Bundle 交给 agent。Agent 在执行中产生的新发现回写为 Finding，经 Sediment Proposal 由人 batch review 后才进入长期 Spec。跨 session 通过 `specanchor_handoff` 导出 handoff packet 重启。
+
+主 `SKILL.md` 只负责入口、路由和工作流选择；详细协议下沉到 `references/`：
+
+- Context utilities（SpecAnchor 真正提供的能力）：`references/agents/context-utilities.md`
+- Optional workflow integration（如 sdd-riper-one）：`references/integrations/sdd-riper-one-flow.md`
+
+**Workflow 不属于 SpecAnchor 核心**——sdd-riper-one 等 schema 是 opt-in integration，新项目默认 `workflow.default: context-only`，不再默认强绑 7 步 deterministic loop。老项目（`writing_protocol.schema: sdd-riper-one`）继续兼容工作。
 
 ## Script Invocation
 
@@ -81,11 +92,18 @@ boot 输出已嵌入紧凑意图映射；命中后直接读对应命令定义文
 
 ## Workflow Selection
 
+SpecAnchor v0.6 默认是 **context-only workflow**——assemble context bundle、记录 finding、产生 sediment proposal；不强制阶段门禁。
+
 - `⚡ lightweight`：单文件或小范围修复，直接执行，无需 Task Spec。
-- `standard Task Spec workflow`：多文件、多模块、数据流或结构性变更；先创建 Task Spec，再推进实现。
-- 严格门禁（Schema Gate）规则见 `references/workflow-gates.md`；不要在 gate 通过前进入 Execute。
+- `📋 context-only`（v0.6 新默认）：装配 context bundle，按需创建 Task Spec 跟踪复杂任务，不强制 Schema Gate。
+- `🔒 schema-driven`（opt-in）：选择 sdd-riper-one / handoff / bug-fix 等具体 schema，启用相应 phase gate。
+- 严格门禁（Schema Gate）仅在用户显式选择 strict schema 时生效，规则见 `references/workflow-gates.md`。
 - `docs/superpowers/` 存在时，Task Spec 创建门禁降级为建议；见 `references/integrations/superpowers.md`。
-- 无论哪种工作流，编辑完成后都应执行 Alignment Check 和 Spec Sediment——具体步骤见 `references/agents/agent-contract.md` §6-§7。
+- 无论哪种工作流：
+  - 执行中发现新事实 → 写入 `.specanchor/findings/` 而非散落在聊天里
+  - 编辑完成后 → 执行 Alignment Check + 评估 Sediment Proposal
+  - Context utility 步骤见 `references/agents/context-utilities.md`
+  - 可选 sdd-riper-one 7 步流程见 `references/integrations/sdd-riper-one-flow.md`
 
 ## Reference Index
 
@@ -93,14 +111,19 @@ boot 输出已嵌入紧凑意图映射；命中后直接读对应命令定义文
 - `references/specanchor-protocol.md`：核心协议总览
 - `references/script-contract.md`：脚本清单、调用契约、输出边界
 - `references/assembly-trace.md`：Assembly Trace 格式与刷新时机
-- `references/agents/agent-contract.md`：AI 代理启动、装载、验证的统一 contract
+- `references/agents/context-utilities.md`：SpecAnchor 提供给 agent 的 context 装配/记录能力（v0.6 主入口）
+- `references/agents/agent-contract.md`：**deprecated alias** → 指向 context-utilities.md + integrations/sdd-riper-one-flow.md
 - `references/agents/claude-code.md` / `codex.md` / `cursor.md` / `gemini.md`：常见代理入口的使用说明
-- `references/workflow-gates.md`：`⚡ lightweight` / `standard Task Spec workflow` 选择与严格门禁规则
+- `references/workflow-gates.md`：workflow 选择（context-only / lightweight / schema-driven）与严格门禁规则
 - `references/external-sources-protocol.md`：外部 sources 治理与 frontmatter 注入
-- `references/integrations/sdd-riper-one.md`：默认写作协议的接入方式
+- `references/integrations/sdd-riper-one-flow.md`：sdd-riper-one 7 步 workflow 流程（opt-in）
+- `references/integrations/sdd-riper-one.md`：sdd-riper-one schema 接入方式
 - `references/integrations/superpowers.md`：与 superpowers 的协作和降级规则
 - `references/integrations/goal-hook.md`：goal-hook 与 Schema Gate 的交互
 - `references/concepts/capability-drift.md`：Capability Drift 概念定义（spec 描述被后续代码超越）
+- `references/concepts/findings-ledger.md`：v0.6 新增——Findings 独立 artifact 协议
+- `references/concepts/sediment-proposal.md`：v0.6 新增——Sediment Proposal hot→cold 回流协议
+- `references/templates/finding-template.md` / `sediment-proposal-template.md`：v0.6 新增——模板
 - `references/skills/spec-anchor-prelude/SKILL.md`：superpowers 流程的 Spec Landscape 预加载 skill
 
 Additional draft command protocols may exist under `references/commands/` (e.g. `codemap.md`); these are not yet routable and are excluded from the Command Routing table above.

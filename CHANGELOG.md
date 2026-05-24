@@ -1,5 +1,64 @@
 # Changelog
 
+## v0.6.0-alpha.1 — Context Construction System (UNRELEASED)
+
+> 定位回归：从"Harness Context Control plane"改为"Context Construction System"。SpecAnchor 不拥有 agent execution loop。详见 `mydocs/idea.md` 附录 F 与 `.specanchor/tasks/_cross-module/2026-05-24_context-system-construction.spec.md`。
+
+### Highlights
+
+- **SKILL.md 主叙事重写**：从 "Harness Context Control plane" 改为 "Context Construction System for AI coding agents"——明确 SpecAnchor 编译 bounded / auditable / sedimentable context bundle，不拥有 agent loop。
+- **`agent-contract.md` 拆分**：原 7 步 deterministic loop 拆成：
+  - `references/agents/context-utilities.md`（context 装配 / 记录 / 沉淀工具集）
+  - `references/integrations/sdd-riper-one-flow.md`（opt-in 7 步 workflow）
+  - 老文件保留为 deprecated alias，避免引用断裂。
+- **Findings 独立 artifact**（v0.6 关键能力）：
+  - 新目录 `.specanchor/findings/`，每个 finding 是独立 markdown 文件，frontmatter 含 `visibility`（hidden / handoff / sediment_queue / immediate）
+  - 跨任务、跨会话引用，不嵌入 task spec
+  - 低 confidence / 低 impact finding **不自动归档**（避免过早丢失弱信号）
+  - 文档：`references/concepts/findings-ledger.md` + `references/templates/finding-template.md`
+- **Sediment Proposal**（hot→cold 安全回流）：
+  - 新目录 `.specanchor/sediment/proposals/`，由 `visibility=sediment_queue` 的 finding 触发生成
+  - frontmatter 含 `operation`（append / replace / supersede / deprecate / delete / merge）——避免 spec 变成 append-only 垃圾场
+  - **不自动 apply 到 spec**——必须人 batch review 后手动应用
+  - 文档：`references/concepts/sediment-proposal.md` + `references/templates/sediment-proposal-template.md`
+- **Context Bundle JSON v1**（产品核心交付物）：
+  - `specanchor-assemble.sh --format=json --bundle-schema=context_bundle.v1` 输出 `specanchor.context_bundle.v1`
+  - 新字段：`layers` (spec/decision/evidence/finding/codemap) + `freshness` (fresh/stale/outdated/unknown) + `freshness_reasons` + `source_type` + `confidence`
+  - 默认仍 `assembly.v1`，向后兼容
+- **两个新 sh 工具**：
+  - `scripts/specanchor-finding.sh new` — 生成 finding 骨架，自动派生 visibility
+  - `scripts/specanchor-sediment.sh propose` — 从一个或多个 finding 生成 sediment proposal 骨架
+- **Lint 扩展**：
+  - `specanchor-validate.sh` 校验 findings + sediment proposals frontmatter（含枚举值）
+  - `specanchor-doctor.sh` 检查 long-pending `sediment_queue` findings 与 `proposed` proposals
+- **`anchor.yaml` 加 `paths.findings` / `paths.sediment_proposals`**，老字段全部保留兼容。
+
+### Workflow Selection（v0.6 新默认）
+
+| Workflow | 何时使用 |
+|---|---|
+| `⚡ lightweight` | 单文件、小修 |
+| `📋 context-only`（**新默认**） | 多文件但不强制阶段门禁；记录 finding / 产生 sediment proposal |
+| `🔒 schema-driven`（opt-in） | 高风险 / 审计 / handoff 场景，启用 sdd-riper-one 等 schema |
+
+### Compatibility
+
+- **零破坏**：现有 `anchor.yaml.writing_protocol.schema: sdd-riper-one` 继续工作
+- 现有 `specanchor-assemble.sh --format=json` 默认 schema 不变
+- 现有 `agent-contract.md` 引用通过 deprecated alias 仍可工作
+- v0.6 不引入跨 repo distribution，cross-tool adapter 留待 v0.7
+
+### Not in v0.6
+
+- Schema Router / Autonomy Router（被显式拒绝）
+- `boot --agent --intent` 包装 assemble 的实现（计划，未实现）
+- Stop trigger 检测脚本（计划，未实现）
+- 跨 repo 共享 spec 协议（见 `.specanchor/tasks/_cross-module/2026-05-24_cross-repo-context-management.spec.md`，v1.0+ 候选）
+- Cross-tool adapters（Kiro / Cursor / Gemini / Copilot 等；v0.7 仅做 Claude Code + Codex 最小 bootloader）
+- `specanchor-finding.sh list` / `specanchor-sediment.sh apply` 等子命令（v0.7+）
+
+---
+
 ## v0.5.0-beta.1 — Harness Context Control
 
 ### Highlights

@@ -21,6 +21,9 @@ WRITE_TRACE=""
 MODE="resolve"
 TASK_SPEC_PATH=""
 WRITE_BACK="false"
+BUNDLE_SCHEMA="assembly.v1"        # v0.6 新增：assembly.v1 (默认，向后兼容) | context_bundle.v1
+FRESHNESS_STALE_AGE_DAYS=14        # v0.6 新增：age >= 此值标 stale（对齐 anchor.yaml.check.stale_days）
+FRESHNESS_OUTDATED_AGE_DAYS=30     # age >= 此值标 outdated（对齐 anchor.yaml.check.outdated_days）
 
 TMP_FILES=()
 
@@ -428,6 +431,141 @@ print_json() {
   printf '\n}\n'
 }
 
+# v0.6 新增：source_type 启发式推断（path → spec|decision|evidence|finding|codemap）
+infer_source_type() {
+  local path="$1"
+  case "$path" in
+    *"/findings/"*) printf 'finding' ;;
+    *"/sediment/"*) printf 'finding' ;;
+    *"/decisions/"*) printf 'decision' ;;
+    *"/evidence/"*) printf 'evidence' ;;
+    *"codemap"*|*"project-codemap"*) printf 'codemap' ;;
+    *) printf 'spec' ;;
+  esac
+}
+
+# v0.6 新增：time-based freshness（用 git mtime 或文件 mtime；输出 fresh|stale|outdated|unknown）
+infer_freshness() {
+  local path="$1"
+  local mtime age_days
+  if [[ ! -e "$path" ]]; then
+    printf 'unknown'
+    return
+  fi
+  # 优先用 git 最后修改时间（更稳）；fallback 文件 mtime
+  if mtime=$(git -C "$(dirname "$path")" log -1 --format=%ct -- "$(basename "$path")" 2>/dev/null); then
+    :
+  fi
+  if [[ -z "$mtime" ]]; then
+    mtime=$(stat -f %m "$path" 2>/dev/null || stat -c %Y "$path" 2>/dev/null || echo "")
+  fi
+  if [[ -z "$mtime" ]]; then
+    printf 'unknown'
+    return
+  fi
+  age_days=$(( ($(date +%s) - mtime) / 86400 ))
+  if   [[ $age_days -lt $FRESHNESS_STALE_AGE_DAYS ]];     then printf 'fresh'
+  elif [[ $age_days -lt $FRESHNESS_OUTDATED_AGE_DAYS ]];  then printf 'stale'
+  else                                                          printf 'outdated'
+  fi
+}
+
+# v0.6 新增：freshness_reasons 文本（time-based 描述）
+infer_freshness_reason() {
+  local path="$1"
+  local mtime age_days
+  [[ -e "$path" ]] || { printf 'file not found'; return; }
+  if mtime=$(git -C "$(dirname "$path")" log -1 --format=%ct -- "$(basename "$path")" 2>/dev/null); then :; fi
+  if [[ -z "$mtime" ]]; then
+    mtime=$(stat -f %m "$path" 2>/dev/null || stat -c %Y "$path" 2>/dev/null || echo "")
+  fi
+  [[ -n "$mtime" ]] || { printf 'no mtime available'; return; }
+  age_days=$(( ($(date +%s) - mtime) / 86400 ))
+  printf 'last modified %d day(s) ago' "$age_days"
+}
+
+# v0.6 新增：Context Bundle v1 JSON 输出
+print_json_bundle_v1() {
+  local i=0 path load reason stype freshness reason_text
+  printf '{\n'
+  printf '  "schema_version": "specanchor.context_bundle.v1",\n'
+  printf '  "status": "%s",\n' "$STATUS"
+  printf '  "intent": "%s",\n' "$(sa_json_escape "$INTENT")"
+  printf '  "budget": {\n'
+  printf '    "profile": "%s",\n' "$BUDGET_PROFILE"
+  printf '    "max_files": %s,\n' "$MAX_FILES"
+  printf '    "max_lines": %s,\n' "$MAX_LINES"
+  printf '    "estimated_files": %s,\n' "$ESTIMATED_FILES"
+  printf '    "estimated_lines": %s,\n' "$ESTIMATED_LINES"
+  printf '    "truncated": %s\n' "$TRUNCATED"
+  printf '  },\n'
+
+  # layers: 按 source_type 分组（保留 files_to_read 列表作为 flat view 备份）
+  # 实现策略：先用一个 helper 把 indices 按 source_type 分组
+  local layer
+  printf '  "layers": {\n'
+  local first_layer=1
+  for layer in spec decision evidence finding codemap; do
+    [[ $first_layer -eq 1 ]] || printf ',\n'
+    first_layer=0
+    printf '    "%s": [' "$layer"
+    local first_item=1
+    i=0
+    while [[ $i -lt ${#FILES_TO_READ_PATHS[@]} ]]; do
+      path="${FILES_TO_READ_PATHS[$i]}"
+      stype=$(infer_source_type "$path")
+      if [[ "$stype" == "$layer" ]]; then
+        load="${FILES_TO_READ_LOADS[$i]}"
+        reason="${FILES_TO_READ_REASONS[$i]}"
+        freshness=$(infer_freshness "$path")
+        reason_text=$(infer_freshness_reason "$path")
+        [[ $first_item -eq 1 ]] || printf ','
+        first_item=0
+        printf '\n      {"path":"%s","load":"%s","reason":"%s","source_type":"%s","freshness":"%s","freshness_reasons":["%s"],"confidence":null}' \
+          "$(sa_json_escape "$path")" \
+          "$load" \
+          "$(sa_json_escape "$reason")" \
+          "$stype" \
+          "$freshness" \
+          "$(sa_json_escape "$reason_text")"
+      fi
+      i=$((i + 1))
+    done
+    [[ $first_item -eq 0 ]] && printf '\n    '
+    printf ']'
+  done
+  printf '\n  },\n'
+
+  # files_to_read 保留为 flat view（向后兼容老消费者）
+  printf '  "files_to_read": [\n'
+  i=0
+  while [[ $i -lt ${#FILES_TO_READ_PATHS[@]} ]]; do
+    [[ $i -gt 0 ]] && printf ',\n'
+    printf '    {"path":"%s","load":"%s","reason":"%s"}' \
+      "$(sa_json_escape "${FILES_TO_READ_PATHS[$i]}")" \
+      "${FILES_TO_READ_LOADS[$i]}" \
+      "$(sa_json_escape "${FILES_TO_READ_REASONS[$i]}")"
+    i=$((i + 1))
+  done
+  printf '\n  ],\n'
+
+  # v0.6 stop_triggers 留占位（Phase 5 实现）
+  printf '  "stop_triggers": [],\n'
+  printf '  "missing": %s,\n' "$MISSING_COUNT"
+  printf '  "agent_instructions": '
+  print_json_array AGENT_INSTRUCTIONS
+  printf ',\n'
+  printf '  "assembly_trace": {\n'
+  printf '    "global": "%s",\n' "$GLOBAL_TRACE"
+  printf '    "module": "%s",\n' "$MODULE_TRACE"
+  printf '    "task": "%s",\n' "$TASK_TRACE"
+  printf '    "sources": "%s"\n' "$SOURCES_TRACE"
+  printf '  },\n'
+  printf '  "warnings": '
+  print_json_array WARNING_MESSAGES
+  printf '\n}\n'
+}
+
 print_markdown() {
   local i=0
   echo "Assembly Trace:"
@@ -711,6 +849,12 @@ main() {
         [[ $# -gt 0 ]] || sa_die "--format requires a value" 64
         FORMAT="$1"
         ;;
+      --bundle-schema=*) BUNDLE_SCHEMA="${1#--bundle-schema=}" ;;
+      --bundle-schema)
+        shift
+        [[ $# -gt 0 ]] || sa_die "--bundle-schema requires a value" 64
+        BUNDLE_SCHEMA="$1"
+        ;;
       --mode=handoff) MODE="handoff" ;;
       --mode=*) sa_die "unknown mode: ${1#--mode=} (use: handoff)" 64 ;;
       --mode)
@@ -747,7 +891,13 @@ main() {
 
   case "$FORMAT" in
     text|markdown) print_markdown ;;
-    json) print_json ;;
+    json)
+      case "$BUNDLE_SCHEMA" in
+        assembly.v1) print_json ;;
+        context_bundle.v1) print_json_bundle_v1 ;;
+        *) sa_die "invalid bundle-schema: ${BUNDLE_SCHEMA} (use: assembly.v1 | context_bundle.v1)" 64 ;;
+      esac
+      ;;
     *) sa_die "invalid format: ${FORMAT}" 64 ;;
   esac
 }
