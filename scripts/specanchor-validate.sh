@@ -522,6 +522,9 @@ if schema == "specanchor.resolve.v2":
     required = ["status", "mode", "budget", "inputs", "anchors", "missing", "warnings", "trace"]
 elif schema == "specanchor.assembly.v1":
     required = ["status", "budget", "files_to_read", "agent_instructions", "assembly_trace", "warnings"]
+elif schema == "specanchor.context_bundle.v1":
+    required = ["status", "intent", "budget", "layers", "files_to_read", "stop_triggers",
+                "missing", "agent_instructions", "assembly_trace", "warnings"]
 else:
     raise SystemExit(f"UNKNOWN_SCHEMA {schema!r}")
 

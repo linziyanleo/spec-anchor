@@ -122,7 +122,7 @@ cp references/templates/finding-template.md \
 
 ## 6. Agent 如何消费 Finding
 
-通过 `specanchor-assemble.sh --bundle-schema=v1` 输出的 Context Bundle，findings 作为独立 layer：
+通过 `specanchor-assemble.sh --bundle-schema=context_bundle.v1` 输出的 Context Bundle，findings 作为独立 layer：
 
 ```json
 {

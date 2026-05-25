@@ -133,7 +133,7 @@ v0.6 仅承诺**单仓库 + 跨会话 + schema-agnostic** 的 context constructi
 升级 `scripts/specanchor-assemble.sh --format=json` 的 schema：
 
 - 新增 `schema_version: specanchor.context_bundle.v1` 输出
-- **保留 `specanchor.assembly.v1` 向后兼容**（用 `--bundle-schema=v1` 切换；默认仍是 assembly.v1，给老消费者留迁移期）
+- **保留 `specanchor.assembly.v1` 向后兼容**（用 `--bundle-schema=context_bundle.v1` 切换；默认仍是 assembly.v1，给老消费者留迁移期）
 - 新增 `layers`：{ spec, decision, evidence, finding, codemap }
 - 每个 item 加字段：`load`（summary / full / deferred / manual）+ `freshness` + `freshness_reasons` + `source_type` + `confidence`
 - 保留 markdown Assembly Trace 作为 human-readable view（不重写两套渲染）
@@ -379,7 +379,7 @@ Bundle 输出里每个 trigger 必须标 `mode`：
 **目标**：建立产品核心 artifact。
 
 - 升级 `scripts/specanchor-assemble.sh --format=json` 输出
-- 新增 `--bundle-schema=v1` 触发 `specanchor.context_bundle.v1` 输出
+- 新增 `--bundle-schema=context_bundle.v1` 触发 `specanchor.context_bundle.v1` 输出
 - 默认仍 `specanchor.assembly.v1`（向后兼容，给老消费者迁移期）
 - 字段：layers / freshness / freshness_reasons / source_type / confidence
 - freshness：v0.6 实现 time + code（用 git mtime），evidence 留接口

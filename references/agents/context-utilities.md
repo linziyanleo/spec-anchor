@@ -32,7 +32,7 @@ specanchor-assemble.sh --files=<paths> --intent="<description>"
 ```
 
 - `--format=json` → 输出 `specanchor.assembly.v1`（默认，向后兼容）
-- `--format=json --bundle-schema=v1` → **v0.6 新增** `specanchor.context_bundle.v1`，含 layers / freshness / freshness_reasons / source_type / confidence
+- `--format=json --bundle-schema=context_bundle.v1` → **v0.6 新增** `specanchor.context_bundle.v1`，含 layers / freshness / freshness_reasons / source_type / confidence
 - 读完 `files_to_read` 中列出的所有文件
 - 如果 `missing` count > 0 且本次涉及行为变更，先创建 Module Spec / Task Spec
 

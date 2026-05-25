@@ -35,6 +35,8 @@ create_directory_structure() {
     ".specanchor/tasks/_cross-module"
     ".specanchor/archive"
     ".specanchor/scripts"
+    ".specanchor/findings"
+    ".specanchor/sediment/proposals"
   )
 
   for dir in "${dirs[@]}"; do
@@ -64,6 +66,20 @@ specanchor:
     spec_index: ".specanchor/spec-index.md"
     module_index: ".specanchor/module-index.md"  # DEPRECATED: v0.5 删除；迁移期仅作 fallback
     project_codemap: ".specanchor/project-codemap.md"
+    findings: ".specanchor/findings/"
+    sediment_proposals: ".specanchor/sediment/proposals/"
+
+  # === v0.6 新增：workflow 段（默认 context-only，不再默认绑 sdd-riper-one） ===
+  workflow:
+    default: "context-only"   # context-only | lightweight | schema-driven
+    schema: null              # null = 不启用任何 schema；可选：sdd-riper-one | simple | bug-fix | refactor | research | handoff
+    optional_integrations:
+      - simple
+      - sdd-riper-one
+      - handoff
+      - bug-fix
+      - refactor
+      - research
 
   coverage:
     scan_paths:
