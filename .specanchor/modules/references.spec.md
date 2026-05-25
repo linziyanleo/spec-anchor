@@ -9,10 +9,10 @@ specanchor:
   author: "maintainers"
   reviewers: []
   created: "2026-04-02"
-  updated: "2026-05-21"
-  last_synced: "2026-05-21"
-  last_synced_sha: "5805e6d"
-  last_change: "script invocation docs clarify long options must stay in one argv"
+  updated: "2026-05-25"
+  last_synced: "2026-05-25"
+  last_synced_sha: "c198ade"
+  last_change: "agents/*.md boot-activation upgraded with boot-install.sh recipe + idempotent marker-block template; init.md step 13 rewritten to call boot-install"
   status: active
   depends_on: []
 ---

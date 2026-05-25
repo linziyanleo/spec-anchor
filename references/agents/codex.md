@@ -41,11 +41,21 @@ For a multi-file change:
 
 ## Boot Activation
 
-To ensure SpecAnchor boots automatically on every new session, configure one of the following.
+To ensure SpecAnchor activates automatically on every new session, choose one:
 
-**Option A: SessionStart hook** (recommended)
+**Option A: One-shot install** (recommended)
 
-Add a SessionStart hook that runs the boot script:
+```bash
+# Standalone — write the trigger block to AGENTS.md (idempotent)
+bash <skill-install-dir>/scripts/specanchor-boot-install.sh --target=codex
+
+# Or during init — combine init + boot install
+bash <skill-install-dir>/scripts/specanchor-init.sh --install-boot=codex
+```
+
+This writes a `<!-- specanchor:boot:start --> ... <!-- specanchor:boot:end -->` block to project `AGENTS.md` instructing the agent to load the `spec-anchor` skill before any code edit. Re-run to upgrade in place; pass `--remove` to revert.
+
+**Option B: SessionStart hook**
 
 ```yaml
 # codex hooks configuration
@@ -54,15 +64,22 @@ hooks:
     - command: "SPECANCHOR_SKILL_DIR=.codex/skills/specanchor bash .codex/skills/specanchor/scripts/specanchor-boot.sh --format=summary"
 ```
 
-**Option B: AGENTS.md instruction** (fallback)
+**Option C: Manual AGENTS.md edit** (if you cannot run scripts)
 
-Add to project `AGENTS.md`:
+Append the same block to project `AGENTS.md` by hand:
 
 ```markdown
-## SpecAnchor Boot
-At session start, run:
-SPECANCHOR_SKILL_DIR=.codex/skills/specanchor bash .codex/skills/specanchor/scripts/specanchor-boot.sh --format=summary
-Then read SKILL.md and follow the SpecAnchor workflow.
+<!-- specanchor:boot:start -->
+## SpecAnchor
+
+This project uses SpecAnchor (see `anchor.yaml`).
+Before writing or editing code, you MUST:
+1. Invoke the `spec-anchor` skill to load it
+2. Run the boot script the skill prints
+3. Follow the Spec Landscape it returns
+
+Triggers: any mention of spec, 规范, 对齐, alignment, checkpoint, handoff, coverage, or any edit in this repo.
+<!-- specanchor:boot:end -->
 ```
 
 ## Full Agent Loop

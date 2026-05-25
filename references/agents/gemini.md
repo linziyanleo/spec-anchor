@@ -24,20 +24,37 @@ Then call `specanchor-assemble.sh`.
 
 ## Boot Activation
 
-To ensure SpecAnchor boots automatically, add a boot instruction to the project's `GEMINI.md`.
+To ensure SpecAnchor activates automatically on every new session, choose one:
 
-Add to project `GEMINI.md`:
+**Option A: One-shot install** (recommended)
 
-```markdown
-## SpecAnchor Boot
-At session start, run:
-SPECANCHOR_SKILL_DIR=<skill-install-dir> bash <skill-install-dir>/scripts/specanchor-boot.sh --format=summary
+```bash
+# Standalone — write the trigger block to GEMINI.md (idempotent)
+bash <skill-install-dir>/scripts/specanchor-boot-install.sh --target=gemini
 
-Then read SKILL.md and follow the SpecAnchor workflow.
-Before editing code, run specanchor-assemble.sh for the target files and intent.
+# Or during init — combine init + boot install
+bash <skill-install-dir>/scripts/specanchor-init.sh --install-boot=gemini
 ```
 
-Replace `<skill-install-dir>` with the actual skill installation path. After editing `GEMINI.md`, run `/memory reload` to pick up the change in the current session.
+This writes a `<!-- specanchor:boot:start --> ... <!-- specanchor:boot:end -->` block to project `GEMINI.md` instructing the agent to load the `spec-anchor` skill before any code edit. Re-run to upgrade in place; pass `--remove` to revert. After editing `GEMINI.md`, run `/memory reload` to pick up the change in the current session.
+
+**Option B: Manual GEMINI.md edit** (if you cannot run scripts)
+
+Append the same block to project `GEMINI.md` by hand:
+
+```markdown
+<!-- specanchor:boot:start -->
+## SpecAnchor
+
+This project uses SpecAnchor (see `anchor.yaml`).
+Before writing or editing code, you MUST:
+1. Invoke the `spec-anchor` skill to load it
+2. Run the boot script the skill prints
+3. Follow the Spec Landscape it returns
+
+Triggers: any mention of spec, 规范, 对齐, alignment, checkpoint, handoff, coverage, or any edit in this repo.
+<!-- specanchor:boot:end -->
+```
 
 ## Full Agent Loop
 

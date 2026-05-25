@@ -185,30 +185,40 @@ bash "<skill_install_dir>/scripts/specanchor-init.sh" --project=<name>
 
     检测结果展示各 spec 文件的新鲜度状态（FRESH / STALE / OUTDATED），Agent 根据检测结果向用户报告需要关注的腐化 spec。
 
-13. **可选：配置 boot 激活**：
+13. **可选：注入 boot 触发块到 Agent 指令文件**：
 
-    Agent 检测当前工作环境的平台标志文件：
+    自动让 spec-anchor skill 在每次 session 启动时被激活——不依赖 hook，只靠 Agent 平台默认加载的指令文件。脚本 `specanchor-boot-install.sh` 把一段 `<!-- specanchor:boot:start --> ... <!-- specanchor:boot:end -->` 触发块幂等注入到目标文件，块外内容永不修改。
 
-    | 标志 | 判定平台 |
+    平台检测规则：
+
+    | 工作区标志 | 注入目标文件 |
     |------|---------|
-    | `.claude/` 目录存在 | Claude Code |
-    | `.cursor/` 目录存在 | Cursor |
-    | `AGENTS.md` 存在且含 codex 标记，或运行环境为 Codex | Codex |
-    | `GEMINI.md` 存在 | Gemini |
+    | `.claude/` 存在 | `CLAUDE.md` |
+    | `AGENTS.md` 存在 | `AGENTS.md`（Codex / 部分 Cursor 设置） |
+    | `GEMINI.md` 存在 | `GEMINI.md` |
+    | `.cursor/` 存在 | `.cursor/rules/specanchor.mdc`（自动 mkdir） |
+    | 都不存在 | 默认按 `CLAUDE.md`（最常用），用户可手动改 `--target` |
 
-    - 多个同时存在 → 列出所有检测到的平台
-    - 都不存在 → 输出通用指引："请根据你的 Agent 平台，参考 `references/agents/` 下对应文件配置 boot 激活"，跳过此步
+    询问用户：
 
     ```
-    检测到当前环境可能使用 <platform>。
-    是否配置 SpecAnchor boot 激活，使每次 session 自动加载 Spec？(Y/n)
+    检测到平台：<targets>
+    是否注入 SpecAnchor 触发块到上述文件？(Y/n/all)
 
-    [Y] → 生成对应平台的最小配置片段
-    [n] → 跳过，输出手动配置指引
+    [Y]   → 调用 specanchor-boot-install.sh --target=<detected>
+    [all] → 注入到全部四个文件（claude,codex,gemini,cursor）
+    [n]   → 跳过，输出："⏭️ 可随时运行 bash $SA_SKILL_DIR/scripts/specanchor-boot-install.sh"
     ```
 
-    - 用户确认 → 按 `references/agents/<platform>.md` 中 `## Boot Activation` 段的模板生成配置文件或输出片段
-    - 用户拒绝 → 跳过，输出：`⏭️ 可随时参考 references/agents/ 手动配置 boot 激活。`
+    用户确认后执行：
+
+    ```bash
+    bash "$SA_SKILL_DIR/scripts/specanchor-boot-install.sh" --target=<targets>
+    ```
+
+    - 重复运行：块内容原位替换，块外保留（幂等）
+    - 卸载：`bash $SA_SKILL_DIR/scripts/specanchor-boot-install.sh --remove`
+    - CLI 一步式：用户可在 init 时直接传 `--install-boot=auto|all|<csv>`，跳过交互
 
 14. **输出完成信息**：
 

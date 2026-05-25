@@ -277,19 +277,24 @@ main() {
   local project_name=""
   local mode="full"
   local scan_sources=false
+  local install_boot=""
 
   for arg in "$@"; do
     case "$arg" in
       --project=*) project_name="${arg#--project=}" ;;
       --mode=*)    mode="${arg#--mode=}" ;;
       --scan-sources) scan_sources=true ;;
+      --install-boot=*) install_boot="${arg#--install-boot=}" ;;
       --help|-h)
-        echo "Usage: specanchor-init.sh [--project=<name>] [--mode=full|parasitic] [--scan-sources]"
+        echo "Usage: specanchor-init.sh [--project=<name>] [--mode=full|parasitic] [--scan-sources] [--install-boot=<targets>]"
         echo ""
         echo "初始化 .specanchor/ 目录结构和默认配置。"
-        echo "  --project=<name>   项目名称（默认取当前目录名）"
-        echo "  --mode=<mode>      运行模式：full（默认）或 parasitic"
-        echo "  --scan-sources     扫描检测已有 spec 体系"
+        echo "  --project=<name>            项目名称（默认取当前目录名）"
+        echo "  --mode=<mode>               运行模式：full（默认）或 parasitic"
+        echo "  --scan-sources              扫描检测已有 spec 体系"
+        echo "  --install-boot=<targets>    init 完成后自动注入 SpecAnchor 触发块到 Agent 指令文件"
+        echo "                              targets: auto | all | <csv of claude,codex,gemini,cursor>"
+        echo "                              不指定此参数则跳过注入，可后续手动运行 specanchor-boot-install.sh"
         exit 0
         ;;
     esac
@@ -320,16 +325,29 @@ main() {
     scan_external_sources
   fi
 
+  if [[ -n "$install_boot" ]]; then
+    echo ""
+    echo -e "${BOLD}Installing boot trigger block...${RESET}"
+    local boot_install_script="${SCRIPT_DIR}/specanchor-boot-install.sh"
+    if [[ -x "$boot_install_script" ]]; then
+      bash "$boot_install_script" "--target=${install_boot}"
+    else
+      echo -e "  ${YELLOW}warning:${RESET} specanchor-boot-install.sh 不可执行，跳过 boot 注入" >&2
+    fi
+  fi
+
   echo ""
   echo -e "${GREEN}✅ SpecAnchor 初始化完成 [${mode}]${RESET}"
   echo -e "  配置: anchor.yaml"
   [[ "$mode" == "full" ]] && echo -e "  目录: .specanchor/"
+  [[ -n "$install_boot" ]] && echo -e "  Boot 注入: ${install_boot}"
   echo ""
   if [[ "$mode" == "full" ]]; then
     echo -e "${DIM}下一步：让 Agent 细化 starter Global Specs，并按需补充 Module / Task Specs${RESET}"
   else
     echo -e "${DIM}下一步：配置 sources 并让 Agent 解析已有外部 Specs${RESET}"
   fi
+  [[ -z "$install_boot" ]] && echo -e "${DIM}如需自动激活 spec-anchor skill，运行：bash scripts/specanchor-boot-install.sh${RESET}"
 }
 
 main "$@"

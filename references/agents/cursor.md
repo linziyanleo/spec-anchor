@@ -33,11 +33,23 @@ For a known module path:
 
 ## Boot Activation
 
-To ensure SpecAnchor boots automatically, create a Cursor project rule.
+To ensure SpecAnchor activates automatically on every new session, choose one:
 
-**Option A: Project rule file** (recommended)
+**Option A: One-shot install** (recommended)
 
-Create `.cursor/rules/specanchor.mdc`:
+```bash
+# Standalone — write the trigger block to .cursor/rules/specanchor.mdc (idempotent, auto-creates dir)
+bash <skill-install-dir>/scripts/specanchor-boot-install.sh --target=cursor
+
+# Or during init — combine init + boot install
+bash <skill-install-dir>/scripts/specanchor-init.sh --install-boot=cursor
+```
+
+This writes a `<!-- specanchor:boot:start --> ... <!-- specanchor:boot:end -->` block to project `.cursor/rules/specanchor.mdc` instructing the agent to load the `spec-anchor` skill before any code edit. Re-run to upgrade in place; pass `--remove` to revert.
+
+**Option B: Manual rule file edit** (if you cannot run scripts)
+
+Create `.cursor/rules/specanchor.mdc` and paste:
 
 ```markdown
 ---
@@ -46,23 +58,20 @@ globs:
 alwaysApply: true
 ---
 
-At session start, run:
-SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary
+<!-- specanchor:boot:start -->
+## SpecAnchor
 
-Then read SKILL.md and follow the SpecAnchor workflow.
-Before editing code, run specanchor-assemble.sh for the target files and intent.
+This project uses SpecAnchor (see `anchor.yaml`).
+Before writing or editing code, you MUST:
+1. Invoke the `spec-anchor` skill to load it
+2. Run the boot script the skill prints
+3. Follow the Spec Landscape it returns
+
+Triggers: any mention of spec, 规范, 对齐, alignment, checkpoint, handoff, coverage, or any edit in this repo.
+<!-- specanchor:boot:end -->
 ```
 
-**Option B: AGENTS.md instruction** (fallback)
-
-Add to project `AGENTS.md`:
-
-```markdown
-## SpecAnchor Boot
-At session start, run:
-SPECANCHOR_SKILL_DIR=.cursor/skills/specanchor bash .cursor/skills/specanchor/scripts/specanchor-boot.sh --format=summary
-Then read SKILL.md and follow the SpecAnchor workflow.
-```
+**Option C: AGENTS.md fallback** — same content, but in `AGENTS.md` instead, if your Cursor setup reads that file.
 
 ## Full Agent Loop
 

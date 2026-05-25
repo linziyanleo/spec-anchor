@@ -8,9 +8,9 @@ specanchor:
   owner: "maintainers"
   created: "2026-04-02"
   status: active
-  last_synced: "2026-05-21"
-  last_synced_sha: "5805e6d"
-  last_change: "boot CLI parser accepts split long-option typo and documents argv constraint"
+  last_synced: "2026-05-25"
+  last_synced_sha: "c198ade"
+  last_change: "add specanchor-boot-install.sh for idempotent skill-trigger injection into agent instruction files"
   depends_on: []
 ---
 
@@ -39,9 +39,24 @@ specanchor:
 | `--project=<name>` | 项目名称（默认取当前目录名） |
 | `--mode=full\|parasitic` | 运行模式（默认 full） |
 | `--scan-sources` | 扫描检测已有 spec 体系 |
+| `--install-boot=<targets>` | init 完成后自动调用 boot-install.sh；`targets` 可为 `auto\|all\|<csv of claude,codex,gemini,cursor>` |
 
-**脚本处理**: 目录创建、anchor.yaml 生成、starter Global Specs、spec-index.md 初始化、deprecated module-index 路径兼容、来源检测
+**脚本处理**: 目录创建、anchor.yaml 生成、starter Global Specs、spec-index.md 初始化、deprecated module-index 路径兼容、来源检测、（可选）boot 触发块注入
 **Agent 处理**: 来源策略确认、细化 starter Global Specs（需代码分析）
+
+### specanchor-boot-install.sh
+
+幂等注入/移除 SpecAnchor 触发块到 Agent 指令文件，用 `<!-- specanchor:boot:start --> ... <!-- specanchor:boot:end -->` 标记块隔离，块外内容永不修改：
+
+| 参数 | 说明 |
+|------|------|
+| `--target=<spec>` | `auto`（默认，按工作区标志检测）/ `all` / `claude` / `codex` / `gemini` / `cursor` / 逗号分隔多选 |
+| `--dry-run` | 仅预览，不写文件 |
+| `--remove` | 移除已注入的标记块（与 `--dry-run` 兼容） |
+
+**目标文件映射**: claude → `CLAUDE.md`, codex → `AGENTS.md`, gemini → `GEMINI.md`, cursor → `.cursor/rules/specanchor.mdc`（自动 mkdir）
+**幂等行为**: 文件不存在 → 创建；文件存在但无块 → 末尾追加（前置空行）；文件已含块 → 块内原位替换。`--remove` 干净移除块并 normalize 空行。
+**典型用法**: 配合 `specanchor-init.sh --install-boot=auto` 一步完成，或独立运行让现有项目升级激活方式。
 
 ### specanchor-status.sh
 
@@ -206,7 +221,8 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 
 | 文件 | 职责 |
 |------|------|
-| `specanchor-init.sh` | 目录结构和配置初始化（半脚本化） |
+| `specanchor-init.sh` | 目录结构和配置初始化（半脚本化）；`--install-boot=<targets>` 钩子转发到 boot-install |
+| `specanchor-boot-install.sh` | 幂等注入/移除 boot 触发块到 CLAUDE.md/AGENTS.md/GEMINI.md/cursor 规则 |
 | `specanchor-status.sh` | 状态/覆盖率报告（summary/json） |
 | `specanchor-index.sh` | spec-index.md 生成/更新（v3 格式，可选 legacy module-index） |
 | `specanchor-boot.sh` | 启动检查（只读摘要输出） |
