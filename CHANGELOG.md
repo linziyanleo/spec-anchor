@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.7.0-alpha.2 — Findings Lazy-Load + Summary Field (UNRELEASED)
+
+> 在 v0.7.0-alpha.1 基础上加 finding 装载分级与 summary 必填字段，使 Context Bundle v1 在 finding 数量增长时仍保持 token 边界可控。
+
+### Highlights
+
+- **`summary` 字段成为 finding 必填字段**：≤120 字符单行；主语 + 事实 + 锚点（路径/数字/对比）。`<...>` 占位串会被 `specanchor-finding.sh new` 与 `specanchor-validate.sh` 拒绝。
+- **`specanchor-finding.sh new --summary=<text>` 必选参数**：脚本侧硬约束写入时 summary 字段格式正确。
+- **`specanchor-validate.sh` 对称二分宽容期**：`status==candidate` 缺字段/超长/占位 fail；`status!=candidate`（accepted / rejected / superseded / archived 与未来新 status）仅 warn——给老仓库迁移窗口而不阻断 CI。
+- **`specanchor-assemble.sh` visibility-driven lazy-load**：当 `--format=json --bundle-schema=context_bundle.v1` 且 `--files=` 非空时，扫描 `.specanchor/findings/*.md` 按 `affects.path` / `affects.module` 命中目标文件分级载荷——`immediate→full / sediment_queue→summary / handoff→title`，`hidden` 不进 bundle。
+- **`--max-findings=N` 共享桶 cap**（默认 50；`anchor.yaml.findings.max_per_bundle` 项目级覆写；immediate 桶不受 cap）。截断时以 `finding_cap_truncated:` 前缀追加到 `warnings[]` string array（保持 schema 向后兼容）。
+- **`specanchor-doctor.sh` summary backfill warn**：非 candidate 状态缺 summary → warn `FINDINGS_SUMMARY_BACKFILL`（建议回填，不阻断）。
+- **`scripts/lib/finding-parser.sh`**（新共享库）：`parse_finding_frontmatter()` 被 validate.sh / assemble.sh / doctor.sh 复用，避免三处重复实现。
+
+### Compatibility
+
+- 零破坏：默认 `--bundle-schema=assembly.v1` 不受影响；warnings[] 仍是 string array。
+- 老 finding 文件无 summary：候选状态 fail（鼓励 agent 立即补全）；非候选仅 warn（给迁移窗口）。
+- `--max-findings` 默认 50 与之前隐含无 cap 行为不同——immediate 桶仍不受 cap，所以 high-priority finding 不会被静默丢弃。
+
+### Not in v0.7.0-alpha.2
+
+- 自动 backfill summary 工具（人手补或后续 PR）
+- finding affects 跨模块解析（仍基于 module_path 单值匹配）
+- bundle schema v3（warnings[] 升级到 object array）
+
+---
+
 ## v0.7.0-alpha.1 — Agent Mode + Stop Triggers + Tool Bootloader (UNRELEASED)
 
 > 在 v0.6 基础上加 agent-facing 入口与 advisory 风险检测，并提供第一份 cross-tool bootloader（Claude Code）。同时把 README / WHY 主叙事切换为 Context Construction System。

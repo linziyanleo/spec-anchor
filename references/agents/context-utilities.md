@@ -36,6 +36,18 @@ specanchor-assemble.sh --files=<paths> --intent="<description>"
 - 读完 `files_to_read` 中列出的所有文件
 - 如果 `missing` count > 0 且本次涉及行为变更，先创建 Module Spec / Task Spec
 
+**Lazy-load findings**（v0.6 新增；仅在 `--format=json --bundle-schema=context_bundle.v1` 且 `--files=` 非空时启用）：
+
+- 扫描 `.specanchor/findings/*.md`，按 `affects.path` / `affects.module` 命中 `--files=` 目标文件做分级载荷
+  - `visibility: immediate` → 入 layers.finding，`load=full`（带完整 body）
+  - `visibility: sediment_queue` → 入 layers.finding，`load=summary`（仅含 frontmatter `summary` 字段）
+  - `visibility: handoff` → 入 layers.finding，`load=title`（仅 id + summary，无 body）
+  - `visibility: hidden` → 不进 bundle
+- 桶排序：precision desc（path > module > none）→ impact desc（high > medium > low）→ created desc
+- `--max-findings=N` 覆写共享桶 cap（默认 50；`anchor.yaml.findings.max_per_bundle` 可项目级覆写；immediate 桶不受 cap）
+- 截断时以前缀 `finding_cap_truncated:` 追加到 `warnings[]` string array（保持 schema 向后兼容）
+- bundle `agent_instructions[]` 会带三条 hint，告诉 agent finding load 字段语义
+
 boot 与 assemble 共存：
 - `boot --agent --intent` 适用于 session 起步（agent 还不知道该读什么）
 - `assemble --files --intent` 适用于已知目标文件、要精准上下文的场景
@@ -45,12 +57,20 @@ boot 与 assemble 共存：
 执行中发现的新事实**不要散落在聊天里**——写入 `.specanchor/findings/`：
 
 ```bash
-# 当前阶段：手动按模板创建 finding 文件
+# 推荐方式（自动校验 summary 字段，赋 id，派生 visibility）：
+SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-finding.sh" new \
+  --topic=<slug> \
+  --summary="<≤120 字符单行：主语 + 事实 + 锚点>" \
+  --type=<stale-claim|missing-coverage|...> \
+  --confidence=<low|medium|high> \
+  --impact=<low|medium|high>
+
+# 手工方式（仅在脚本不可用时）——cp 后必须立即编辑 summary 字段，
+# 否则 candidate 状态下 specanchor-validate.sh 会 fail：
 cp references/templates/finding-template.md .specanchor/findings/F-$(date +%Y%m%d)-NNN-<topic>.md
-# 后续阶段：可能提供 specanchor-finding.sh new 命令（见 PR 候选）
 ```
 
-Finding frontmatter 必须含 `id` / `type` / `status` / `confidence` / `impact` / `visibility` / `affects` / `evidence_ref`。具体见 `references/concepts/findings-ledger.md`。
+Finding frontmatter 必须含 `id` / `summary` / `type` / `status` / `confidence` / `impact` / `visibility` / `affects` / `evidence_ref`。`summary` 是 v0.6 新增必需字段（≤120 字符单行；主语 + 事实 + 锚点；`<...>` 占位串会被拒绝）；driven the lazy-load tier in §2 above。具体见 `references/concepts/findings-ledger.md`。
 
 **关键原则**：
 - `candidate finding ≠ spec fact`

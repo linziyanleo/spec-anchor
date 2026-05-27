@@ -38,11 +38,16 @@ execution, do not let it disappear into chat history. Record it:
 
 ```bash
 bash .claude/skills/specanchor/scripts/specanchor-finding.sh new \
-  --topic="<short-kebab>" --type=fact --confidence=medium --impact=medium
+  --topic="<short-kebab>" \
+  --summary="<≤120 chars: subject + fact + anchor (path/number/comparison)>" \
+  --type=fact --confidence=medium --impact=medium
 ```
 
-Edit the generated file's frontmatter (visibility auto-derives, override if
-needed) and fill in Observation / Evidence / Implications.
+`--summary` is required (≤120 chars, single line, no `<...>` placeholders).
+The summary drives lazy-load tier selection in context bundle v1
+(immediate→full / sediment_queue→summary / handoff→title-only). Edit the
+generated file's frontmatter (visibility auto-derives, override if needed)
+and fill in Observation / Evidence / Implications.
 
 ### Stop trigger check
 
