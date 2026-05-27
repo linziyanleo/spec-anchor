@@ -1,0 +1,15 @@
+{
+  "name": "spec-anchor",
+  "description": "Spec-anchored development context compiler",
+  "owner": {
+    "name": "方壶"
+  },
+  "plugins": [
+    {
+      "name": "spec-anchor",
+      "description": "Spec-anchored development — compile bounded, auditable engineering context for coding agents",
+      "version": "0.7.0",
+      "source": "./"
+    }
+  ]
+}

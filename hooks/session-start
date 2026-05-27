@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# SessionStart hook for spec-anchor plugin
+# Injects project context when anchor.yaml or .specanchor/ is detected.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Only inject when the current project uses spec-anchor
+if [ ! -f "anchor.yaml" ] && [ ! -d ".specanchor" ]; then
+  printf '{}\n'
+  exit 0
+fi
+
+# Extract project name from anchor.yaml if available
+project_name=""
+if [ -f "anchor.yaml" ]; then
+  project_name="$(grep -m1 '^project_name:' anchor.yaml 2>/dev/null | sed 's/^project_name:[[:space:]]*//' | sed 's/^["'"'"']//' | sed 's/["'"'"']$//' || true)"
+fi
+if [ -z "$project_name" ]; then
+  project_name="$(basename "$(pwd)")"
+fi
+
+escape_for_json() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$'\r'/\\r}"
+  s="${s//$'\t'/\\t}"
+  printf '%s' "$s"
+}
+
+session_context="<IMPORTANT>
+This project (${project_name}) uses spec-anchor for engineering context management.
+
+MANDATORY: Before writing or modifying code, invoke the spec-anchor skill to load coding standards, module contracts, and active tasks.
+
+You MUST use the spec-anchor skill when:
+1. Starting any coding task — spec-anchor loads the project's coding standards and constraints
+2. The user mentions spec, context, module, task, finding, alignment, or asks about project conventions
+3. You are about to create, modify, or refactor code files
+4. The user asks you to check alignment, manage specs, handoff, or review findings
+5. After completing a coding task — evaluate whether alignment check and findings apply
+
+Do NOT skip spec-anchor because:
+- \"This is just a simple change\" — even small changes must respect project contracts
+- \"I already know the codebase\" — spec-anchor loads active tasks and recent findings you don't have
+- \"I'll check later\" — context BEFORE coding prevents misalignment
+- \"The user didn't ask for it\" — spec-anchor is a project requirement, not optional
+- \"I can infer conventions from code\" — specs contain constraints not visible in code alone
+
+Post-Coding Chain (after completing a coding task):
+1. Run alignment check: compare changes against loaded specs (always)
+2. Record findings (only if new facts, contradictions, risks, or drift discovered):
+   use the spec-anchor finding command (specanchor-finding.sh) via the skill scripts
+3. Evaluate sediment: if findings reveal spec drift, draft a Sediment Proposal
+</IMPORTANT>"
+
+session_context_escaped="$(escape_for_json "$session_context")"
+
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  printf '{\n  "additional_context": "%s"\n}\n' "$session_context_escaped"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -z "${COPILOT_CLI:-}" ]; then
+  printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$session_context_escaped"
+else
+  printf '{\n  "additionalContext": "%s"\n}\n' "$session_context_escaped"
+fi
+
+exit 0

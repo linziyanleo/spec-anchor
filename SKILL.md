@@ -1,7 +1,12 @@
 ---
 name: spec-anchor
-description: Context Construction System for AI coding agents——为 agent 编译有边界、可审计、可沉淀的工程上下文。三类工作记忆产物（Spec / Decision / Evidence + Finding）经过 inclusion / budget / freshness 装配成 Context Bundle，跨 session 通过 handoff packet 重启。三级 Spec（Global/Module/Task）是 cold context 来源；Findings 是 hot context 写回入口；Sediment Proposal 是 hot→cold 安全回流。Workflow schema（sdd-riper-one 等）是 optional integration，不是默认骨架。只要项目中有 anchor.yaml 或 .specanchor/ 目录，或者正在生成 Spec / 装配上下文，就应该使用此 Skill。自然语言是主入口，`SA:` 仅是高级 shorthand；中英文关键词触发：规范、约定、对齐、覆盖率、spec、context、bundle、handoff、finding、sediment、checkpoint、决策、证据。
+description: "MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes, spec/context management, alignment checks, handoff, findings, or sediment work. Loads coding standards, module contracts, and active tasks."
 ---
+
+<HARD-GATE>
+If this project has `anchor.yaml` or `.specanchor/`, load SpecAnchor context before code changes.
+Specs contain constraints not visible in code alone — even for small edits, assemble context first.
+</HARD-GATE>
 
 # SpecAnchor
 
@@ -127,3 +132,13 @@ SpecAnchor v0.6 默认是 **context-only workflow**——assemble context bundle
 - `references/skills/spec-anchor-prelude/SKILL.md`：superpowers 流程的 Spec Landscape 预加载 skill
 
 Additional draft command protocols may exist under `references/commands/` (e.g. `codemap.md`); these are not yet routable and are excluded from the Command Routing table above.
+
+## Post-Coding Chain
+
+After completing a coding task, run through this chain:
+
+1. **Alignment Check** — compare changes against loaded specs. Run `specanchor_check` or manually verify that modified files still conform to their Module Spec contracts.
+2. **Record Findings** — if new facts, contradictions, risks, or drift were discovered, record via: `SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-finding.sh" new --topic=<slug> --summary=<single-line summary>`.
+3. **Evaluate Sediment** — if findings reveal spec drift or missing constraints, draft a Sediment Proposal (`references/concepts/sediment-proposal.md`) to flow hot context back into cold specs.
+
+Always run Alignment Check. Record Findings and Evaluate Sediment can be skipped when no new facts, risks, or drift were discovered.

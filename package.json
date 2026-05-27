@@ -1,0 +1,6 @@
+{
+  "name": "spec-anchor",
+  "version": "0.7.0",
+  "type": "module",
+  "description": "Spec-anchored development — compile bounded, auditable engineering context for coding agents"
+}
