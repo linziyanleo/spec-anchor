@@ -1,0 +1,10 @@
+overall_verdict: request_changes
+summary: "v2 addresses the manifest, standalone-path, spec-update, and verification gaps from v1. The remaining problem is that the revised plan still leaves the actual plugin skill entry and skill identifier unresolved, so the SessionStart hook could install correctly while pointing the agent at a skill that plugin discovery never exposes."
+review_comments:
+  - finding_id: F-1
+    severity: high
+    category: correctness
+    location: "re: F-2/F-3 from v1; Open Questions Q2; SessionStart chain text"
+    description: "The v1 fix keeps only the root SKILL.md and asserts that it also serves plugin skill discovery, but the cited superpowers model does not prove that: superpowers has no root SKILL.md and exposes invokable skills from skills/*/SKILL.md. As written, the hook tells the agent to invoke `spec-anchor`, while v2 still treats the actual plugin skill location and identifier (`spec-anchor` vs a namespaced form such as `spec-anchor:spec-anchor`) as an open question verified only after implementation."
+    suggested_change: "Make skill discovery a blocking pre-implementation gate, or add a plugin-local `skills/spec-anchor/SKILL.md` entry now as a thin wrapper with the short description and body that delegates to `../../SKILL.md` while preserving the root SKILL.md for standalone installs. Then update the SessionStart injected text and V3/V5/V9 expectations to use the exact verified skill identifier."
+    rationale: "The hook can be registered and still fail the core trigger goal if the invoked skill name is not actually discoverable in plugin installs."

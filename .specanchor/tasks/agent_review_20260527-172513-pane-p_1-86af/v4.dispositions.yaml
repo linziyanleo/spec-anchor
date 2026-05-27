@@ -1,0 +1,6 @@
+plan_version_reviewed: "v4"
+total_review_comments: 1
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: "在 v5 的 Rejected suggestions 段中更正 v2 F-2 的理由：移除 spec-index 更新相关声明，明确表述为'本任务不修改任何 spec artifact，Plugin Packaging surface contract 作为独立后续任务由方壶跟进'。"

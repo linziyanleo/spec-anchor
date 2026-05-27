@@ -1,0 +1,38 @@
+overall_verdict: block
+summary: "The plan does not yet define a valid Claude Code plugin installation surface and it breaks the existing standalone skill contract that it lists as a hard constraint. It also leaves path semantics, spec alignment, and verification too loose for a packaging and trigger-system change."
+review_comments:
+  - finding_id: F-1
+    severity: high
+    category: correctness
+    location: "Proposed approach 1.1 / Affected files: package.json"
+    description: "The plan treats package.json as the plugin identity, but Claude Code plugin discovery needs an actual plugin manifest; hooks/hooks.json and package.json alone are not enough to prove that claude plugin add will install the plugin or register SessionStart."
+    suggested_change: "Add the required Claude plugin manifest to the affected files, for example .claude-plugin/plugin.json with name, description, version, author/repository metadata as appropriate, and add an installation verification step that installs the repo as a plugin and confirms hooks/hooks.json is loaded."
+    rationale: "If the plugin is not discoverable, the SessionStart hook never runs and the core goal of the plan fails."
+  - finding_id: F-2
+    severity: high
+    category: correctness
+    location: "Directory structure change / backward compatibility"
+    description: "Moving the only SKILL.md from the repository root into skills/spec-anchor/SKILL.md contradicts the stated backward-compatibility constraint for ~/.claude/skills/spec-anchor and deviates from the project architecture norm that the Core layer is the root SKILL.md."
+    suggested_change: "Keep the root SKILL.md as the canonical standalone skill entry, and only add a plugin-local skills/spec-anchor/SKILL.md if plugin discovery requires it; alternatively, define an explicit packaging step that preserves root SKILL.md for non-plugin installs and verify that install mode directly."
+    rationale: "Executing the move as written can make the existing standalone installation stop being discoverable."
+  - finding_id: F-3
+    severity: high
+    category: correctness
+    location: "Risk R2 / Script invocation and reference paths"
+    description: "The plan acknowledges that moving SKILL.md changes the skill root, but it still lists scripts/*, references/commands/*, and references/integrations/* as unchanged even though existing commands assume $SA_SKILL_DIR/scripts and $SA_SKILL_DIR/references."
+    suggested_change: "Choose one stable root contract before implementation: either do not move SKILL.md, or introduce an explicit plugin root variable and update every runtime path reference in SKILL.md, references/commands/*.md, templates, and prelude instructions that currently point at $SA_SKILL_DIR/scripts or root-relative references/."
+    rationale: "Partial path updates will produce a skill that loads but cannot run boot, check, init, or command definitions from the plugin layout."
+  - finding_id: F-4
+    severity: medium
+    category: maintainability
+    location: "Global architecture alignment / affected files"
+    description: "The plan adds a new hooks/ surface and plugin packaging layer but does not say how those surfaces fit the existing Core / Protocol / Scripts architecture, nor does it include the spec-index or module/global spec updates needed to keep the Spec Landscape fresh."
+    suggested_change: "Add a small architecture/spec delta that classifies hooks and plugin metadata, update or add the relevant module spec entries, and include bash scripts/specanchor-index.sh plus strict validation in the execution checklist."
+    rationale: "Without spec updates, this repo will dogfood a stale Spec Landscape immediately after an architecture-level change."
+  - finding_id: F-5
+    severity: medium
+    category: testing
+    location: "Verification plan"
+    description: "The verification plan relies mostly on manual observation of system prompts and agent behavior, but it lacks deterministic tests for hook JSON output, Bash 3.2 compatibility, plugin installation, and the existing regression suite."
+    suggested_change: "Add concrete checks: /bin/bash -n hooks/session-start hooks/run-hook.cmd; run hooks/session-start in temp SpecAnchor and non-SpecAnchor directories and pipe output through python3 -m json.tool; install the repo through the Claude plugin path in a disposable environment; run bash tests/run.sh and SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh because this changes low-level loading behavior."
+    rationale: "Manual trigger observation will not catch malformed hook JSON, broken shell portability, or regressions in existing script-driven contracts."

@@ -1,0 +1,21 @@
+plan_version_reviewed: "v1"
+total_review_comments: 6
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: "给 hooks/run-hook.cmd 设置可执行权限（chmod +x）。在验证步骤中加入文件权限检查，确保 run-hook.cmd 和 session-start 都有 +x。"
+  - finding_id: F-2
+    disposition: incorporated
+    plan_change_summary: "将 V9（双入口去重）和 V10（端到端安装测试）提升为 pre-merge 必须验证项。V9 通过检查 Claude Code plugin skill discovery 路径验证同名 skill 去重。V10 通过实际安装插件后启动新 session 验证注入。"
+  - finding_id: F-3
+    disposition: incorporated
+    plan_change_summary: "HARD-GATE 改为 'load SpecAnchor context before code changes in anchored projects'，不强制具体工作流，保留 lightweight/context-only/schema-driven 选择权。Post-Coding Chain 改为条件性——'after completing a coding task'，findings 仅在发现新事实、矛盾、风险或 drift 时记录，不要求每次编辑都产出 finding。"
+  - finding_id: F-4
+    disposition: incorporated
+    plan_change_summary: "Post-Coding Chain 中 Record Findings 步骤改为引导使用 specanchor-finding.sh 脚本接口（bash scripts/specanchor-finding.sh new --topic=<slug> --summary=<line>），不再直接引用模板路径。模板仅作为手动恢复场景的 fallback。"
+  - finding_id: F-5
+    disposition: incorporated
+    plan_change_summary: "在 Affected files 中添加 .specanchor/spec-index.md 更新——为 hooks/、skills/、.claude-plugin/ 添加 Plugin Packaging 层级分类。完整架构文档更新记入 Risks & open questions 作为后续跟进项。"
+  - finding_id: F-6
+    disposition: incorporated
+    plan_change_summary: "扩展 SKILL.md description 覆盖编码和非编码触发域：'MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes, spec/context management, alignment checks, handoff, findings, or sediment work. Loads coding standards, module contracts, and active tasks.' 保持命令式开头 + 简洁长度，同时恢复关键触发域。"

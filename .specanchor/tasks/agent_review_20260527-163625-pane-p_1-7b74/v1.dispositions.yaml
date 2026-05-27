@@ -1,0 +1,43 @@
+plan_version_reviewed: "v1"
+total_review_comments: 5
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: >-
+      添加 .claude-plugin/plugin.json（含 name, description, version, author, repository, keywords）
+      和 .claude-plugin/marketplace.json 到 Affected files。从 superpowers 的结构确认这是 Claude Code
+      插件发现的必需文件。在 Verification plan 中添加 V9：在临时目录执行 claude plugin add --git
+      并验证 hooks/hooks.json 被加载、SessionStart hook 触发。
+  - finding_id: F-2
+    disposition: incorporated
+    plan_change_summary: >-
+      取消 SKILL.md 移入 skills/ 子目录的计划。保持根目录 SKILL.md 作为 canonical
+      standalone skill 入口——这同时服务于非插件安装（~/.claude/skills/spec-anchor/SKILL.md）
+      和插件安装。插件 skill discovery 通过根目录 SKILL.md 即可工作（经 superpowers 结构验证：
+      其 skills/ 子目录下的 SKILL.md 文件对应独立子技能如 brainstorming、debugging 等，
+      主入口仍然是 CLAUDE.md 和 hooks 驱动的）。目录结构变更段落重写为「仅新增 hooks/ 和
+      .claude-plugin/，不移动任何现有文件」。
+  - finding_id: F-3
+    disposition: incorporated
+    plan_change_summary: >-
+      因为不移动 SKILL.md，$SA_SKILL_DIR 语义不变，所有 scripts/ 和 references/ 路径引用
+      保持原样。风险 R2 从 Risks 表中移除（不再存在）。R3 的缓解措施更新为：
+      「插件安装和 skill 安装共存时，SKILL.md 位置不变，只有 SessionStart hook 是
+      plugin-only 能力」。
+  - finding_id: F-4
+    disposition: incorporated
+    plan_change_summary: >-
+      在实现顺序中添加步骤：更新 .specanchor/spec-index.md 把 hooks/ 归入 Core 层；
+      如有需要为 hooks/ 创建简要 module spec 条目；实现完成后运行 specanchor-index.sh
+      刷新索引。在 Affected files 中添加 .specanchor/spec-index.md 和相关 module spec。
+  - finding_id: F-5
+    disposition: incorporated
+    plan_change_summary: >-
+      在 Verification plan 中添加 deterministic tests：
+      V9: /bin/bash -n hooks/session-start hooks/run-hook.cmd（语法检查）；
+      V10: 在临时 SpecAnchor 目录运行 hooks/session-start | python3 -m json.tool
+      验证 JSON 输出格式；
+      V11: 在非 SpecAnchor 目录运行 hooks/session-start 验证输出 {}；
+      V12: bash --version 确认 Bash 3.2 兼容性（macOS 默认）；
+      V13: 运行现有测试套件 bash tests/run.sh 和 SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh
+      确认无回归。

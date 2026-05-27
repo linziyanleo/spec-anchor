@@ -1,0 +1,12 @@
+plan_version_reviewed: "v3"
+total_review_comments: 3
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: "Post-Coding Chain 中 Record Findings 脚本路径改为 skill-root 完整形式：SKILL.md 中使用 SPECANCHOR_SKILL_DIR=\"$SA_SKILL_DIR\" bash \"$SA_SKILL_DIR/scripts/specanchor-finding.sh\" new --topic=<slug> --summary=<line>。hooks/session-start 注入中改为自然语言描述 'use the spec-anchor finding command (specanchor-finding.sh)'，不硬编码 bare path——因为 hook 注入的上下文中 agent 已通过 boot 获得 SA_SKILL_DIR。"
+  - finding_id: F-2
+    disposition: incorporated
+    plan_change_summary: "将 Post-Coding Chain 的条件性限定为 Record Findings 和 Evaluate Sediment 两步。Alignment Check 始终在编码任务完成后执行，不受是否发现新事实的条件约束。结尾句改为：'Record Findings and Evaluate Sediment can be skipped when no new facts, risks, or drift were discovered — but always run Alignment Check.'"
+  - finding_id: F-3
+    disposition: incorporated
+    plan_change_summary: "从 Affected files 中移除 .specanchor/spec-index.md（本任务不修改它）。修正 v2 F-2 的 rejected 理由：明确声明本任务不更改任何 spec artifact，Plugin Packaging surface contract 作为独立后续任务跟进。"

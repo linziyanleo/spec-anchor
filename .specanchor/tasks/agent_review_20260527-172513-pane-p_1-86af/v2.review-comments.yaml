@@ -1,0 +1,17 @@
+overall_verdict: request_changes
+summary: "v2 fixes several problems in the plan text, but the claimed incorporated changes are not reflected in the implementation being reviewed. The remaining issues are narrow: make the worktree match the v2 claims, and anchor the new plugin packaging surface in the project specs rather than only in generated index text."
+review_comments:
+  - finding_id: F-1
+    severity: high
+    category: correctness
+    location: "re: F-1/F-3/F-4/F-6 from v1"
+    description: "The v1 dispositions say the fixes were incorporated, but the live implementation still has the v1 state: hooks/run-hook.cmd is not executable, root SKILL.md and skills/spec-anchor/SKILL.md still use the old 'before writing code' description and hard gate, and hooks/session-start still says 'after every code edit' and writes findings directly to .specanchor/findings/. Since v2 presents the five-layer system as already implemented, these are not just pending plan edits."
+    suggested_change: "Apply the v2 content to SKILL.md, skills/spec-anchor/SKILL.md, and hooks/session-start; commit or otherwise preserve chmod +x on hooks/run-hook.cmd; then rerun the exact hooks/hooks.json command path plus the JSON output checks. If v2 is intentionally plan-only, change the plan language from 'already implemented' to 'to implement' and do not mark those dispositions as incorporated."
+    rationale: "The review loop cannot converge on fixes that exist only in the plan artifact while the shipped hook and skill entry points still have the original behavior."
+  - finding_id: F-2
+    severity: medium
+    category: scope
+    location: "re: F-5 from v1"
+    description: "The architecture drift fix is still insufficient. v2 adds .specanchor/spec-index.md to Affected files, but spec-index is generated inventory, not the contract that defines a new top-level plugin packaging surface; the global architecture and module specs still only define Core, Protocol, and Scripts, and there is no concrete risk/open-question entry despite the disposition saying this was recorded as follow-up."
+    suggested_change: "Add a minimal spec update that defines the Plugin Packaging surface and its boundaries for hooks/, skills/, and .claude-plugin/, then refresh spec-index. If that is intentionally out of scope for this change, mark the v1 F-5 disposition as deferred with an owner or follow-up task instead of incorporated."
+    rationale: "New runtime surfaces need an owning spec contract, otherwise the repository is immediately out of alignment with its own SpecAnchor governance model."

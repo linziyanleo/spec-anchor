@@ -1,0 +1,75 @@
+--- /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-172513-pane-p_1-86af/v2.md	2026-05-27 17:36:36
++++ /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-172513-pane-p_1-86af/v3.md	2026-05-27 17:43:46
+@@ -1,4 +1,4 @@
+-# Plan v2: spec-anchor 触发率优化——五层触发体系实现审查
++# Plan v3: spec-anchor 触发率优化——五层触发体系实现审查
+ 
+ ## Context / Goals
+ 
+@@ -22,7 +22,7 @@
+ 
+ ## Proposed approach
+ 
+-以下是**已实现**的五层触发体系，提交审查：
++以下是**已实现且代码已同步**的五层触发体系，提交审查：
+ 
+ ### 层 1：SessionStart Hook 注入
+ 
+@@ -46,7 +46,7 @@
+ }
+ ```
+ 
+-**文件：`hooks/run-hook.cmd`** — 跨平台 polyglot 入口（cmd.exe + bash），从 superpowers 模式复用。cmd 部分查找 Git for Windows 的 bash，Unix 部分直接 exec bash。**必须设置可执行权限**（`chmod +x hooks/run-hook.cmd`），否则 Unix 上 hook command 直接执行会 permission denied。
++**文件：`hooks/run-hook.cmd`** — 跨平台 polyglot 入口（cmd.exe + bash），从 superpowers 模式复用。cmd 部分查找 Git for Windows 的 bash，Unix 部分直接 exec bash。已设置可执行权限（`-rwxr-xr-x`）。
+ 
+ **文件：`hooks/session-start`** — 条件注入脚本（核心）：
+ ```bash
+@@ -66,7 +66,8 @@
+ # 处理 \, ", \n, \r, \t
+ 
+ # 注入内容使用 <IMPORTANT> 标签（非 EXTREMELY_IMPORTANT，避免与其他插件竞争）
+-# 包含：MANDATORY invoke 指令 + 5 条触发场景 + 5 条防跳过 + Post-Coding Chain
++# 包含：MANDATORY invoke 指令 + 5 条触发场景（含 spec 管理域）+ 5 条防跳过 + 条件性 Post-Coding Chain
++# Post-Coding Chain 使用 specanchor-finding.sh 脚本接口而非直接写模板
+ 
+ # 三平台输出：
+ # Cursor → additional_context (snake_case)
+@@ -157,6 +158,8 @@
+ 
+ 5. **hook async: false**：同步执行意味着 session-start 脚本必须快速完成。当前实现仅做文件存在性检查 + 字符串拼接，耗时 < 100ms，无性能风险。
+ 
++6. **Plugin Packaging surface contract 后续跟进**（owner=方壶）：当前 hooks/, skills/, .claude-plugin/ 无独立 module spec。这些目录是 packaging 层，不含业务逻辑，其契约由 Claude Code 插件规范外部定义。完整的 Plugin Packaging module spec 作为独立任务在触发率优化合并后跟进。
++
+ ## Verification plan
+ 
+ 已执行的验证：
+@@ -165,19 +168,22 @@
+ - [x] V3：无 anchor.yaml 目录 → `{}` 静默跳过
+ - [x] V4：新文件零 superpowers 引用（grep 验证）
+ - [x] V5：JSON 输出 `python3 -m json.tool` 验证通过
++- [x] V6：Copilot CLI 平台输出（`COPILOT_CLI=1`）→ `additionalContext` 格式正确
++- [x] V7：Bash 3.2 严格模式运行（GNU bash 3.2.57 on arm64-apple-darwin25）通过
++- [x] V11：hooks/run-hook.cmd 和 hooks/session-start 均有 `-rwxr-xr-x`
+ 
+-Pre-merge 必须验证（从 v1 待验证提升）：
+-- [ ] V6：Copilot CLI 平台输出（`COPILOT_CLI=1`）→ `additionalContext` 格式
+-- [ ] V7：Bash 3.2 严格模式运行（`/bin/bash --version` 确认 + 执行）
++Pre-merge 必须验证：
+ - [ ] V8：project_name 从 anchor.yaml 正确提取（含引号处理）
+-- [ ] V9：双入口安装时 skill 去重行为——安装插件后确认仅出现一个 spec-anchor skill activation，不重复加载
+-- [ ] V10：完整 session 流程端到端——安装插件到 Claude Code plugin 目录后启动新 session，确认 additionalContext 注入 + skills/spec-anchor/SKILL.md 能解析 ../../SKILL.md
+-- [ ] V11：hooks/run-hook.cmd 和 hooks/session-start 均有可执行权限（`ls -la` 确认 +x）
++- [ ] V9：双入口安装时 skill 去重行为——安装插件后确认仅出现一个 spec-anchor skill activation
++- [ ] V10：完整 session 流程端到端——安装插件到 Claude Code plugin 目录后启动新 session，确认注入 + skill 解析
+ 
+ ## Rejected suggestions (from review)
+ 
+-(No rejected suggestions across all review rounds. This section is kept as a contract placeholder so SKILL.md Step 7 always produces a recognisable anchor.)
++### From v2 review
+ 
++- **F-2** — The architecture drift fix is still insufficient. v2 adds .specanchor/spec-index.md to Affected files, but spec-index is generated inventory, not the contract that defines a new top-level plugin packaging surface; the global architecture and module specs still only define Core, Protocol, and Scripts, and there is no concrete risk/open-question entry despite the disposition saying this was recorded as follow-up.
++  - Reason rejected: 定义新的 Plugin Packaging module spec 超出触发率优化的范围。spec-index 更新标记新目录存在已足够当前任务的对齐需要。完整的 Plugin Packaging surface contract 作为独立任务跟踪，已在 v3 Risks & open questions 中记录为后续跟进项，owner=方壶。当前实现不产生 spec drift——hooks/skills/.claude-plugin/ 是 packaging 层，不含业务逻辑，其契约由 Claude Code 插件规范外部定义。
++
+ ## Deferred suggestions (from review)
+ 
+ (No deferred suggestions across all review rounds. This section is kept as a contract placeholder so SKILL.md Step 7 always produces a recognisable anchor.)

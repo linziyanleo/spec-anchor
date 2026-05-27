@@ -1,0 +1,9 @@
+plan_version_reviewed: "v2"
+total_review_comments: 2
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: "实际同步更新代码文件使其与 v2 plan 一致：(1) chmod +x hooks/run-hook.cmd，(2) 更新根 SKILL.md description + HARD-GATE + Post-Coding Chain 为 v2 文本，(3) 更新 skills/spec-anchor/SKILL.md description + HARD-GATE 为 v2 文本，(4) 更新 hooks/session-start 注入内容——Post-Coding Chain 改为条件性、Record Findings 改用 specanchor-finding.sh。v3 plan 中标注代码已同步。"
+  - finding_id: F-2
+    disposition: rejected
+    reason: "定义新的 Plugin Packaging module spec 超出触发率优化的范围。spec-index 更新标记新目录存在已足够当前任务的对齐需要。完整的 Plugin Packaging surface contract 作为独立任务跟踪，已在 v3 Risks & open questions 中记录为后续跟进项，owner=方壶。当前实现不产生 spec drift——hooks/skills/.claude-plugin/ 是 packaging 层，不含业务逻辑，其契约由 Claude Code 插件规范外部定义。"

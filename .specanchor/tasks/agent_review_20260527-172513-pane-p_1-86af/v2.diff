@@ -1,0 +1,105 @@
+--- /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-172513-pane-p_1-86af/v1.md	2026-05-27 17:27:09
++++ /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-172513-pane-p_1-86af/v2.md	2026-05-27 17:36:36
+@@ -1,4 +1,4 @@
+-# Plan v1: spec-anchor 触发率优化——五层触发体系实现审查
++# Plan v2: spec-anchor 触发率优化——五层触发体系实现审查
+ 
+ ## Context / Goals
+ 
+@@ -46,7 +46,7 @@
+ }
+ ```
+ 
+-**文件：`hooks/run-hook.cmd`** — 跨平台 polyglot 入口（cmd.exe + bash），从 superpowers 模式复用。cmd 部分查找 Git for Windows 的 bash，Unix 部分直接 exec bash。
++**文件：`hooks/run-hook.cmd`** — 跨平台 polyglot 入口（cmd.exe + bash），从 superpowers 模式复用。cmd 部分查找 Git for Windows 的 bash，Unix 部分直接 exec bash。**必须设置可执行权限**（`chmod +x hooks/run-hook.cmd`），否则 Unix 上 hook command 直接执行会 permission denied。
+ 
+ **文件：`hooks/session-start`** — 条件注入脚本（核心）：
+ ```bash
+@@ -78,10 +78,10 @@
+ 
+ **根 SKILL.md frontmatter** 从 ~200 字描述性文本改为：
+ ```yaml
+-description: "MUST invoke before writing code in projects with anchor.yaml or .specanchor/ — loads coding standards, module contracts, and active tasks to anchor implementation."
++description: "MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes, spec/context management, alignment checks, handoff, findings, or sediment work. Loads coding standards, module contracts, and active tasks."
+ ```
+ 
+-关键变化：以 `MUST invoke` 开头（命令式），~150 字符，包含触发条件（`anchor.yaml or .specanchor/`）和价值主张（`loads coding standards, module contracts, and active tasks`）。
++关键变化：以 `MUST invoke` 开头（命令式），~180 字符，包含触发条件（`anchor.yaml or .specanchor/`）、编码触发（`before code changes`）和非编码触发域（`spec/context management, alignment checks, handoff, findings, sediment`），保持关键 SpecAnchor 命令的可发现性。
+ 
+ ### 层 3：宽触发面积（双入口）
+ 
+@@ -89,12 +89,12 @@
+ ```markdown
+ ---
+ name: spec-anchor
+-description: "MUST invoke before writing code in projects with anchor.yaml or .specanchor/ — loads coding standards, module contracts, and active tasks to anchor implementation."
++description: "MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes, spec/context management, alignment checks, handoff, findings, or sediment work. Loads coding standards, module contracts, and active tasks."
+ ---
+ 
+ <HARD-GATE>
+-If this project has `anchor.yaml` or `.specanchor/`, you MUST run spec-anchor boot before writing any code.
+-No exceptions for "simple changes" — specs contain constraints not visible in code alone.
++If this project has `anchor.yaml` or `.specanchor/`, load SpecAnchor context before code changes.
++Specs contain constraints not visible in code alone — even for small edits, assemble context first.
+ </HARD-GATE>
+ 
+ The full spec-anchor skill definition is in the plugin root `SKILL.md`. Read and follow `../../SKILL.md` for all commands, protocols, and references.
+@@ -108,7 +108,7 @@
+ 
+ 三重防线：
+ 1. **SessionStart hook 注入**：`<IMPORTANT>` 标签包裹 5 条"Do NOT skip because"反论
+-2. **HARD-GATE 块**：在 SKILL.md 和 skills/spec-anchor/SKILL.md 中，强制 boot 门禁
++2. **HARD-GATE 块**：在 SKILL.md 和 skills/spec-anchor/SKILL.md 中，引导在 anchored 项目中加载 context（不强制具体工作流）
+ 3. **命令式 description**：`MUST invoke` 语义暗示非可选
+ 
+ 5 条反跳过条目：
+@@ -122,13 +122,14 @@
+ 
+ **根 SKILL.md 新增 Post-Coding Chain 段**：
+ ```
+-After every code edit, complete this chain before reporting the task as done:
+-1. Alignment Check — compare changes against loaded specs
+-2. Record Findings — write discoveries to .specanchor/findings/
+-3. Evaluate Sediment — propose spec updates if findings reveal drift
++After completing a coding task, evaluate whether this chain applies:
++1. Alignment Check — compare changes against loaded specs (specanchor_check)
++2. Record Findings — if new facts, contradictions, risks, or drift were discovered,
++   record via: bash scripts/specanchor-finding.sh new --topic=<slug> --summary=<line>
++3. Evaluate Sediment — if findings reveal spec drift, draft a Sediment Proposal
+ ```
+ 
+-**SessionStart hook 注入中也包含 Post-Coding Chain**：确保即使 agent 没有读完整 SKILL.md，也能看到链式调用要求。
++**SessionStart hook 注入中也包含 Post-Coding Chain**：确保即使 agent 没有读完整 SKILL.md，也能看到链式调用要求。Chain 是条件性的——仅在发现新事实或 drift 时记录 finding，不要求每次编辑都产出。
+ 
+ ## Affected files
+ 
+@@ -141,6 +142,7 @@
+ | `.claude-plugin/plugin.json` | 新建 | 插件 manifest |
+ | `.claude-plugin/marketplace.json` | 新建 | 市场元数据 |
+ | `SKILL.md`（根） | 修改 | description 重写 + HARD-GATE + Post-Coding Chain |
++| `.specanchor/spec-index.md` | 修改 | 添加 Plugin Packaging 层级（hooks/ + skills/ + .claude-plugin/） |
+ | `package.json` | 已有 | 未修改（已含所需字段） |
+ 
+ ## Risks & open questions
+@@ -164,9 +166,18 @@
+ - [x] V4：新文件零 superpowers 引用（grep 验证）
+ - [x] V5：JSON 输出 `python3 -m json.tool` 验证通过
+ 
+-待验证：
++Pre-merge 必须验证（从 v1 待验证提升）：
+ - [ ] V6：Copilot CLI 平台输出（`COPILOT_CLI=1`）→ `additionalContext` 格式
+ - [ ] V7：Bash 3.2 严格模式运行（`/bin/bash --version` 确认 + 执行）
+ - [ ] V8：project_name 从 anchor.yaml 正确提取（含引号处理）
+-- [ ] V9：双入口安装时 skill 去重行为
+-- [ ] V10：完整 session 流程端到端测试（安装插件后新 session 是否自动注入）
++- [ ] V9：双入口安装时 skill 去重行为——安装插件后确认仅出现一个 spec-anchor skill activation，不重复加载
++- [ ] V10：完整 session 流程端到端——安装插件到 Claude Code plugin 目录后启动新 session，确认 additionalContext 注入 + skills/spec-anchor/SKILL.md 能解析 ../../SKILL.md
++- [ ] V11：hooks/run-hook.cmd 和 hooks/session-start 均有可执行权限（`ls -la` 确认 +x）
++
++## Rejected suggestions (from review)
++
++(No rejected suggestions across all review rounds. This section is kept as a contract placeholder so SKILL.md Step 7 always produces a recognisable anchor.)
++
++## Deferred suggestions (from review)
++
++(No deferred suggestions across all review rounds. This section is kept as a contract placeholder so SKILL.md Step 7 always produces a recognisable anchor.)

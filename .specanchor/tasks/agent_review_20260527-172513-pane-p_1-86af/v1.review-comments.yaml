@@ -1,0 +1,45 @@
+overall_verdict: request_changes
+summary: "The plan targets the right activation problem, but the core SessionStart path is not yet safe to accept. The main hook can fail before the injection script runs, and several proposed instructions conflict with SpecAnchor's current context-only and script-driven norms."
+review_comments:
+  - finding_id: F-1
+    severity: high
+    category: correctness
+    location: "Layer 1: hooks/hooks.json and hooks/run-hook.cmd"
+    description: "The hook command invokes hooks/run-hook.cmd directly, but the wrapper is not executable in the current implementation and the plan does not require setting its executable bit. On Unix this fails with permission denied before session-start can emit any additionalContext."
+    suggested_change: "Either make hooks/run-hook.cmd executable in the committed file mode or change hooks/hooks.json to invoke it through bash, then verify the exact configured command succeeds from a spec-anchor project and from a non-spec-anchor directory."
+    rationale: "SessionStart injection is the first layer of the design, so a direct launch failure makes the five-layer trigger system ineffective."
+  - finding_id: F-2
+    severity: high
+    category: testing
+    location: "Verification plan: V9 and V10"
+    description: "The plan leaves double-entry skill deduplication and the installed-plugin end-to-end SessionStart flow as pending checks, even though both are core claims of the implementation. Without these checks, the plan has not proven that Claude Code discovers the plugin, loads the thin-wrapper skill correctly, injects context once, and avoids duplicate or missing activation."
+    suggested_change: "Move V9 and V10 into required pre-merge verification: install the plugin in a temporary or real Claude Code plugin location, start a fresh session in a project with anchor.yaml, confirm exactly one spec-anchor activation context appears, and confirm skills/spec-anchor/SKILL.md can resolve ../../SKILL.md."
+    rationale: "Unit-level JSON checks do not prove the trigger-rate mechanism works in the runtime that actually consumes hooks and skills."
+  - finding_id: F-3
+    severity: medium
+    category: maintainability
+    location: "Layer 4: HARD-GATE and Layer 5: Post-Coding Chain"
+    description: "The proposed HARD-GATE and 'after every code edit' chain overstate SpecAnchor's authority over the agent loop. Current project norms describe SpecAnchor as a context compiler with context-only as the default workflow, lightweight changes allowed, and strict gates only under an explicit schema-driven workflow."
+    suggested_change: "Reword the gate to require loading or assembling SpecAnchor context before code changes in anchored projects, while preserving workflow selection; make the post-coding chain apply to completed code-edit tasks and say findings are recorded only when new facts, contradictions, risks, or drift are discovered."
+    rationale: "Activation copy that contradicts the root workflow contract will cause agents to apply heavier process than the project currently specifies."
+  - finding_id: F-4
+    severity: medium
+    category: correctness
+    location: "Layer 5: Record Findings"
+    description: "The plan tells agents to write discoveries directly to .specanchor/findings/ using the template, but the scripts module defines specanchor-finding.sh new as the v0.6 write-back interface and requires --summary validation. Direct template writes can bypass required summary and visibility validation."
+    suggested_change: "Change the chain text to instruct agents to use bash scripts/specanchor-finding.sh new --topic=<slug> --summary=<single-line summary> for new findings, falling back to the template only when explicitly doing manual recovery."
+    rationale: "Bypassing the public script interface risks producing findings that later lazy-load and validation logic cannot trust."
+  - finding_id: F-5
+    severity: medium
+    category: scope
+    location: "Affected files and architecture alignment"
+    description: "The plan introduces new top-level runtime surfaces, hooks/, skills/, and .claude-plugin/, but does not update the documented architecture or module coverage. The current architecture spec only names Core, Protocol, and Scripts layers, while Available Modules only cover references/ and scripts/."
+    suggested_change: "Add a minimal architecture/module-spec update that defines the plugin/hook packaging surface and its dependency boundaries, then refresh spec-index and run the relevant coverage or alignment check for the new paths."
+    rationale: "Adding unanchored top-level surfaces creates immediate spec drift in a project whose norms require code and spec structure to stay aligned."
+  - finding_id: F-6
+    severity: medium
+    category: correctness
+    location: "Layer 2: shortened SKILL.md description"
+    description: "The shortened description optimizes for before-writing-code activation but drops several established SpecAnchor trigger domains: init, global/module/task spec management, status/check/index/import/handoff, findings, sediment, context bundle, and Chinese-language trigger terms. This can regress non-coding SpecAnchor activation while solving the coding-trigger case."
+    suggested_change: "Keep the description concise but include both coding and spec-management triggers, for example: MUST invoke in projects with anchor.yaml or .specanchor/ before code changes, spec/context management, alignment checks, handoff, findings, or sediment work."
+    rationale: "Trigger-rate optimization should not narrow discovery so far that core non-code commands become less likely to activate."

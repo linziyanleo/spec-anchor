@@ -1,0 +1,16 @@
+plan_version_reviewed: "v2"
+total_review_comments: 1
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: >-
+      添加 skills/spec-anchor/SKILL.md 作为 plugin skill entry（thin wrapper）。
+      内容：新的命令式 description frontmatter + body 委托到 plugin root 的 SKILL.md。
+      根目录 SKILL.md 保留不动——独立安装（~/.claude/skills/）时由 Claude Code 直接发现；
+      plugin 安装时由 skills/spec-anchor/SKILL.md 被 plugin skill discovery 发现。
+      SessionStart hook 注入文本更新为同时覆盖两种 skill identifier：
+      "invoke the spec-anchor skill" 统一措辞（Skill tool 对 plugin skill 支持
+      spec-anchor:spec-anchor 和简写 spec-anchor 两种形式）。
+      V3/V5/V9 验证步骤更新为明确验证 plugin 安装后 skill 在 /skills 列表中可见。
+      Q2 从 open question 移到 verification gate：V9 必须确认 skill 可发现性后才能
+      认为实现成功。

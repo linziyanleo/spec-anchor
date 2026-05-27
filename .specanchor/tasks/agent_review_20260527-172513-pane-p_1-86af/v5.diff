@@ -1,0 +1,17 @@
+--- /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-172513-pane-p_1-86af/v4.md	2026-05-27 17:49:57
++++ /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-172513-pane-p_1-86af/v5.md	2026-05-27 17:53:57
+@@ -1,4 +1,4 @@
+-# Plan v4: spec-anchor 触发率优化——五层触发体系实现审查
++# Plan v5: spec-anchor 触发率优化——五层触发体系实现审查
+ 
+ ## Context / Goals
+ 
+@@ -183,7 +183,7 @@
+ ### From v2 review
+ 
+ - **F-2** — The architecture drift fix is still insufficient. v2 adds .specanchor/spec-index.md to Affected files, but spec-index is generated inventory, not the contract that defines a new top-level plugin packaging surface; the global architecture and module specs still only define Core, Protocol, and Scripts, and there is no concrete risk/open-question entry despite the disposition saying this was recorded as follow-up.
+-  - Reason rejected: 定义新的 Plugin Packaging module spec 超出触发率优化的范围。spec-index 更新标记新目录存在已足够当前任务的对齐需要。完整的 Plugin Packaging surface contract 作为独立任务跟踪，已在 v3 Risks & open questions 中记录为后续跟进项，owner=方壶。当前实现不产生 spec drift——hooks/skills/.claude-plugin/ 是 packaging 层，不含业务逻辑，其契约由 Claude Code 插件规范外部定义。
++  - Reason rejected: 本任务不修改任何 spec artifact（包括 spec-index.md）。定义 Plugin Packaging surface contract 超出触发率优化的范围。hooks/skills/.claude-plugin/ 是 packaging 层，不含业务逻辑，其契约由 Claude Code 插件规范外部定义。完整的 Plugin Packaging module spec 作为独立后续任务跟进（owner=方壶），已在 Risks & open questions §6 中记录。
+ 
+ ## Deferred suggestions (from review)
+ 

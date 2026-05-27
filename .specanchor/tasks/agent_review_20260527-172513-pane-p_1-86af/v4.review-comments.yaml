@@ -1,0 +1,10 @@
+overall_verdict: request_changes
+summary: "v4 fixes the substantive implementation problems from v3: the post-coding chain now keeps Alignment Check mandatory and uses the skill-root script invocation. One audit artifact is still inconsistent with the revised scope decision: the rejected-suggestion rationale still claims spec-index was updated even though v4 correctly removed that file from the affected set."
+review_comments:
+  - finding_id: F-1
+    severity: low
+    category: maintainability
+    location: "re: F-3 from v3 / Rejected suggestions"
+    description: "v3.dispositions.yaml says the rejected reason for the packaging-spec issue was revised to state that no spec artifact is changed, but v4.md still carries the old v2 rejection text: 'spec-index 更新标记新目录存在已足够当前任务的对齐需要.' This conflicts with v4's Affected files table, which now correctly removes .specanchor/spec-index.md."
+    suggested_change: "Update the Rejected suggestions entry for v2 F-2 to remove the spec-index-update claim and state the current position plainly: this task does not modify spec artifacts, and the Plugin Packaging surface contract is deferred to a separate follow-up owned by 方壶."
+    rationale: "The review record should not preserve a false implementation claim after the plan has intentionally narrowed scope."

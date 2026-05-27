@@ -1,0 +1,24 @@
+overall_verdict: request_changes
+summary: "v3 materially fixes the prior code-plan mismatch: the executable bit and the main SKILL/hook text are now synchronized. Two post-coding details still break the stated consumer workflow, and the rejected packaging-spec rationale depends on a spec-index update that is not actually present."
+review_comments:
+  - finding_id: F-1
+    severity: high
+    category: correctness
+    location: "Layer 5: Post-Coding Chain in SKILL.md and hooks/session-start"
+    description: "The new Record Findings instruction uses `bash scripts/specanchor-finding.sh ...`, but the root Skill Invocation contract says scripts live under the skill root, not the user's anchored project root. In a normal consumer project with anchor.yaml/.specanchor but no repository-local `scripts/` directory, the injected command will fail and the findings write-back layer will not work."
+    suggested_change: "Change the Post-Coding Chain text to use the skill-root invocation form, e.g. `SPECANCHOR_SKILL_DIR=\"$SA_SKILL_DIR\" bash \"$SA_SKILL_DIR/scripts/specanchor-finding.sh\" new --topic=<slug> --summary=<single-line summary>`, or inject an absolute plugin-root script path from hooks/session-start; then add a verification case from a temporary anchored project that has no local `scripts/` directory."
+    rationale: "The feature is meant to activate SpecAnchor from arbitrary anchored projects, so instructions that only work inside the spec-anchor repository break the post-coding chain."
+  - finding_id: F-2
+    severity: medium
+    category: correctness
+    location: "re: F-3 from v1 / Layer 5: Post-Coding Chain"
+    description: "The final SKILL.md sentence says to skip the entire chain when no new facts or drift were discovered, which also skips the Alignment Check. The previous fix was supposed to make findings conditional, not make the alignment check conditional on discovering drift."
+    suggested_change: "Rewrite the closing sentence to say that Record Findings and Sediment can be skipped when no new facts, risks, or drift were discovered, while Alignment Check remains part of completing a coding task."
+    rationale: "Project norms still require code changes to be checked against loaded specs even when the edit does not produce a new finding."
+  - finding_id: F-3
+    severity: medium
+    category: scope
+    location: "re: F-2 from v2 / Affected files and rejected suggestion"
+    description: "The v3 rejection says spec-index was updated enough for the current task, and Affected files still lists `.specanchor/spec-index.md` as modified, but the live worktree has no `.specanchor/spec-index.md` change and no Plugin Packaging entry. The rejection may be acceptable as a scope decision, but its factual basis is currently false."
+    suggested_change: "Either actually refresh `.specanchor/spec-index.md` so the claimed Plugin Packaging entry exists, or remove `.specanchor/spec-index.md` from Affected files and revise the rejected-suggestion reason to state that no spec artifact is changed in this task and the packaging contract is explicitly deferred."
+    rationale: "Review convergence depends on the plan and dispositions accurately describing what the current diff contains."

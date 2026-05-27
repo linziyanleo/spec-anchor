@@ -1,0 +1,102 @@
+--- /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-163625-pane-p_1-7b74/v2.md	2026-05-27 16:55:04
++++ /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-163625-pane-p_1-7b74/v3.md	2026-05-27 17:03:17
+@@ -1,7 +1,7 @@
+ <!-- After convergence this plan becomes a formal Task Spec under .specanchor/tasks/.
+      Format reference: ~/.claude/skills/spec-anchor/references/commands/task.md -->
+ 
+-# Plan v2: SpecAnchor 触发率优化——五层触发体系实现
++# Plan v3: SpecAnchor 触发率优化——五层触发体系实现
+ 
+ ## Context / Goals
+ 
+@@ -12,7 +12,7 @@
+ - 已有 `specanchor-boot-install.sh` 在 CLAUDE.md 中注入触发块（fallback 层）
+ - 已有 `spec-anchor-prelude` skill 与 superpowers 集成（但未被系统性连接）
+ - 必须向后兼容非插件安装方式
+-- **根目录 SKILL.md 不能移动**——它同时服务于独立 skill 安装和 plugin skill discovery
++- **根目录 SKILL.md 不能移动**——它服务于独立 skill 安装（`~/.claude/skills/`）；plugin 安装通过 `skills/spec-anchor/SKILL.md` thin wrapper 做 skill discovery
+ 
+ **目标**：
+ 1. 将 spec-anchor 从被动 skill 升级为 plugin+skill 混合体
+@@ -28,7 +28,7 @@
+ - 不修改 superpowers 的代码（只通过 spec-anchor 侧的 hook 和 skill 实现集成）
+ - 不上架 marketplace（第一期，先验证机制有效性）
+ - 不修改现有 scripts/ 和 references/ 的核心逻辑
+-- **不移动 SKILL.md**——根目录位置是独立 skill 安装的 contract
++- **不移动 SKILL.md**——根目录位置是独立 skill 安装的 contract；plugin skill discovery 通过 `skills/spec-anchor/SKILL.md` thin wrapper 实现
+ 
+ ## Proposed approach
+ 
+@@ -120,7 +120,36 @@
+ - Bash 3.2 兼容（macOS 默认 bash 版本）：不使用 `readarray`、`declare -A`、`${var,,}` 等 bash 4+ 特性
+ 
+ **1.6 创建 `hooks/run-hook.cmd`**——跨平台 polyglot 入口（cmd.exe batch + bash），复用 superpowers 的 polyglot 结构。
++
++**1.7 创建 `skills/spec-anchor/SKILL.md`**——plugin skill discovery entry（thin wrapper）。
++
++Claude Code 的 plugin skill discovery 扫描 `skills/*/SKILL.md`（经 superpowers 结构验证：superpowers 无根目录 SKILL.md，所有 skill 在 `skills/brainstorming/SKILL.md`、`skills/systematic-debugging/SKILL.md` 等）。因此需要一个 plugin-local skill entry。
++
++```markdown
++---
++name: spec-anchor
++description: >-
++  MUST invoke before writing code in projects with anchor.yaml or .specanchor/ —
++  loads coding standards, module contracts, and active tasks to anchor implementation.
++---
++
++# SpecAnchor
++
++This is the plugin skill entry. The full skill content is at the plugin root.
++
++Read and follow: `../../SKILL.md`
+ 
++The plugin root SKILL.md contains boot instructions, command routing, workflow
++selection, and all reference pointers. After reading it, run the boot script
++it specifies.
++```
++
++**设计决策**：
++- thin wrapper 而非内容复制——避免两份 SKILL.md 同步维护
++- 根目录 SKILL.md 保留完整内容——独立安装（`~/.claude/skills/spec-anchor/`）时直接被 Claude Code 发现
++- plugin 安装时通过 `skills/spec-anchor/SKILL.md` 被 plugin discovery 发现，agent 随后读取 `../../SKILL.md` 获取完整内容
++- skill identifier：plugin 安装时为 `spec-anchor:spec-anchor`；独立安装时为 `spec-anchor`；SessionStart hook 注入文本使用 "invoke the `spec-anchor` skill" 覆盖两种情况
++
+ **关键决策**：
+ - 用 `<IMPORTANT>` 而非 `<EXTREMELY_IMPORTANT>` 标签——避免与 superpowers 的元技能调度器竞争优先级；两者互补不冲突（superpowers 管「哪些技能要调用」，spec-anchor 管「编码前先加载什么 context」）
+ - 条件注入（检测 anchor.yaml / .specanchor/）而非无条件注入——spec-anchor 是项目级工具，非通用技能
+@@ -211,6 +240,7 @@
+ - `hooks/hooks.json` — SessionStart hook 定义
+ - `hooks/run-hook.cmd` — 跨平台 hook 入口
+ - `hooks/session-start` — 条件注入脚本
++- `skills/spec-anchor/SKILL.md` — plugin skill discovery entry（thin wrapper，委托到根目录 SKILL.md）
+ 
+ ### 修改文件
+ - `SKILL.md`（**原地修改，不移动**）— 重写 description + 添加 `<HARD-GATE>` + 添加 Post-Coding Chain 区块
+@@ -236,22 +266,24 @@
+ 
+ **Open Questions**：
+ - Q1: Claude Code plugin 通过 `claude plugin add --git <repo>` 安装时，是否自动从 `.claude-plugin/plugin.json` 发现 hooks？需要在安装后实测验证（V9）。
+-- Q2: 插件安装后，根目录的 SKILL.md 是否通过 `<plugin-name>:spec-anchor` 命名空间被发现？还是需要在 `skills/` 子目录下放一个 SKILL.md？需实测（V9）。
+ - Q3: `<IMPORTANT>` 标签在 additionalContext 中的实际权重——是否足够让 agent 在有 `<EXTREMELY_IMPORTANT>` 的 superpowers context 存在时仍然执行 spec-anchor 的指令？
+ 
++**已解决的 Questions**（移入 Verification Gate）：
++- ~~Q2~~: plugin skill discovery 通过 `skills/spec-anchor/SKILL.md` thin wrapper 解决。V9 验证 plugin 安装后 `spec-anchor:spec-anchor` 或 `spec-anchor` 在 `/skills` 列表中可见。
++
+ ## Verification plan
+ 
+ | # | 验证项 | 方法 | 预期结果 |
+ |---|--------|------|----------|
+ | V1 | SessionStart hook 在 SpecAnchor 项目中注入 context | 在有 anchor.yaml 的目录启动新 Claude Code 会话，检查系统提示 | 包含 "SpecAnchor Project Detected" |
+ | V2 | SessionStart hook 在非 SpecAnchor 项目中静默 | 在无 anchor.yaml 的目录启动新会话 | 无注入（输出 `{}`） |
+-| V3 | description 在技能列表中显示命令式短文本 | 运行 `/skills` 命令 | 显示 "MUST invoke before writing code..." |
++| V3 | description 在技能列表中显示命令式短文本 | 运行 `/skills` 命令（两种安装方式各测一次） | 显示 "MUST invoke before writing code..."；plugin 安装时 identifier 为 `spec-anchor:spec-anchor` |
+ | V4 | 防跳过表在注入内容中可见 | 检查系统提示的 additionalContext | 包含 5 条防跳过理由 |
+ | V5 | agent 在调用 superpowers 技能前先调用 spec-anchor | 在 SpecAnchor 项目中请求 brainstorm → 观察调用顺序 | spec-anchor 在 brainstorming 之前被调用 |
+ | V6 | 编码完成后 agent 触发 alignment check | 完成编码任务后观察 | agent 运行 specanchor_check |
+ | V7 | 非插件安装仍通过 boot-install fallback 工作 | 在 `~/.claude/skills/` 安装方式下测试 | CLAUDE.md 触发块生效 |
+ | V8 | $SA_SKILL_DIR 路径引用正确 | 调用 skill 后运行 boot → 检查脚本和 references 加载 | 所有路径解析正确 |
+-| V9 | Plugin 安装验证 | 在临时目录执行 `claude plugin add --git <repo>`，验证 `.claude-plugin/plugin.json` 被读取、`hooks/hooks.json` 被加载、SessionStart hook 在 SpecAnchor 项目中触发 | 插件安装成功，hook 注册生效 |
++| V9 | Plugin 安装 + skill discovery 验证（**blocking gate**） | 在临时目录执行 `claude plugin add --git <repo>`，验证：(a) `.claude-plugin/plugin.json` 被读取；(b) `hooks/hooks.json` 被加载且 SessionStart hook 在 SpecAnchor 项目中触发；(c) `/skills` 列表中包含 `spec-anchor:spec-anchor` 且 description 正确；(d) `Skill("spec-anchor:spec-anchor")` 能加载 thin wrapper 并引导到根 SKILL.md | 全部通过才算实现成功 |
+ | V10 | Hook 脚本语法检查 | `/bin/bash -n hooks/session-start hooks/run-hook.cmd` | 无语法错误 |
+ | V11 | Hook JSON 输出格式正确 | 在临时 SpecAnchor 目录运行 `hooks/session-start \| python3 -m json.tool` | 合法 JSON，包含 additionalContext |
+ | V12 | 非 SpecAnchor 目录 hook 输出 | 在空临时目录运行 `hooks/session-start \| python3 -m json.tool` | 输出 `{}` |

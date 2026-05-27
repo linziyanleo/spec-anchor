@@ -1,0 +1,37 @@
+--- /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-172513-pane-p_1-86af/v3.md	2026-05-27 17:43:46
++++ /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260527-172513-pane-p_1-86af/v4.md	2026-05-27 17:49:57
+@@ -1,4 +1,4 @@
+-# Plan v3: spec-anchor 触发率优化——五层触发体系实现审查
++# Plan v4: spec-anchor 触发率优化——五层触发体系实现审查
+ 
+ ## Context / Goals
+ 
+@@ -123,14 +123,16 @@
+ 
+ **根 SKILL.md 新增 Post-Coding Chain 段**：
+ ```
+-After completing a coding task, evaluate whether this chain applies:
+-1. Alignment Check — compare changes against loaded specs (specanchor_check)
++After completing a coding task, run through this chain:
++1. Alignment Check — compare changes against loaded specs (specanchor_check) [always]
+ 2. Record Findings — if new facts, contradictions, risks, or drift were discovered,
+-   record via: bash scripts/specanchor-finding.sh new --topic=<slug> --summary=<line>
++   record via: SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-finding.sh" new --topic=<slug> --summary=<line>
+ 3. Evaluate Sediment — if findings reveal spec drift, draft a Sediment Proposal
++
++Always run Alignment Check. Record Findings and Evaluate Sediment can be skipped when no new facts, risks, or drift were discovered.
+ ```
+ 
+-**SessionStart hook 注入中也包含 Post-Coding Chain**：确保即使 agent 没有读完整 SKILL.md，也能看到链式调用要求。Chain 是条件性的——仅在发现新事实或 drift 时记录 finding，不要求每次编辑都产出。
++**SessionStart hook 注入中也包含 Post-Coding Chain**：使用自然语言引导（"use the spec-anchor finding command"），不硬编码 bare path——agent 在 boot 后已通过 `$SA_SKILL_DIR` 知道脚本位置。Alignment Check 始终执行；Record Findings 和 Evaluate Sediment 仅在发现新事实或 drift 时执行。
+ 
+ ## Affected files
+ 
+@@ -143,7 +145,6 @@
+ | `.claude-plugin/plugin.json` | 新建 | 插件 manifest |
+ | `.claude-plugin/marketplace.json` | 新建 | 市场元数据 |
+ | `SKILL.md`（根） | 修改 | description 重写 + HARD-GATE + Post-Coding Chain |
+-| `.specanchor/spec-index.md` | 修改 | 添加 Plugin Packaging 层级（hooks/ + skills/ + .claude-plugin/） |
+ | `package.json` | 已有 | 未修改（已含所需字段） |
+ 
+ ## Risks & open questions
