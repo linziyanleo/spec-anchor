@@ -7,6 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
+# shellcheck source=scripts/lib/finding-parser.sh
+source "$SCRIPT_DIR/lib/finding-parser.sh"
 
 FORMAT="text"
 STRICT_MODE="false"
@@ -302,11 +304,12 @@ run_base_checks() {
 }
 
 ## v0.6 新增：long-pending sediment_queue findings + hidden 过期建议归档
+##  + v0.6 lazy-load 加固：非 candidate finding 缺 summary → backfill 建议
 check_findings_health() {
   [[ -d ".specanchor/findings" ]] || return 0
   local now=$(date +%s)
-  local file mtime age_days vis status
-  local pending_queue=0 stale_hidden=0
+  local file mtime age_days
+  local pending_queue=0 stale_hidden=0 missing_summary=0
   local pending_queue_max_days=14    # sediment_queue 超过 14 天未处理 → warn
   local stale_hidden_max_days=60     # hidden 超过 60 天 → 建议归档
 
@@ -314,8 +317,13 @@ check_findings_health() {
     [[ -f "$file" ]] || continue
     case "$(basename "$file")" in finding-template.md|.gitkeep) continue ;; esac
 
-    vis=$(awk -F'[[:space:]]*:[[:space:]]*' '/^---$/{c++; next} c==1 && $1=="visibility"{print $2; exit}' "$file" | tr -d '"' | tr -d "'")
-    status=$(awk -F'[[:space:]]*:[[:space:]]*' '/^---$/{c++; next} c==1 && $1=="status"{print $2; exit}' "$file" | tr -d '"' | tr -d "'")
+    if ! parse_finding_frontmatter "$file" "DH"; then
+      continue
+    fi
+    local vis="${DH_VISIBILITY:-}"
+    local status="${DH_STATUS:-}"
+    local summary="${DH_SUMMARY:-}"
+
     mtime=$(git log -1 --format=%ct -- "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo "")
     [[ -n "$mtime" ]] || continue
     age_days=$(( (now - mtime) / 86400 ))
@@ -325,6 +333,12 @@ check_findings_health() {
     fi
     if [[ "$vis" == "hidden" && "$status" != "archived" && $age_days -gt $stale_hidden_max_days ]]; then
       stale_hidden=$((stale_hidden + 1))
+    fi
+
+    # backfill warn：非 candidate finding 缺 summary（candidate 由 validate.sh fail，不在此重复）
+    if [[ -z "$summary" && -n "$status" && "$status" != "candidate" ]]; then
+      missing_summary=$((missing_summary + 1))
+      printf '[finding] %s: missing summary field (backfill recommended for status=%s)\n' "$file" "$status" >&2
     fi
   done
 
@@ -337,6 +351,11 @@ check_findings_health() {
     add_warning "FINDINGS_HIDDEN_AGED" \
       "${stale_hidden} 个 visibility=hidden finding 超过 ${stale_hidden_max_days} 天未更新" \
       "考虑将其 status 改为 archived（不自动归档）。"
+  fi
+  if [[ $missing_summary -gt 0 ]]; then
+    add_warning "FINDINGS_SUMMARY_BACKFILL" \
+      "${missing_summary} 个非 candidate finding 缺少 summary 字段" \
+      "为这些 finding 补 summary（≤120 字符；主语 + 事实 + 锚点），帮助 lazy-load 装配端正确分级。"
   fi
 }
 
