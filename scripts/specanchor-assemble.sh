@@ -6,6 +6,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
+# shellcheck source=scripts/lib/finding-parser.sh
+source "$SCRIPT_DIR/lib/finding-parser.sh"
 
 FORMAT="text"
 FILES_CSV=""
@@ -24,6 +26,8 @@ WRITE_BACK="false"
 BUNDLE_SCHEMA="assembly.v1"        # v0.6 新增：assembly.v1 (默认，向后兼容) | context_bundle.v1
 FRESHNESS_STALE_AGE_DAYS=14        # v0.6 新增：age >= 此值标 stale（对齐 anchor.yaml.check.stale_days）
 FRESHNESS_OUTDATED_AGE_DAYS=30     # age >= 此值标 outdated（对齐 anchor.yaml.check.outdated_days）
+MAX_FINDINGS=50                    # v0.6 lazy-load：sediment_queue + handoff 共享 cap（immediate 桶 uncapped）
+MAX_FINDINGS_CLI_SET=0             # v0.6 lazy-load：CLI 显式 --max-findings=N 时置 1，让 anchor.yaml override 跳过
 
 TMP_FILES=()
 
@@ -32,6 +36,18 @@ declare -a FILES_TO_READ_LOADS=()
 declare -a FILES_TO_READ_REASONS=()
 declare -a WARNING_MESSAGES=()
 declare -a AGENT_INSTRUCTIONS=()
+
+# v0.6 lazy-load：finding discovery 输入与输出（不与 FILES_TO_READ_* 共享）
+declare -a REQUESTED_TARGET_FILES=()
+declare -a DISCOVERED_FINDING_PATHS=()
+declare -a DISCOVERED_FINDING_LOADS=()
+declare -a DISCOVERED_FINDING_IDS=()
+declare -a DISCOVERED_FINDING_TYPES=()
+declare -a DISCOVERED_FINDING_IMPACTS=()
+declare -a DISCOVERED_FINDING_VISIBILITIES=()
+declare -a DISCOVERED_FINDING_AFFECTS=()       # 已 JSON 字符串化的 list
+declare -a DISCOVERED_FINDING_SUMMARIES=()
+declare -a DISCOVERED_FINDING_MATCH_PRECISIONS=()
 
 STATUS="ok"
 MAX_FILES=12
@@ -236,6 +252,379 @@ write_trace_if_requested() {
       cp "$trace_tmp" "$WRITE_TRACE"
       ;;
   esac
+}
+
+# v0.6 lazy-load：从 anchor.yaml 读 context.budget.max_findings（CLI 已显式覆写时跳过）
+load_anchor_max_findings_override() {
+  [[ "$MAX_FINDINGS_CLI_SET" == "1" ]] && return 0
+  local config
+  config=$(sa_find_config 2>/dev/null) || return 0
+  [[ -f "$config" ]] || return 0
+  local raw
+  # 优先识别 `findings:` 块内的 `max_per_bundle: <N>`（v0.6 lazy-load 契约）
+  # fallback 兼容历史 `max_findings: <N>` 写法
+  raw=$(awk '
+    BEGIN { in_findings = 0; findings_depth = -1 }
+    {
+      match($0, /^[[:space:]]*/)
+      cur_depth = RLENGTH
+    }
+    # 优先识别 findings: 块开头（top-level 或嵌套均可）
+    /^[[:space:]]*findings:[[:space:]]*$/ {
+      in_findings = 1
+      findings_depth = cur_depth
+      next
+    }
+    # 块内非空且缩进 > findings_depth 视为 in-block；缩进 <= 视为 block 结束
+    in_findings && /[^[:space:]]/ && cur_depth <= findings_depth {
+      in_findings = 0
+    }
+    in_findings && /^[[:space:]]*max_per_bundle:[[:space:]]/ {
+      sub(/^[[:space:]]*max_per_bundle:[[:space:]]*/, "", $0)
+      sub(/[[:space:]]*#.*$/, "", $0)
+      print
+      exit
+    }
+    # legacy fallback：未在 findings: 块内的 max_findings 全局兜底
+    !in_findings && /^[[:space:]]+max_findings:[[:space:]]/ {
+      sub(/^[[:space:]]+max_findings:[[:space:]]*/, "", $0)
+      sub(/[[:space:]]*#.*$/, "", $0)
+      print
+      exit
+    }
+  ' "$config")
+  raw=$(printf '%s' "$raw" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+  if [[ "$raw" =~ ^[0-9]+$ ]]; then
+    MAX_FINDINGS="$raw"
+  fi
+}
+
+# v0.6 lazy-load：合并各路输入到 REQUESTED_TARGET_FILES[]（去重 + 去空 + repo-relative）
+build_requested_targets() {
+  REQUESTED_TARGET_FILES=()
+  local seen_marker_prefix="__sa_seen__"
+  local raw_path normalized
+
+  add_target() {
+    local p="$1"
+    p=$(printf '%s' "$p" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/^"//; s/"$//; s/^,//; s/,$//')
+    [[ -z "$p" ]] && return 0
+    # 去重（线性扫描；REQUESTED_TARGET_FILES 通常 < 100 entries）
+    local existing
+    for existing in "${REQUESTED_TARGET_FILES[@]:-}"; do
+      [[ "$existing" == "$p" ]] && return 0
+    done
+    REQUESTED_TARGET_FILES+=("$p")
+  }
+
+  # FILES_CSV：逗号分隔
+  if [[ -n "$FILES_CSV" ]]; then
+    local IFS=','
+    local item
+    for item in $FILES_CSV; do
+      add_target "$item"
+    done
+  fi
+
+  # FILES_FROM：每行一个
+  if [[ -n "$FILES_FROM" && -f "$FILES_FROM" ]]; then
+    while IFS= read -r raw_path || [[ -n "$raw_path" ]]; do
+      add_target "$raw_path"
+    done < "$FILES_FROM"
+  fi
+
+  # DIFF_FROM：git diff name-only
+  if [[ -n "$DIFF_FROM" ]]; then
+    local diff_files
+    if diff_files=$(git diff --name-only "$DIFF_FROM" 2>/dev/null); then
+      while IFS= read -r raw_path; do
+        add_target "$raw_path"
+      done <<< "$diff_files"
+    fi
+  fi
+
+  # RESOLVE_JSON：读 inputs.files[]（resolve.v2 中保存用户原始 target 文件；
+  # 不读 anchors[].path——那是已解析锚点 ≠ 用户输入）
+  if [[ -n "$RESOLVE_JSON" && -f "$RESOLVE_JSON" ]]; then
+    if command -v python3 >/dev/null 2>&1; then
+      local files_block
+      files_block=$(python3 - "$RESOLVE_JSON" <<'PY'
+import json, sys
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as fh:
+        data = json.load(fh)
+    for f in (data.get("inputs", {}) or {}).get("files", []) or []:
+        if isinstance(f, str) and f.strip():
+            print(f.strip())
+except Exception:
+    pass
+PY
+)
+      while IFS= read -r raw_path; do
+        add_target "$raw_path"
+      done <<< "$files_block"
+    fi
+  fi
+}
+
+# v0.6 lazy-load：visibility → load 标签映射
+visibility_to_load() {
+  case "$1" in
+    immediate)      printf 'full' ;;
+    sediment_queue) printf 'summary' ;;
+    handoff)        printf 'title' ;;
+    *)              printf 'title' ;;
+  esac
+}
+
+# v0.6 lazy-load：把 affects 并行数组渲染为内联 JSON list
+finding_render_affects_json() {
+  local i count="$1"
+  shift
+  local types_var="$1" values_var="$2"
+  local out="["
+  i=0
+  while [[ $i -lt $count ]]; do
+    local t v
+    t=$(eval "printf '%s' \"\${${types_var}[$i]}\"")
+    v=$(eval "printf '%s' \"\${${values_var}[$i]}\"")
+    [[ $i -gt 0 ]] && out+=","
+    out+=$(printf '{"type":"%s","value":"%s"}' "$(sa_json_escape "$t")" "$(sa_json_escape "$v")")
+    i=$((i + 1))
+  done
+  out+="]"
+  printf '%s' "$out"
+}
+
+# v0.6 lazy-load：把 module 名 → 目录前缀（扫 .specanchor/specs/modules/*.md 的 module_path frontmatter 字段）
+declare -a SA_MODULE_NAMES=()
+declare -a SA_MODULE_PATHS=()
+SA_MODULE_MAP_LOADED=0
+load_module_path_map() {
+  [[ "$SA_MODULE_MAP_LOADED" == "1" ]] && return 0
+  SA_MODULE_MAP_LOADED=1
+  local module_dir
+  for module_dir in .specanchor/specs/modules .specanchor/modules; do
+    [[ -d "$module_dir" ]] || continue
+    local f mp name fname
+    for f in "$module_dir"/*.md; do
+      [[ -f "$f" ]] || continue
+      mp=$(sa_parse_frontmatter_field "$f" "module_path" 2>/dev/null || true)
+      [[ -n "$mp" ]] || continue
+      # 优先用 frontmatter module_name；fallback 到去 .spec.md / .md 后缀的文件名
+      name=$(sa_parse_frontmatter_field "$f" "module_name" 2>/dev/null || true)
+      if [[ -z "$name" ]]; then
+        fname=$(basename "$f")
+        name="${fname%.spec.md}"
+        name="${name%.md}"
+      fi
+      SA_MODULE_NAMES+=("$name")
+      SA_MODULE_PATHS+=("$mp")
+    done
+  done
+}
+
+module_name_to_path() {
+  local name="$1"
+  load_module_path_map
+  local i=0
+  while [[ $i -lt ${#SA_MODULE_NAMES[@]} ]]; do
+    if [[ "${SA_MODULE_NAMES[$i]}" == "$name" ]]; then
+      printf '%s' "${SA_MODULE_PATHS[$i]}"
+      return 0
+    fi
+    i=$((i + 1))
+  done
+  printf ''
+}
+
+# v0.6 lazy-load：扫描 .specanchor/findings/*.md，按 affects + REQUESTED_TARGET_FILES 命中匹配
+discover_findings() {
+  # 守门：调用方应已确认 schema gate；这里再加一层防御
+  [[ "$FORMAT" == "json" ]] || return 0
+  [[ "$BUNDLE_SCHEMA" == "context_bundle.v1" ]] || return 0
+  [[ ${#REQUESTED_TARGET_FILES[@]} -gt 0 ]] || return 0
+  [[ -d ".specanchor/findings" ]] || return 0
+
+  local f
+  # 临时收集所有命中（未 cap），存到本地并行数组，最后做 cap+sort 写入 DISCOVERED_FINDING_*
+  local -a tmp_paths=() tmp_loads=() tmp_ids=() tmp_types=() tmp_impacts=() tmp_visibilities=()
+  local -a tmp_summaries=() tmp_match_precisions=() tmp_affects_json=() tmp_created=()
+
+  for f in .specanchor/findings/*.md; do
+    [[ -f "$f" ]] || continue
+    case "$(basename "$f")" in
+      finding-template.md|.gitkeep) continue ;;
+    esac
+
+    if ! parse_finding_frontmatter "$f" "DF"; then
+      continue
+    fi
+    [[ -n "$DF_ID" ]] || continue
+    [[ "$DF_VISIBILITY" == "hidden" ]] && continue
+
+    # 默认 visibility 兜底（解析失败/缺字段时按 handoff 处理，避免漏 finding）
+    local vis="${DF_VISIBILITY:-handoff}"
+
+    # 按 affects 与 REQUESTED_TARGET_FILES[] 做最长前缀匹配
+    local hit=0 best_precision=0
+    local n_aff=${#DF_AFFECTS_TYPES[@]}
+    local i=0
+    while [[ $i -lt $n_aff ]]; do
+      local at="${DF_AFFECTS_TYPES[$i]}"
+      local av="${DF_AFFECTS_VALUES[$i]}"
+      local prefix=""
+      case "$at" in
+        path)     prefix="$av" ;;
+        module)   prefix=$(module_name_to_path "$av") ;;
+        contract) prefix="" ;; # v0.6 不支持 contract 命中
+      esac
+      if [[ -n "$prefix" ]]; then
+        local tf
+        for tf in "${REQUESTED_TARGET_FILES[@]}"; do
+          # 前缀匹配（以 prefix 开头；prefix 不必以 / 结尾）
+          case "$tf" in
+            "$prefix"|"$prefix"/*|"$prefix"*)
+              hit=1
+              if [[ ${#prefix} -gt $best_precision ]]; then
+                best_precision=${#prefix}
+              fi
+              ;;
+          esac
+        done
+      fi
+      i=$((i + 1))
+    done
+
+    [[ $hit -eq 1 ]] || continue
+
+    local load
+    load=$(visibility_to_load "$vis")
+    local affects_json
+    affects_json=$(finding_render_affects_json "$n_aff" DF_AFFECTS_TYPES DF_AFFECTS_VALUES)
+
+    tmp_paths+=("$f")
+    tmp_loads+=("$load")
+    tmp_ids+=("$DF_ID")
+    tmp_types+=("${DF_TYPE:-}")
+    tmp_impacts+=("${DF_IMPACT:-medium}")
+    tmp_visibilities+=("$vis")
+    tmp_summaries+=("${DF_SUMMARY:-}")
+    tmp_match_precisions+=("$best_precision")
+    tmp_affects_json+=("$affects_json")
+    tmp_created+=("${DF_CREATED:-}")
+  done
+
+  # cap + sort：分桶
+  local total=${#tmp_paths[@]}
+  [[ $total -gt 0 ]] || return 0
+
+  # 按桶顺序 immediate → sediment_queue → handoff，桶内按
+  # 长前缀 desc → impact desc(high>medium>low) → created desc
+  # 用 awk pipeline 排序：每行一个 sort key + index
+  impact_rank() {
+    case "$1" in high) printf '3' ;; medium) printf '2' ;; low) printf '1' ;; *) printf '0' ;; esac
+  }
+
+  local -a bucket_immediate=()
+  local -a bucket_sediment=()
+  local -a bucket_handoff=()
+
+  local idx=0
+  while [[ $idx -lt $total ]]; do
+    local v="${tmp_visibilities[$idx]}"
+    case "$v" in
+      immediate)      bucket_immediate+=("$idx") ;;
+      sediment_queue) bucket_sediment+=("$idx") ;;
+      handoff|*)      bucket_handoff+=("$idx") ;;
+    esac
+    idx=$((idx + 1))
+  done
+
+  # 桶内排序 helper（bash 3.2 兼容：用 eval 取数组元素，sort 后 read 回栈）
+  bucket_sort_by_keys() {
+    local arr_name="$1"
+    local count
+    count=$(eval "printf '%s' \${#$arr_name[@]}")
+    [[ $count -gt 0 ]] || return 0
+    local input="" k i
+    i=0
+    while [[ $i -lt $count ]]; do
+      local idx_val
+      idx_val=$(eval "printf '%s' \"\${${arr_name}[$i]}\"")
+      local impact created precision
+      precision="${tmp_match_precisions[$idx_val]}"
+      impact=$(impact_rank "${tmp_impacts[$idx_val]}")
+      created="${tmp_created[$idx_val]}"
+      # key: precision(8d desc) <TAB> impact(1d desc) <TAB> created(desc 字符串) <TAB> idx
+      input+=$(printf '%08d\t%s\t%s\t%s\n' "$precision" "$impact" "$created" "$idx_val")
+      input+=$'\n'
+      i=$((i + 1))
+    done
+    # 三键 desc 排序：-k1,1 数字 desc; -k2,2 数字 desc; -k3,3 字符串 desc
+    local sorted
+    sorted=$(printf '%s' "$input" | grep -v '^$' | sort -t $'\t' -k1,1nr -k2,2nr -k3,3r)
+    # rebuild array
+    eval "$arr_name=()"
+    while IFS=$'\t' read -r _ _ _ idx_val; do
+      [[ -z "$idx_val" ]] && continue
+      eval "$arr_name+=(\"$idx_val\")"
+    done <<< "$sorted"
+  }
+
+  bucket_sort_by_keys bucket_immediate
+  bucket_sort_by_keys bucket_sediment
+  bucket_sort_by_keys bucket_handoff
+
+  # cap：immediate uncapped；sediment + handoff 共享 MAX_FINDINGS
+  local cap=$MAX_FINDINGS
+  [[ "$cap" =~ ^[0-9]+$ ]] || cap=50
+  local kept_sediment_count=${#bucket_sediment[@]}
+  local kept_handoff_count=${#bucket_handoff[@]}
+  local total_shared=$((kept_sediment_count + kept_handoff_count))
+  local truncated_count=0
+  if [[ $total_shared -gt $cap ]]; then
+    truncated_count=$((total_shared - cap))
+    # 优先保留 sediment（重要性更高），剩余 cap 给 handoff
+    if [[ $kept_sediment_count -ge $cap ]]; then
+      kept_sediment_count=$cap
+      kept_handoff_count=0
+    else
+      kept_handoff_count=$((cap - kept_sediment_count))
+    fi
+  fi
+
+  # 组装最终 DISCOVERED_FINDING_* 数组
+  emit_one() {
+    local arr_name="$1" limit="$2"
+    local count
+    count=$(eval "printf '%s' \${#$arr_name[@]}")
+    [[ -z "$limit" ]] && limit=$count
+    [[ $limit -gt $count ]] && limit=$count
+    local k=0
+    while [[ $k -lt $limit ]]; do
+      local idx_val
+      idx_val=$(eval "printf '%s' \"\${${arr_name}[$k]}\"")
+      DISCOVERED_FINDING_PATHS+=("${tmp_paths[$idx_val]}")
+      DISCOVERED_FINDING_LOADS+=("${tmp_loads[$idx_val]}")
+      DISCOVERED_FINDING_IDS+=("${tmp_ids[$idx_val]}")
+      DISCOVERED_FINDING_TYPES+=("${tmp_types[$idx_val]}")
+      DISCOVERED_FINDING_IMPACTS+=("${tmp_impacts[$idx_val]}")
+      DISCOVERED_FINDING_VISIBILITIES+=("${tmp_visibilities[$idx_val]}")
+      DISCOVERED_FINDING_AFFECTS+=("${tmp_affects_json[$idx_val]}")
+      DISCOVERED_FINDING_SUMMARIES+=("${tmp_summaries[$idx_val]}")
+      DISCOVERED_FINDING_MATCH_PRECISIONS+=("${tmp_match_precisions[$idx_val]}")
+      k=$((k + 1))
+    done
+  }
+  emit_one bucket_immediate ""
+  emit_one bucket_sediment "$kept_sediment_count"
+  emit_one bucket_handoff  "$kept_handoff_count"
+
+  if [[ $truncated_count -gt 0 ]]; then
+    WARNING_MESSAGES+=("finding_cap_truncated: truncated ${truncated_count} findings (cap=${cap}, buckets=sediment_queue+handoff)")
+    sa_warn "truncated ${truncated_count} findings (sediment_queue+handoff bucket exceeded cap=${cap})"
+  fi
 }
 
 build_resolve_json() {
@@ -501,7 +890,8 @@ print_json_bundle_v1() {
   printf '  },\n'
 
   # layers: 按 source_type 分组（保留 files_to_read 列表作为 flat view 备份）
-  # 实现策略：先用一个 helper 把 indices 按 source_type 分组
+  # finding 层独立从 DISCOVERED_FINDING_* 并行数组取（v0.6 lazy-load discovery 输出），
+  # 不再从 FILES_TO_READ_* 推断；其他层（spec/decision/evidence/codemap）保持旧行为。
   local layer
   printf '  "layers": {\n'
   local first_layer=1
@@ -510,27 +900,56 @@ print_json_bundle_v1() {
     first_layer=0
     printf '    "%s": [' "$layer"
     local first_item=1
-    i=0
-    while [[ $i -lt ${#FILES_TO_READ_PATHS[@]} ]]; do
-      path="${FILES_TO_READ_PATHS[$i]}"
-      stype=$(infer_source_type "$path")
-      if [[ "$stype" == "$layer" ]]; then
-        load="${FILES_TO_READ_LOADS[$i]}"
-        reason="${FILES_TO_READ_REASONS[$i]}"
+    if [[ "$layer" == "finding" ]]; then
+      i=0
+      while [[ $i -lt ${#DISCOVERED_FINDING_PATHS[@]} ]]; do
+        path="${DISCOVERED_FINDING_PATHS[$i]}"
+        load="${DISCOVERED_FINDING_LOADS[$i]}"
         freshness=$(infer_freshness "$path")
         reason_text=$(infer_freshness_reason "$path")
         [[ $first_item -eq 1 ]] || printf ','
         first_item=0
-        printf '\n      {"path":"%s","load":"%s","reason":"%s","source_type":"%s","freshness":"%s","freshness_reasons":["%s"],"confidence":null}' \
+        printf '\n      {"id":"%s","path":"%s","type":"%s","impact":"%s","visibility":"%s","affects":%s,"summary":"%s","load":"%s","freshness":"%s","freshness_reasons":["%s"],"confidence":"%s","source_type":"finding"}' \
+          "$(sa_json_escape "${DISCOVERED_FINDING_IDS[$i]}")" \
           "$(sa_json_escape "$path")" \
+          "$(sa_json_escape "${DISCOVERED_FINDING_TYPES[$i]}")" \
+          "$(sa_json_escape "${DISCOVERED_FINDING_IMPACTS[$i]}")" \
+          "$(sa_json_escape "${DISCOVERED_FINDING_VISIBILITIES[$i]}")" \
+          "${DISCOVERED_FINDING_AFFECTS[$i]}" \
+          "$(sa_json_escape "${DISCOVERED_FINDING_SUMMARIES[$i]}")" \
           "$load" \
-          "$(sa_json_escape "$reason")" \
-          "$stype" \
           "$freshness" \
-          "$(sa_json_escape "$reason_text")"
-      fi
-      i=$((i + 1))
-    done
+          "$(sa_json_escape "$reason_text")" \
+          "$(sa_json_escape "${DISCOVERED_FINDING_IMPACTS[$i]}")"
+        i=$((i + 1))
+      done
+    else
+      i=0
+      while [[ $i -lt ${#FILES_TO_READ_PATHS[@]} ]]; do
+        path="${FILES_TO_READ_PATHS[$i]}"
+        stype=$(infer_source_type "$path")
+        # finding 层的 file 已在 DISCOVERED_FINDING_* 渲染；这里跳过避免重复
+        if [[ "$stype" == "finding" ]]; then
+          i=$((i + 1)); continue
+        fi
+        if [[ "$stype" == "$layer" ]]; then
+          load="${FILES_TO_READ_LOADS[$i]}"
+          reason="${FILES_TO_READ_REASONS[$i]}"
+          freshness=$(infer_freshness "$path")
+          reason_text=$(infer_freshness_reason "$path")
+          [[ $first_item -eq 1 ]] || printf ','
+          first_item=0
+          printf '\n      {"path":"%s","load":"%s","reason":"%s","source_type":"%s","freshness":"%s","freshness_reasons":["%s"],"confidence":null}' \
+            "$(sa_json_escape "$path")" \
+            "$load" \
+            "$(sa_json_escape "$reason")" \
+            "$stype" \
+            "$freshness" \
+            "$(sa_json_escape "$reason_text")"
+        fi
+        i=$((i + 1))
+      done
+    fi
     [[ $first_item -eq 0 ]] && printf '\n    '
     printf ']'
   done
@@ -786,6 +1205,10 @@ Usage:
   bash scripts/specanchor-assemble.sh --files "scripts/specanchor-boot.sh" --intent "debug startup" --budget=normal --format=json
   bash scripts/specanchor-assemble.sh --resolve-json /tmp/specanchor-resolve.json --format=markdown
   bash scripts/specanchor-assemble.sh --mode=handoff --task-spec=<path> [--format=text|markdown|json] [--write-back]
+
+Options (v0.6 lazy-load):
+  --bundle-schema=<v>   assembly.v1 (default) | context_bundle.v1 (enables finding lazy-load)
+  --max-findings=<N>    cap for sediment_queue+handoff buckets (default 50, immediate uncapped)
 EOF
   exit 0
 }
@@ -855,6 +1278,13 @@ main() {
         [[ $# -gt 0 ]] || sa_die "--bundle-schema requires a value" 64
         BUNDLE_SCHEMA="$1"
         ;;
+      --max-findings=*) MAX_FINDINGS="${1#--max-findings=}"; MAX_FINDINGS_CLI_SET=1 ;;
+      --max-findings)
+        shift
+        [[ $# -gt 0 ]] || sa_die "--max-findings requires a value" 64
+        MAX_FINDINGS="$1"
+        MAX_FINDINGS_CLI_SET=1
+        ;;
       --mode=handoff) MODE="handoff" ;;
       --mode=*) sa_die "unknown mode: ${1#--mode=} (use: handoff)" 64 ;;
       --mode)
@@ -881,12 +1311,31 @@ main() {
     return 0
   fi
 
+  load_anchor_max_findings_override
+  build_requested_targets
+
   local resolve_json
   resolve_json=$(build_resolve_json)
   parse_resolve_json "$resolve_json"
+
+  # v0.6 lazy-load：finding discovery — 只在 schema-gated 路径上走
+  if [[ "$FORMAT" == "json" && "$BUNDLE_SCHEMA" == "context_bundle.v1" ]] && \
+     [[ ${#REQUESTED_TARGET_FILES[@]} -gt 0 ]]; then
+    discover_findings
+  fi
+
   recalculate_estimate
   enforce_budget_caps
   finalize_instructions
+
+  # v0.6 lazy-load：B3 agent_instructions hint（必须在 finalize_instructions 之后追加，
+  # 让 finalize 把 warning 转 instruction 的逻辑先跑完）
+  if [[ ${#DISCOVERED_FINDING_PATHS[@]} -gt 0 ]]; then
+    AGENT_INSTRUCTIONS+=("${#DISCOVERED_FINDING_PATHS[@]} findings are attached to your target files.")
+    AGENT_INSTRUCTIONS+=("Findings with load=full MUST be read in full before editing.")
+    AGENT_INSTRUCTIONS+=("For load=summary or load=title, scan the summary/type/impact/affects fields first; read full text only if relevant to your changes.")
+  fi
+
   write_trace_if_requested
 
   case "$FORMAT" in
