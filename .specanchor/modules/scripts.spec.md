@@ -4,13 +4,13 @@ specanchor:
   module_name: "scripts"
   module_path: "scripts/"
   summary: "Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验"
-  version: "2.3.0"
+  version: "2.4.0"
   owner: "maintainers"
   created: "2026-04-02"
   status: active
-  last_synced: "2026-05-25"
-  last_synced_sha: "c198ade"
-  last_change: "add specanchor-boot-install.sh for idempotent skill-trigger injection into agent instruction files"
+  last_synced: "2026-05-26"
+  last_synced_sha: "71b2c7c"
+  last_change: "v0.6 findings lazy-load: specanchor-finding.sh new --summary 必选；specanchor-validate.sh 对称二分宽容期；specanchor-assemble.sh 加 --max-findings 与 visibility-driven discovery；specanchor-doctor.sh backfill warn；新增 lib/finding-parser.sh 共享解析器"
   depends_on: []
 ---
 
@@ -168,12 +168,45 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 | `--resolve-json=<path>` | 复用已生成的 resolve JSON |
 | `--budget=compact\|normal\|full` | 上下文预算策略 |
 | `--format=text\|markdown\|json` | 输出格式 |
+| `--bundle-schema=assembly.v1\|context_bundle.v1` | JSON shape 选择（v0.6 新增；默认 assembly.v1 向后兼容） |
+| `--max-findings=N` | v0.6：lazy-load findings 共享桶 cap（默认 50；`anchor.yaml.findings.max_per_bundle` 项目级覆写；immediate 桶不受 cap） |
 | `--write-trace=<path>` | 写出 Assembly Trace |
 | `--mode=handoff` | 切换到 Harness Context Control handoff 模式（v0.5.0-beta.1+） |
 | `--task-spec=<path>` | handoff 模式：目标 Task Spec 路径 |
 | `--write-back` | handoff 模式：把 packet 回写到 Task Spec §7.2 |
 
 默认输出 bounded read plan、Assembly Trace 与 agent instructions，不直接读取或修改业务文件。`--mode=handoff` 输出 handoff packet（task name / phase / hot decisions / evidence status / next step），用于跨 session 接手。
+
+**v0.6 lazy-load findings**（仅在 `--format=json --bundle-schema=context_bundle.v1` 且 `--files=` 非空时启用）：扫描 `.specanchor/findings/*.md`，按 `affects.path` / `affects.module` 命中目标文件分级载荷——`immediate→full / sediment_queue→summary / handoff→title`，`hidden` 不进 bundle。截断时以 `finding_cap_truncated:` 前缀追加到 `warnings[]`（保持 schema 向后兼容）。
+
+### specanchor-finding.sh
+
+v0.6 hot context 写回入口：
+
+| 子命令 | 签名 | 用途 |
+|--------|------|------|
+| `new` | `new --topic=<slug> --summary=<text> [--type=...] [--confidence=...] [--impact=...] [--visibility=...] [--suggested-target=...]` | 生成 finding 骨架，自动赋 id 与 visibility，写入 `.specanchor/findings/` |
+
+**`--summary` 必选**（≤120 字符单行；主语 + 事实 + 锚点；占位串 `<...>` 会被拒绝）。`--topic` 必选；其他字段有默认值。
+
+### specanchor-sediment.sh
+
+v0.6 hot→cold 安全回流入口：
+
+| 子命令 | 签名 | 用途 |
+|--------|------|------|
+| `propose` | `propose --finding=<F-id> [--target=<spec-path>] [--operation=...] [--topic=...]` | 生成 sediment proposal 骨架；校验 source findings 存在；不自动 apply |
+
+### specanchor-stop-triggers.sh
+
+v0.7 advisory 风险路径检测：
+
+| 参数 | 说明 |
+|------|------|
+| `--staged` / `--against=<ref>` | 检测变更范围（必选其一） |
+| `--format=text\|json` | 输出格式 |
+
+仅 advisory（不阻断），命中类别：public_api / schema / dependency / security_path。JSON 输出可被 Bundle v1 集成。
 
 ### specanchor-validate.sh
 
@@ -232,11 +265,15 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 | `specanchor-doctor.sh` | 只读健康检查 |
 | `specanchor-resolve.sh` | 锚点解析 |
 | `specanchor-assemble.sh` | resolve 结果到 agent context plan 的装配器 |
-| `specanchor-validate.sh` | 基础 schema/frontmatter 校验 |
+| `specanchor-validate.sh` | 基础 schema/frontmatter 校验（含 v0.6 finding lint：candidate fail / 非 candidate warn 对称二分宽容期） |
 | `specanchor-hygiene.sh` | 只读 spec drift / dead-link 巡检（可选修复 generated 产物） |
+| `specanchor-finding.sh` | v0.6 finding 骨架生成（`new` 子命令；`--summary` 必选） |
+| `specanchor-sediment.sh` | v0.6 sediment proposal 骨架生成（`propose` 子命令） |
+| `specanchor-stop-triggers.sh` | v0.7 advisory 风险路径检测（public_api / schema / dependency / security_path） |
 | `lib/common.sh` | 跨脚本共享函数库 |
 | `lib/decision-filter.sh` | Harness Context Control：Task Spec §5.2 hot/cold/superseded/withdrawn 分类（双重接口 lib + CLI） |
 | `lib/evidence-filter.sh` | Harness Context Control：Task Spec §6.2 4 子段解析 + hot/cold 分类（双重接口 lib + CLI） |
+| `lib/finding-parser.sh` | v0.6：共享 `parse_finding_frontmatter()` 解析器，被 validate.sh / assemble.sh / doctor.sh 复用 |
 
 ## 8. 已知问题（待修复）
 

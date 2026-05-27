@@ -1,0 +1,13 @@
+overall_verdict: request_changes
+summary: |-
+  v3 addresses the prior round's substantive issues: truncation no longer corrupts stdout JSON, resolve-json target extraction now points at inputs.files[], rejected legacy findings are covered, and evidence_ref parsing is specified. One compatibility issue remains: the truncation-warning fix changes the existing context_bundle.v1 warnings field shape instead of preserving its current semantics.
+findings:
+  - finding_id: F-1
+    severity: medium
+    category: correctness
+    location: "re: F-1 from v2 / B1.3 truncation warning channel / B2 Bundle top-level warnings[]"
+    description: |-
+      The v3 fix routes truncation notices into `warnings[]`, but specifies `warnings: [{code, message}]`. The current `print_json_bundle_v1()` already emits top-level `warnings` as an array of strings from WARNING_MESSAGES, so changing that field to an object array violates the plan's own non-goal of not changing existing context_bundle.v1 field semantics and can break consumers that treat warnings as strings.
+    suggested_change: |-
+      Preserve the existing `warnings` string-array shape for context_bundle.v1 and append a string such as `finding_cap_truncated: truncated N findings (cap=50)`, or add a new optional object-valued field such as `warning_events` for coded warnings while leaving `warnings[]` unchanged. Update V13/AC14 to assert JSON validity plus the preserved warning shape, and include a regression case where resolver WARNING_MESSAGES and finding truncation warnings both render without changing the existing field type.
+    rationale: "The JSON-safe fix should not introduce a schema/consumer compatibility break in an existing top-level field."

@@ -1,0 +1,40 @@
+overall_verdict: request_changes
+summary: |-
+  v2 materially fixes the v1 issues: discovery is schema-gated, findings are isolated from FILES_TO_READ, immediate findings are protected from cap truncation, and the parser/doc-sync gaps are now explicitly planned. A few details still need correction before execution, mainly around JSON-safe warnings, resolve-json target extraction, and status/parser edge cases introduced by the revision.
+findings:
+  - finding_id: F-1
+    severity: high
+    category: correctness
+    location: "B1.3 Visibility-aware cap & sort / Verification V13"
+    description: |-
+      The plan says shared-bucket truncation emits a stdout warning. Since discovery is gated to `--format=json --bundle-schema=context_bundle.v1`, any non-JSON warning printed to stdout during truncation will corrupt the context bundle output exactly when V13 exercises the cap path.
+    suggested_change: |-
+      Route truncation notices through the existing JSON `warnings` array, or emit diagnostics to stderr only. Update V13 to validate the full command output with `python3 -m json.tool` and assert the truncation notice appears in `warnings[]`, not as free text before or after the JSON document.
+    rationale: "A cap warning must not make the machine-readable bundle invalid."
+  - finding_id: F-2
+    severity: medium
+    category: correctness
+    location: "re: F-2 from v1 / B0.2 Target file extraction"
+    description: |-
+      The v2 target extraction fix still specifies `RESOLVE_JSON -> anchors[].file`, but the current `specanchor.resolve.v2` JSON writes requested targets under `inputs.files` and anchor paths under `anchors[].path`. Extracting `anchors[].file` will produce an empty target list for real resolve JSON, causing discovery to be skipped silently for `--resolve-json` invocations.
+    suggested_change: |-
+      Change the resolve-json extraction contract to read `inputs.files[]` from `specanchor.resolve.v2`; only fall back to skipping when `inputs.files` is absent or empty. Add a verification case that first generates a resolve JSON with `specanchor-resolve.sh --files=... --format=json`, then feeds it to assemble via `--resolve-json` and asserts the matching finding is discovered.
+    rationale: "The revised plan otherwise leaves one advertised input path nonfunctional."
+  - finding_id: F-3
+    severity: medium
+    category: correctness
+    location: "A3 specanchor-validate.sh / Risks Q3"
+    description: |-
+      The grace-period rule is inconsistent: the goal says candidate findings fail and all other statuses warn, but A3 only names accepted, superseded, and archived. Existing valid statuses include rejected, so rejected legacy findings without summary are left undefined and may either fail validation or avoid the backfill warning.
+    suggested_change: |-
+      Make the rule explicit as `status=candidate` fails and `status!=candidate` warns, including rejected. Add a validate test with a rejected finding missing summary and assert exit 0 plus a backfill warning.
+    rationale: "Legacy rejected findings should not become accidental CI blockers or silent exceptions."
+  - finding_id: F-4
+    severity: medium
+    category: testing
+    location: "B0.1 Finding frontmatter parser / Verification V22-V30"
+    description: |-
+      The parser is required to populate EVIDENCE_TYPES and EVIDENCE_REFS, but the test matrix only covers affects and scalar fields. The actual template uses two-key evidence_ref entries (`- type: ...` followed by `ref: ...`), not a simple single-key list, and validate.sh still relies on evidence_ref semantics for accepted findings.
+    suggested_change: |-
+      Specify that `parse_finding_frontmatter` supports the current two-line evidence_ref item shape and add parser tests for one evidence_ref entry, multiple entries, and accepted-finding validation using the parsed evidence_ref arrays.
+    rationale: "Replacing local validation parsing with a shared parser should not weaken accepted-finding evidence checks."

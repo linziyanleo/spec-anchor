@@ -4,15 +4,15 @@ specanchor:
   module_name: "协议层"
   module_path: "references/"
   summary: "协议声明层：命令定义、Spec 模板、Schema 系统、核心协议"
-  version: "1.4.0"
+  version: "1.5.0"
   owner: "maintainers"
   author: "maintainers"
   reviewers: []
   created: "2026-04-02"
-  updated: "2026-05-25"
-  last_synced: "2026-05-25"
-  last_synced_sha: "c198ade"
-  last_change: "agents/*.md boot-activation upgraded with boot-install.sh recipe + idempotent marker-block template; init.md step 13 rewritten to call boot-install"
+  updated: "2026-05-26"
+  last_synced: "2026-05-26"
+  last_synced_sha: "71b2c7c"
+  last_change: "v0.6 findings lazy-load: summary 字段成为必填 + visibility-driven 分级载荷 (immediate→full / sediment_queue→summary / handoff→title) 文档同步至 context-utilities / findings-ledger / claude-code-bootloader / commands-quickref / workflow-gates / script-contract"
   status: active
   depends_on: []
 ---
@@ -82,8 +82,14 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | `workflow-gates.md` | `⚡/📋` 选择与严格门禁规则 |
 | `integrations/*.md` | 与 SDD-RIPER-ONE / superpowers 的集成说明 |
 | `agents/agent-contract.md` | Agent 标准工作循环（7 步：boot → resolve → workflow → execute → check → sediment → archive） |
+| `agents/context-utilities.md` | v0.6 主入口：context 装配 / 记录 / 沉淀 utility 集（含 lazy-load findings 协议） |
 | `agents/{claude-code,codex,cursor,gemini}.md` | 各 Agent 工具的入口适配说明 + Boot Activation 模板 |
-| `concepts/*.md` | 可被 schema / template 引用的稳定概念说明 |
+| `adapters/claude-code-bootloader.md` | Claude Code CLAUDE.md 引导片段（v0.7） |
+| `concepts/findings-ledger.md` | v0.6 findings 独立 artifact 协议（含 summary 必填 + visibility tier） |
+| `concepts/sediment-proposal.md` | v0.6 hot→cold 安全回流协议 |
+| `concepts/*.md` | 其他可被 schema / template 引用的稳定概念说明 |
+| `templates/finding-template.md` | v0.6 finding 模板（含 summary 字段填写指引） |
+| `templates/sediment-proposal-template.md` | v0.6 sediment proposal 模板 |
 | `skills/*.md` | 可外置安装或桥接其他 workflow 的 skill 草稿 |
 
 ## 4. 内部状态

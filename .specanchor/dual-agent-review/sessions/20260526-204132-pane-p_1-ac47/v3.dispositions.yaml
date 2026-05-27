@@ -1,0 +1,33 @@
+plan_version_reviewed: v3
+total_findings: 1
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: |-
+      v4 改回保留 `warnings[]` 既有 string-array 形态——既不破坏 v0.6 现有
+      consumer（assembly.v1 / context_bundle.v1 都用 print_json_array
+      WARNING_MESSAGES 渲染，scripts/specanchor-assemble.sh:430 + :565），也满足
+      JSON-safe 要求。具体做法：
+        (1) 撤销 v3 §B2 引入的 `warnings: [{code, message}]` object schema 提议；
+        (2) §B1.3 截断告警改为：往现有 WARNING_MESSAGES[] **append 一条 string**，
+            格式固定为 `finding_cap_truncated: truncated <N> findings (cap=<MAX>,
+            buckets=sediment_queue+handoff)`，code 前缀让消费者可 grep 解析；
+        (3) §B2 删除 "warnings 顶层段示例" 子节，改为一句 "现有 `warnings[]`
+            string array 字段保持不变；finding 截断告警以 string 形式追加，前缀
+            `finding_cap_truncated:` 可用于消费者识别"；
+        (4) 保留 stderr 人读 hint（`[assemble] warning: ...`）不变；
+        (5) Verification V13 重写为：
+              - (a) stdout 完整输出过 `python3 -m json.tool` exit 0
+              - (b) 解析 JSON 后 `.warnings[] | select(. | startswith
+                ("finding_cap_truncated:"))` 必须存在
+              - (c) **同时构造 resolver-side WARNING_MESSAGES**（如缺失 spec），
+                断言 warnings[] 中两类 string 共存且都为 string 类型（保留
+                schema）
+              - (d) stderr 含人读 hint
+        (6) AC14 文案更新："截断告警以 string 追加到既有 warnings[] 字段，不引入
+            新 schema 字段；JSON 输出 byte-equal-shape（warnings 仍为 string
+            array）"；
+        (7) §R9 风险条目改为 "warnings[] 不变，新告警以 string 追加；前缀
+            `finding_cap_truncated:` 由消费者自决是否 grep" → 风险等级降到 R9（无）。
+      v4 增量描述加一行："F-1' warnings schema 保持 string-array 兼容（撤销 v3
+      object-schema 提议）"。

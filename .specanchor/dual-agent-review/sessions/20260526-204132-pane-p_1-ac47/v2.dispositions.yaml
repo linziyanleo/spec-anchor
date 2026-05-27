@@ -1,0 +1,59 @@
+plan_version_reviewed: v2
+total_findings: 4
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: |-
+      v3 §B1.3 cap warning 通道改为 JSON-safe：truncation notice 不写 stdout，而是
+      (a) 注入 bundle 顶层 `warnings[]` 数组（schema: `[{code, message, count?}]`），
+      (b) 同步打 stderr 一行人读 hint。stdout 仅承载 JSON document，保证 `python3 -m
+      json.tool` 可解析。具体做法：assemble 在 print_json_bundle_v1() 之前累计
+      truncation 事件到 BUNDLE_WARNINGS_CODES[] / BUNDLE_WARNINGS_MESSAGES[] 并行
+      数组（沿用 specanchor.resolve.v2 的 warnings schema），渲染时插入到 bundle
+      的 `warnings[]` 段。Verification V13 重写为 3 段：(a) 跑 assemble 完整 stdout
+      过 `python3 -m json.tool` 必须 exit 0；(b) 解析 JSON 后 `.warnings[] | select
+      (.code=="finding_cap_truncated") | .message` 必须存在且含截断条数；(c) stderr
+      含人读 hint，但 stdout 不含。同时 §B1.3 文案更新："共享桶超 cap 时按桶内排序
+      截断；通过 bundle.warnings[] 显式 surfaced，并 stderr 打人读 hint"。
+  - finding_id: F-2
+    disposition: incorporated
+    plan_change_summary: |-
+      v3 §B0.2 build_requested_targets() 修正 RESOLVE_JSON 抽取契约：从
+      `specanchor.resolve.v2` 的 **inputs.files[]** 字段读取 target 文件列表（不
+      读 anchors[].file，因该字段不存在；anchors[].path 是已解析锚点，不是输入
+      target）。fallback：inputs.files 缺失或空 → REQUESTED_TARGET_FILES 为空 →
+      跳过 discovery。Verification 加 V20a：
+        ```
+        bash scripts/specanchor-resolve.sh --files=scripts/specanchor-assemble.sh \
+          --intent=test --format=json > /tmp/resolve.json
+        bash scripts/specanchor-assemble.sh --resolve-json=/tmp/resolve.json \
+          --intent=test --bundle-schema=context_bundle.v1 --format=json
+        ```
+      构造一个 affects=`scripts/` 的 finding，断言 layers.finding[] 含该 finding。
+      §B0.2 输入源注释更新为 "RESOLVE_JSON → 提取 inputs.files[]"。
+  - finding_id: F-3
+    disposition: incorporated
+    plan_change_summary: |-
+      v3 §A3 validate.sh finding lint 规则改为对称二分：
+        - `status=candidate` → fail
+        - `status!=candidate` → warn（覆盖 accepted / superseded / archived /
+          rejected 与其他未来 status）
+      §C1 doctor 规则保持一致（非 candidate 缺 summary 输出 backfill warn）。Risk
+      Q3 表述更新为 "candidate 强制 fail；非 candidate 一律 warn"。Verification
+      新增 V5a：构造 status=rejected finding 缺 summary，跑 validate.sh 断言 exit
+      0 + warn 输出。AC8 evidence 列表加 V5a。
+  - finding_id: F-4
+    disposition: incorporated
+    plan_change_summary: |-
+      v3 §B0.1 parse_finding_frontmatter 解析契约扩展：evidence_ref 支持模板的
+      **两键 list-item 形态**（每条 entry 跨两行：`- type: <X>` 后跟同缩进的
+      `ref: <Y>`）。输出仍为 `<prefix>_EVIDENCE_TYPES[]` + `<prefix>_EVIDENCE_REFS[]`
+      并行数组（一一对应）。affects 的解析契约不变（单键 list-item）。validate.sh
+      改用 parser 后保留 accepted finding 必须 evidence_ref 非空校验（值不为空字符
+      串）。Verification matrix 加：
+        - V31: evidence_ref 单条目 (type/ref 两行)
+        - V32: evidence_ref 多条目混合 type
+        - V33: accepted finding 含合法 evidence_ref → validate exit 0
+        - V34: accepted finding 缺 evidence_ref（数组 length=0）→ validate fail
+      AC12 evidence 列表加 V31-V34。Implementation Checklist 同步：parser 新增
+      multiline two-key list-item 解析支路。

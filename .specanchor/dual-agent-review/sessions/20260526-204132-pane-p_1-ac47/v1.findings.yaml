@@ -1,0 +1,49 @@
+overall_verdict: request_changes
+summary: |-
+  The direction is sound, but the plan is not yet executable as written. The biggest risks are that finding discovery is wired through shared assembly arrays without a schema gate, relies on target-file and frontmatter parsing that the current scripts do not provide, and can drop immediate findings under the proposed cap.
+findings:
+  - finding_id: F-1
+    severity: high
+    category: correctness
+    location: "Proposed approach B1 / Verification plan AC9 / Rollback"
+    description: |-
+      The plan claims the new logic is gated to context_bundle.v1 and that assembly.v1 remains unchanged, but B1 injects discovered findings into the shared FILES_TO_READ_PATHS / FILES_TO_READ_LOADS / FILES_TO_READ_REASONS arrays. In the current script, print_json for assembly.v1, markdown output, budget estimation, and files_to_read all consume those same arrays, so an unconditional discovery step will change default assembly output and budget behavior.
+    suggested_change: |-
+      Explicitly gate discovery to FORMAT=json and BUNDLE_SCHEMA=context_bundle.v1, and keep discovered findings in separate DISCOVERED_FINDING_* arrays consumed only by print_json_bundle_v1(). If context_bundle.v1 also needs findings in its flat files_to_read view, merge them only inside the context_bundle.v1 render path; add a regression test where a matching finding exists but `bash scripts/specanchor-assemble.sh --files=... --format=json` still emits no finding entry.
+    rationale: "The compatibility guarantee is false unless discovery is isolated from the default assembly.v1 path."
+  - finding_id: F-2
+    severity: high
+    category: correctness
+    location: "Proposed approach B1 / Signatures / Verification plan V6-V13"
+    description: |-
+      discover_findings() is specified as consuming FILES_REQUESTED[], but specanchor-assemble.sh currently has no such array. It only retains FILES_CSV, FILES_FROM, DIFF_FROM, or RESOLVE_JSON and then parses resolver anchors, so an implementation following the plan can either crash under set -u, only support --files, or silently miss findings for --files-from, --diff-from, --resolve-json, and boot-driven flows.
+    suggested_change: |-
+      Add a concrete target extraction step before discovery: derive normalized repo-relative target files from resolver JSON inputs, or build a single REQUESTED_TARGET_FILES array from --files, --files-from, and --diff-from before calling resolve. Define that --intent-only and --resolve-json without target files skip finding discovery, and add tests for --files, --files-from, --diff-from, and no-target cases.
+    rationale: "Finding relevance is entirely based on target files, so undefined target extraction makes the feature unreliable."
+  - finding_id: F-3
+    severity: high
+    category: correctness
+    location: "Proposed approach B1 / A3"
+    description: |-
+      The plan says to parse finding frontmatter including affects, visibility, summary, id, type, and impact, but the current shared sa_parse_frontmatter_field helper only reads two-space-indented fields under specanchor: and cannot parse root-level finding fields or multiline affects lists such as `- module:` and `- path:`. Existing validate_finding_file uses local scalar awk parsing and also does not provide a reusable multiline affects parser.
+    suggested_change: |-
+      Specify and implement a dedicated finding frontmatter parser for root-level scalar fields plus multiline list-of-single-key maps for affects. Cover affects: [], a single path, a single module, multiple affects entries, quoted values, and values with spaces in tests before using the parsed data in assemble, validate, or doctor.
+    rationale: "The discovery mechanism cannot match findings unless the affects list is parsed correctly."
+  - finding_id: F-4
+    severity: high
+    category: correctness
+    location: "Proposed approach B1 sorting/cap / Risks Q4 / Verification V13"
+    description: |-
+      The proposed sort order is long prefix match, impact, then created, followed by a default cap of 50; visibility is not part of the ordering or cap policy. A visibility=immediate finding can therefore be truncated behind 50 lower-urgency findings with longer prefixes, despite the plan requiring load=full findings to be read before editing.
+    suggested_change: |-
+      Make immediate findings uncapped or sort visibility before match precision, then cap only the non-immediate remainder. Update V13 to create more than 50 matching findings including one immediate finding with a shorter prefix, and assert the immediate finding is still present while non-immediate truncation is warned.
+    rationale: "A MUST-read finding is useless if cap logic can remove it from the bundle."
+  - finding_id: F-5
+    severity: medium
+    category: maintainability
+    location: "Documentation sync D / Risks R3"
+    description: |-
+      The plan makes --summary mandatory but only names findings-ledger.md and context-utilities.md for documentation updates. The repo has existing official examples without --summary in references/commands-quickref.md, references/workflow-gates.md, references/adapters/claude-code-bootloader.md, and references/script-contract.md; context-utilities.md also documents manual cp from finding-template, which will now create candidate findings that fail validation unless summary is filled.
+    suggested_change: |-
+      Add a grep-driven checklist item to update every `specanchor-finding.sh new` example with --summary and replace or qualify manual cp guidance so summary is filled before validation. Add verification with `rg "specanchor-finding\\.sh new|finding-template" references SKILL.md README.md README_ZH.md WHY.md WHY_ZH.md` and record the intended status of every hit.
+    rationale: "A required CLI parameter with stale official examples will break users even if the scripts are correct."

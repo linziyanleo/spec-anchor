@@ -1,0 +1,199 @@
+--- /Users/fanghu/Documents/Work/spec-anchor/.specanchor/dual-agent-review/sessions/20260526-204132-pane-p_1-ac47/v2.md	2026-05-26 20:53:37
++++ /Users/fanghu/Documents/Work/spec-anchor/.specanchor/dual-agent-review/sessions/20260526-204132-pane-p_1-ac47/v3.md	2026-05-26 21:00:15
+@@ -1,12 +1,14 @@
+-# Plan v2: Findings Lazy-Load (summary frontmatter + visibility-driven 分级载荷)
++# Plan v3: Findings Lazy-Load (summary frontmatter + visibility-driven 分级载荷)
+ 
+ > 评审目标：本 plan 设计如何给 SpecAnchor 的 finding artifact 加 lazy-load 能力——frontmatter 加 `summary` 字段、写作端硬约束、bundle 按 visibility 分级载荷。
+ >
+-> 完整 Task Spec（含 frontmatter / RIPER 段落 / Acceptance Criteria）：`.specanchor/tasks/_cross-module/2026-05-25_findings-lazy-load-summary-field.spec.md`。本 v2.md 是该 Task Spec 的 review-friendly distillation，七段对应 dual-agent-review schema。
++> 完整 Task Spec（含 frontmatter / RIPER 段落 / Acceptance Criteria）：`.specanchor/tasks/_cross-module/2026-05-25_findings-lazy-load-summary-field.spec.md`。本 v3.md 是该 Task Spec 的 review-friendly distillation，七段对应 dual-agent-review schema。
+ >
+ > 仓库：spec-anchor (CWD: /Users/fanghu/Documents/Work/spec-anchor)。
+ >
+-> v2 增量（vs v1）：F-1 schema gate + 隔离数组、F-2 target extraction、F-3 frontmatter parser、F-4 visibility-aware cap/sort、F-5 grep-driven 文档同步。详见各段落。
++> v2 增量（vs v1）：F-1 schema gate + 隔离数组、F-2 target extraction、F-3 frontmatter parser、F-4 visibility-aware cap/sort、F-5 grep-driven 文档同步。
++>
++> v3 增量（vs v2）：F-1' JSON-safe truncation warnings（走 bundle.warnings[]）、F-2' RESOLVE_JSON 抽 inputs.files[]、F-3' validate 对称二分（候选 fail / 非候选 warn）、F-4' parser 支持 evidence_ref 两键 list-item。详见各段落。
+ 
+ ## Context / Goals
+ 
+@@ -69,7 +71,10 @@
+ - 必填字段加 `summary`
+ - 长度校验 ≤ 120
+ - 非占位校验
+-- `status: candidate` → fail；`status ∈ {accepted, superseded, archived}` → warn（不 fail）——给老 finding grace period
++- **对称二分宽容期**（F-3' 修复 v2 列举不全的问题）：
++  - `status == candidate` → **fail**
++  - `status != candidate` → **warn 不 fail**（覆盖 accepted / rejected / superseded / archived 与未来新 status；不再用枚举白名单）
++- accepted finding 仍要求 `evidence_ref` 非空（沿用现有规则；v3 改用 §B0.1 parser 的 `EVIDENCE_REFS[]` 非空判定）
+ - 调用 §B0.1 共享 `parse_finding_frontmatter` parser（避免重复实现）
+ 
+ ### B. 装配端：parser → target extraction → discovery → 分级载荷（schema-gated）
+@@ -87,12 +92,24 @@
+ 支持字段（root-level 在 `---` 块内）：
+ - **Scalar**：`id` / `summary` / `type` / `status` / `confidence` / `impact` / `visibility` / `created` / `updated` / `source_task` / `suggested_target`
+ - **Multiline list-of-single-key map**：
+-  - `affects:` → 解析为 `<prefix>_AFFECTS_TYPES[]` + `<prefix>_AFFECTS_VALUES[]` 并行数组（type ∈ {module, path, contract}）
+-  - `evidence_ref:` → 解析为 `<prefix>_EVIDENCE_TYPES[]` + `<prefix>_EVIDENCE_REFS[]`
++  - `affects:` → 解析为 `<prefix>_AFFECTS_TYPES[]` + `<prefix>_AFFECTS_VALUES[]` 并行数组（type ∈ {module, path, contract}）；每条 entry 单行 `- <key>: <value>` 形态。
++- **Multiline list-of-two-key map**（F-4' 修复——匹配 finding-template 实际形态）：
++  - `evidence_ref:` → 解析为 `<prefix>_EVIDENCE_TYPES[]` + `<prefix>_EVIDENCE_REFS[]` 并行数组；每条 entry 跨两行：
+ 
+-**实现约束**：纯 awk/sed/bash，不引入 Python 或 yq；保持 bash 3.2 兼容；尊重 list 缩进（2 空格 `- module:` / 4 空格变体均接受）。
++    ```yaml
++    evidence_ref:
++      - type: diff
++        ref: <git-sha-or-file-or-command>
++      - type: command
++        ref: <cmd-string>
++    ```
+ 
+-**测试覆盖矩阵**（见 §Verification plan V22-V30）：
++    解析规则：以 `- type:` 开头的行起一条新 entry，下一条同缩进的 `ref:` 行补完（required 配对）；遇到 entry 缺 `ref:` 视为格式错误，parser 跳过该 entry 并 stderr warn（不影响其他 entry）。
++- 余下行为不变：纯 awk/sed/bash，不引入 Python 或 yq；保持 bash 3.2 兼容；尊重 list 缩进。
++
++**实现约束**（重申）：纯 awk/sed/bash，不引入 Python 或 yq；保持 bash 3.2 兼容；尊重 list 缩进（2 空格 `- module:` / 4 空格变体均接受）。
++
++**测试覆盖矩阵**（见 §Verification plan V22-V34）：
+ - T1: `affects: []` 空列表
+ - T2: 单 `- path: <p>`
+ - T3: 单 `- module: <name>`
+@@ -103,6 +120,9 @@
+ - T8: 空文件 / frontmatter 缺失
+ - T9: scalar 字段含特殊字符 (`:` `#` `'`)
+ - T10: `contract:` 类型解析（discovery 阶段忽略，但 parser 必须不报错）
++- **T11**: evidence_ref 单条目（type/ref 两行配对） → EVIDENCE_TYPES/REFS 各 length=1
++- **T12**: evidence_ref 多条目混合 type（diff + command + test） → 数组按出现顺序填充
++- **T13**: evidence_ref entry 缺 `ref:` 行 → parser 跳过该 entry，stderr warn，其他 entry 正常
+ 
+ **消费方**：finding.sh / validate.sh / assemble.sh / doctor.sh 全部改用 `parse_finding_frontmatter`；finding.sh 现有 `next_serial` 等局部 awk 不动。
+ 
+@@ -117,9 +137,16 @@
+ #   FILES_CSV       (--files=a,b,c)
+ #   FILES_FROM      (--files-from=path)
+ #   DIFF_FROM       (--diff-from=ref)
+-#   RESOLVE_JSON    (--resolve-json=path) → 提取 anchors[].file 字段
++#   RESOLVE_JSON    (--resolve-json=path) → 提取 inputs.files[]   # F-2' 修复
+ ```
+ 
++**RESOLVE_JSON 抽取契约**（F-2' 修复 v2 错误字段）：
++- 读 `specanchor.resolve.v2` 顶层 `inputs.files[]`（resolver 把用户原始 target 文件保存在此）。
++- **不**读 `anchors[].path`（已解析锚点 ≠ 用户输入 target；用此字段会把 resolver 扩展出的 spec/codemap 路径误当输入）。
++- **不**读 `anchors[].file`（该字段在 specanchor.resolve.v2 中**不存在**，v2 plan 里写的字段名是错的）。
++- 解析方式：sed/awk 抽 `"inputs"` 块下 `"files"` 数组，与现有 `--files-from` 处理统一规范化（去引号、去空白、去重、repo-relative）。
++- Fallback：`inputs.files` 缺失或空数组 → 该输入源贡献 0 条 → 与其他源合并后若仍空 → 跳过 discovery。
++
+ **Skip discovery 条件**（任一满足即跳过 discovery，不报错）：
+ - `REQUESTED_TARGET_FILES` 为空（即 `--intent-only` 模式 / `--resolve-json` 无 anchors / boot --agent 无明确 target）
+ - `BUNDLE_SCHEMA != context_bundle.v1` 或 `FORMAT != json`（schema gate，见 §B1.1）
+@@ -173,7 +200,12 @@
+ **Cap 规则**：
+ - **immediate 桶 uncapped**——必须全部入 bundle
+ - sediment_queue + handoff **共享** `MAX_FINDINGS`（默认 50；可由 `--max-findings=N` CLI 或 `anchor.yaml.context.budget.max_findings` 覆写）
+-- 共享桶超 cap 时按桶内排序截断；stdout warn 列出被截断条数
++- 共享桶超 cap 时按桶内排序截断
++- **截断告警通道**（F-1' 修复——避免 stdout free text 破坏 JSON）：
++  - 累积到全局并行数组 `BUNDLE_WARNINGS_CODES[]` / `BUNDLE_WARNINGS_MESSAGES[]`（schema 沿用 `specanchor.resolve.v2` 的 `warnings: [{code, message}]` 形态）。
++  - `print_json_bundle_v1()` 在 bundle 顶层渲染 `"warnings": [...]` 段；本任务负责实现，schema 字段已被 v0.6 designed-but-empty 占位（向后兼容）。
++  - 同步打 stderr 一行人读 hint：`[assemble] warning: truncated <N> findings (sediment_queue+handoff bucket exceeded cap=<MAX>)`。
++  - **stdout 仅承载 JSON document**，保证 `python3 -m json.tool` / `jq` 可直接消费。
+ 
+ **桶内排序**（每个桶独立排）：长前缀匹配 desc → impact desc（high>medium>low） → created desc
+ 
+@@ -211,6 +243,21 @@
+ 
+ **字段稳定性**：`load=title` 时 `summary` 字段**仍然提供**（让 agent 有自决材料）；区别在 load 标签暗示 agent 默认行为，不在 metadata 缺失。
+ 
++**Bundle 顶层 `warnings[]`**（F-1' 修复——补足 schema 占位）：
++
++```json
++{
++  "schema_version": "specanchor.context_bundle.v1",
++  "...": "...",
++  "layers": { "finding": [...] },
++  "warnings": [
++    {"code": "finding_cap_truncated", "message": "truncated 1 findings (cap=50)"}
++  ]
++}
++```
++
++`warnings[]` 在无截断时为 `[]`（空数组）。其他未来 warning code（如 frontmatter parse error）也走此通道。
++
+ #### B3. agent_instructions[] 段追加 hint
+ 
+ ```text
+@@ -324,13 +371,15 @@
+ - **R5（低）**：`anchor.yaml.context.budget.max_findings` 是新键，需要确认 v0.6 schema 宽容性（应允许 unknown key）。
+ - **R6（低）**：bundle item 新字段（id/type/impact/visibility/affects/summary）对 `assembly.v1` 旧消费者：旧消费者只看 `files_to_read[]` flat view，且新逻辑 schema-gated 不动 flat view，理论零影响（V12+V15+V16 强制验证）。
+ - **R7（低）**：`affects: contract:<name>` 未来支持时，B1.2 step 4 要扩展，但 parser 已支持解析（v0.6 阶段忽略）。
+-- **R8（低）**：parser 测试覆盖矩阵 T1-T10 是必要但非充分，特殊 frontmatter 风格（如多行 `>` 字符串）暂不支持——会被 parser 视为格式错误跳过。
++- **R8（低）**：parser 测试覆盖矩阵 T1-T13 是必要但非充分，特殊 frontmatter 风格（如多行 `>` 字符串）暂不支持——会被 parser 视为格式错误跳过。
++- **R9（低，v3 新）**：bundle 顶层 `warnings[]` 是新字段，旧 `context_bundle.v1` 消费者忽略未知字段不报错（v0.6 schema 兼容性约定）；assembly.v1 schema 不动 warnings 字段（gated 不影响）。
++- **R10（低，v3 新）**：evidence_ref 两键 list-item parser 解析失败时只 stderr warn 不 fail——避免单条错误 entry 阻断整文件 parse；validate.sh 在 accepted finding 上仍要求 EVIDENCE_REFS 数组非空，间接保证 evidence 完整性。
+ 
+ ### Open questions
+ 
+ - **Q1（已解决 →）**：`affects: contract:<name>` v0.6 阶段：parser 解析、discovery 忽略、留 v0.7 命中。
+ - **Q2（已解决 →）**：排序规则：visibility 桶 → 长前缀匹配 → impact desc → created desc。
+-- **Q3**：老 finding（无 `summary` 字段）的 grace period——validate 在 status=candidate 强制 fail，其他 status 仅 doctor warn（提议）；是否在某个版本之后升级为 fail？**留待 v0.7 决策**。
++- **Q3（v3 解决 →）**：老 finding（无 `summary` 字段）的 grace period——validate `status==candidate` 强制 fail；`status!=candidate` 一律 warn 不 fail（含 rejected / accepted / superseded / archived 与未来 status，对称二分）。是否在某个版本之后升级为 fail？**留待 v0.7 决策**。
+ - **Q4（已解决 →）**：immediate 桶 uncapped；sediment_queue + handoff 共享 cap=50。
+ - **Q5（已解决 →）**：`load=title` 仍带 `summary` 字段（让 agent 有自决材料）。
+ - **Q6（已解决 →）**：assemble 没有 `--files`-class 输入时（REQUESTED_TARGET_FILES 为空）跳过 discovery，不报错。
+@@ -348,6 +397,7 @@
+ | V3 | `bash scripts/specanchor-finding.sh new --topic=t --summary="$(printf 'x%.0s' {1..121})"` | exit 64，stderr 含 "summary too long" | AC1 |
+ | V4 | `bash scripts/specanchor-validate.sh`（构造 candidate finding 缺 summary） | exit ≠ 0，stderr 列出该文件 | AC2 |
+ | V5 | `bash scripts/specanchor-validate.sh`（accepted finding 缺 summary） | exit 0，stderr/stdout warn 列出 | AC2 + AC8 |
++| V5a | `bash scripts/specanchor-validate.sh`（**rejected** finding 缺 summary） | exit 0，warn 列出 | AC8 + F-3' |
+ | V6 | `bash scripts/specanchor-assemble.sh --files=scripts/specanchor-assemble.sh --intent=test --bundle-schema=context_bundle.v1 --format=json` 构造 affects=`scripts/` finding | JSON `layers.finding[]` 含该 finding，含 `id/summary/type/impact/affects/load/visibility` | AC3 + AC5 + AC6 |
+ | V7 | 同 V6 但 finding visibility=hidden | JSON `layers.finding[]` **不**含该 finding | AC4 |
+ | V8 | 同 V6 visibility=immediate | bundle item `load=full` | AC5 |
+@@ -355,14 +405,16 @@
+ | V10 | 同 V6 visibility=handoff | bundle item `load=title`，`summary` 字段仍存在 | AC5 + Q5 |
+ | V11 | bundle JSON `agent_instructions[]` | 含三条 hint：N findings / load=full MUST / load=summary\|title 自决 | AC7 |
+ | V12 | `assembly.v1` schema 默认输出（同样 --files 命中 finding） | `files_to_read[]` 与改动前 byte-equal（除 freshness 自然变化） | AC9 + F-1 |
+-| V13 | 构造 51 个匹配 finding，含 1 个 visibility=immediate 且匹配前缀**最短** | (a) immediate finding 必出现；(b) 总数 ≤ 51 = 1 immediate + 50 共享；(c) stdout warn 列出 sediment_queue/handoff 中被截断的 ≥ 1 条 | AC10 + F-4 |
++| V13 | 构造 51 个匹配 finding，含 1 个 visibility=immediate 且匹配前缀**最短** | (a) immediate finding 必出现；(b) 总数 ≤ 51 = 1 immediate + 50 共享；(c) **stdout 完整输出过 `python3 -m json.tool` exit 0**；(d) JSON 顶层 `warnings[]` 含 `code=finding_cap_truncated` 条目，`message` 含 "truncated <N>"；(e) stderr 同步含人读 hint | AC10 + F-4 + F-1' |
+ | V14 | `bash scripts/specanchor-doctor.sh`（构造 accepted 老 finding 缺 summary） | exit 0，输出 backfill warn 行 | AC8 |
+ | V15 | 构造一个 affects 命中的 finding，跑 `--format=json` **不带** `--bundle-schema=context_bundle.v1` | JSON 输出与无该 finding 时 byte-equal | F-1 |
+ | V16 | 同 V15 但 `--format=markdown` | markdown 输出与无该 finding 时 byte-equal | F-1 |
+ | V17 | `--files=<single>` 命中 | finding 注入 | F-2 |
+ | V18 | `--files-from=<list>` 命中 | finding 注入 | F-2 |
+ | V19 | `--diff-from=<ref>` 命中 | finding 注入 | F-2 |
+-| V20 | `--intent-only` 或 `--resolve-json` 无 anchors | discovery 跳过，exit 0，bundle `layers.finding=[]` | F-2 |
++| V20 | `--intent-only` 模式 / 无 target 输入 | discovery 跳过，exit 0，bundle `layers.finding=[]` | F-2 |
++| V20a | 先 `bash scripts/specanchor-resolve.sh --files=<f> --format=json > /tmp/resolve.json` 再 `bash scripts/specanchor-assemble.sh --resolve-json=/tmp/resolve.json --bundle-schema=context_bundle.v1 --format=json` | bundle `layers.finding[]` 含 affects 命中 finding | F-2' |
++| V20b | resolve.json 的 `inputs.files` 为空 | discovery 跳过，bundle `layers.finding=[]` | F-2' |
+ | V21 | `rg "specanchor-finding\\.sh new" references SKILL.md README.md README_ZH.md WHY.md WHY_ZH.md` | 所有 hit 含 `--summary=` | F-5 |
+ | V22 | parser T1: `affects: []` | parser 返回 0，AFFECTS_TYPES/VALUES 数组 length=0 | F-3 |
+ | V23 | parser T2-T4: 单 path / 单 module / 多 mixed | 数组解析正确 | F-3 |
+@@ -373,6 +425,10 @@
+ | V28 | parser T10: `contract:` 类型 | 解析后 AFFECTS_TYPES 含 "contract"，但 discovery 阶段忽略（V29 验证） | F-3 |
+ | V29 | finding 仅含 `affects: - contract: foo`，跑 V6 类输入 | bundle `layers.finding=[]`（contract 不命中） | F-3 + Non-goals |
+ | V30 | parser idempotent：同一文件 parse 两次 | 第二次输出与第一次一致 | F-3 |
++| V31 | parser T11: evidence_ref 单条目（type/ref 两行配对） | EVIDENCE_TYPES/REFS length=1，配对正确 | F-4' |
++| V32 | parser T12: evidence_ref 多条目混合 type | 数组按出现顺序填充，长度匹配 | F-4' |
++| V33 | accepted finding 含合法 evidence_ref → validate.sh | exit 0 | F-4' |
++| V34 | accepted finding 缺 evidence_ref（数组 length=0） → validate.sh | exit ≠0，stderr 列出该文件 | F-4' |
+ 
+ ### Acceptance Criteria
+ 
+@@ -385,12 +441,13 @@
+ | AC5 | visibility 映射 load 标签正确（含 title 仍带 summary） | V8+V9+V10 |
+ | AC6 | bundle 含 summary/id/type/impact/visibility/affects 元数据 | V6 |
+ | AC7 | agent_instructions 含 lazy-load hint | V11 |
+-| AC8 | 老 finding（无 summary）非 candidate 不 fail validate | V5+V14 |
++| AC8 | 老 finding（无 summary）非 candidate 不 fail validate（含 rejected） | V5+V5a+V14 |
+ | AC9 | 现有 bundle 消费者（assembly.v1 / markdown）行为不变 | V12+V15+V16 |
+ | AC10 | cap 默认 50 生效，immediate uncapped | V13 |
+-| AC11 (新) | 多入参源 target extraction 正确 | V17+V18+V19+V20 |
+-| AC12 (新) | finding-parser 测试矩阵全过 | V22-V30 |
+-| AC13 (新) | 文档 grep 验证 `--summary` 全覆盖 | V21 |
++| AC11 | 多入参源 target extraction 正确（含 resolve.v2 inputs.files[]） | V17+V18+V19+V20+V20a+V20b |
++| AC12 | finding-parser 测试矩阵全过（含 evidence_ref 两键） | V22-V34 |
++| AC13 | 文档 grep 验证 `--summary` 全覆盖 | V21 |
++| AC14 (v3 新) | 截断告警 JSON-safe：bundle stdout 可被 `json.tool` 解析；warnings[] 含截断条目；stderr 含人读 hint | V13 |
+ 
+ ### 回滚
+ 

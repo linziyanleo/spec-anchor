@@ -1,0 +1,70 @@
+plan_version_reviewed: v1
+total_findings: 5
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: |-
+      v2 §B1 改为：discovery 严格 gated 在 FORMAT=json AND BUNDLE_SCHEMA=context_bundle.v1；
+      discovered findings 写入独立的 DISCOVERED_FINDING_PATHS / DISCOVERED_FINDING_LOADS /
+      DISCOVERED_FINDING_META_* 并行数组，仅由 print_json_bundle_v1() 消费，绝不进
+      FILES_TO_READ_* 共享数组。Verification plan 新增 V15 regression：构造一个匹配
+      finding 但跑 `--format=json` 默认 schema，断言输出与改动前 byte-equal（除 mtime
+      自然变化）；V16：跑 `--format=markdown` 同样断言无变化。同时修订 §4.1 File
+      Changes，删除 "注入 FILES_TO_READ_PATHS" 表述，改为 "注入 DISCOVERED_FINDING_*"。
+      Rollback 段保持单 PR + revert，但补一句 "discovery 关闭等价于不传 --bundle-schema=
+      context_bundle.v1"。
+  - finding_id: F-2
+    disposition: incorporated
+    plan_change_summary: |-
+      v2 §B1 之前新增 §B0 "Target file extraction"：从 --files / --files-from / --diff-from
+      / --resolve-json 统一规约出 REQUESTED_TARGET_FILES[] 数组（已是 repo-relative，去重，
+      去空）。明确：`--intent-only`、`--resolve-json` 无 target、boot --agent 模式无明确
+      target 时，REQUESTED_TARGET_FILES 为空 → 跳过 discovery（不 fail）。Implementation
+      Checklist 在原 step 9 之前插入 "9a. 实现 build_requested_targets() 统一 target 提取"。
+      Verification plan 加 V17（--files=单文件命中）/ V18（--files-from 命中）/ V19（--diff-from
+      命中）/ V20（无 target 输入跳过 discovery 不报错）。Signatures 段更新 discover_findings()
+      签名为 `discover_findings(REQUESTED_TARGET_FILES[], MAX_FINDINGS)`。
+  - finding_id: F-3
+    disposition: incorporated
+    plan_change_summary: |-
+      v2 §B1 之前新增独立子节 "Finding frontmatter parser"：specify 一个专门 parser
+      `parse_finding_frontmatter`（落 `scripts/lib/finding-parser.sh`），支持 root-level
+      scalar 字段（id / summary / type / status / confidence / impact / visibility /
+      created / updated / source_task）+ multiline list-of-single-key map 字段（affects:
+      list of `- module: <n>` / `- path: <p>` / `- contract: <c>` 形态，contract 在 v0.6
+      解析但 discovery 阶段忽略）+ multiline list-of-single-key map for evidence_ref。
+      Implementation Checklist 新增 step 8a 实现 parser、step 8b 单测，覆盖：affects: []
+      / 单 path / 单 module / 多 affects / 引号包裹值 / 含空格值 / 跨行 list 缩进
+      （2 空格 vs 4 空格）/ 空文件 / frontmatter 缺失。finding.sh 与 validate.sh /
+      assemble.sh / doctor.sh 全部改用此 parser，避免重复实现。
+  - finding_id: F-4
+    disposition: incorporated
+    plan_change_summary: |-
+      v2 §B1 cap/排序策略改为：visibility 是排序首键。具体规则：
+        (1) 先按 visibility 分桶：immediate / sediment_queue / handoff（hidden 已过滤）；
+        (2) immediate 桶 **uncapped**——必须全部入 bundle；
+        (3) sediment_queue + handoff 共享 cap = MAX_FINDINGS（默认 50）；
+        (4) 桶内排序：长前缀匹配 → impact desc → created desc。
+      Bundle 输出顺序：immediate 段 → sediment_queue 段 → handoff 段。Verification V13
+      重写为：构造 51 个匹配 finding，其中 1 个 visibility=immediate 且匹配前缀最短，
+      跑 assemble，断言：(a) immediate finding 必出现；(b) 总 finding 数 = 1 + 50；
+      (c) stdout warn 列出被截断的 1 条 handoff/sediment_queue finding。Open
+      Questions Q4 标记为 resolved。
+  - finding_id: F-5
+    disposition: incorporated
+    plan_change_summary: |-
+      v2 §D Documentation sync 重写为 grep-driven checklist。具体：
+        (1) 跑 `rg -l "specanchor-finding\\.sh new" .` 与 `rg -l "finding-template" .`
+            （范围：references/ + SKILL.md + README*.md + WHY*.md + .specanchor/global/），
+            登记每个 hit 的 "intended status: 必更新 / 仅引用不动 / 删除"；
+        (2) 已知必改：references/commands-quickref.md / references/workflow-gates.md /
+            references/adapters/claude-code-bootloader.md / references/script-contract.md /
+            references/agents/context-utilities.md（每个 `specanchor-finding.sh new` 例子
+            加 `--summary="..."`）；
+        (3) context-utilities.md §3 中 `cp finding-template ...` 手工创建模式：替换为
+            "推荐用 `specanchor-finding.sh new --summary=...` 创建；手工 cp 后必须立即
+            填 summary 否则 candidate validate 会 fail"；
+        (4) Implementation Checklist 新增 step 16a "跑 grep checklist + 更新所有 hit"。
+      Verification plan 加 V21：跑 `rg "specanchor-finding\\.sh new" references SKILL.md
+      README.md README_ZH.md WHY.md WHY_ZH.md`，断言所有 hit 含 `--summary=`。Risks R3
+      更新：缓解措施 = grep checklist + 上述具体文件清单。
