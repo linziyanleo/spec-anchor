@@ -7,6 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/lib/common.sh"
+# shellcheck source=scripts/lib/finding-parser.sh
+source "$SCRIPT_DIR/lib/finding-parser.sh"
 
 FORMAT="text"
 TARGET_PATH=""
@@ -399,6 +401,11 @@ validate_spec_file() {
 }
 
 ## v0.6 新增：Findings Ledger frontmatter 校验 (references/concepts/findings-ledger.md)
+##
+## 报错策略（v0.6 lazy-load 加固）：summary / required-field / 枚举三类校验
+## 对 status==candidate 走 fail（add_error），对 status!=candidate 走 warn
+## (add_warning) — 对称二分宽容期，覆盖 accepted/rejected/superseded/archived
+## 与未来新 status，避免老 finding 在迁移窗口炸 CI。
 validate_finding_file() {
   local file="$1"
   VALIDATED_FILES+=("$file")
@@ -407,36 +414,57 @@ validate_finding_file() {
     finding-template.md|.gitkeep) return ;;
   esac
 
-  local frontmatter=""
-  frontmatter=$(awk '/^---$/ { count++; if (count==1) { in_ff=1; next } else { in_ff=0; exit } } in_ff' "$file")
-  if [[ -z "$frontmatter" ]]; then
+  if ! parse_finding_frontmatter "$file" "VF"; then
     add_error "${file}: FINDING_MISSING_FRONTMATTER"
     return
   fi
 
+  local v_status="$VF_STATUS"
+  # severity routing helper：candidate fail，其他 warn（含空 status 视作 candidate）
+  _vff_report() {
+    local code="$1" detail="${2:-}"
+    if [[ -z "$v_status" || "$v_status" == "candidate" ]]; then
+      add_error  "${file}: ${code}${detail:+ ${detail}}"
+    else
+      add_warning "${file}: ${code} (status=${v_status}; grace-period warn)${detail:+ ${detail}}"
+    fi
+  }
+
+  # 必填字段（含 v0.6 新增 summary）
   local field val
-  for field in id type status confidence impact visibility; do
-    val=$(printf '%s\n' "$frontmatter" | awk -v k="$field" '$1==k":" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
-    [[ -n "$val" ]] || add_error "${file}: FINDING_MISSING_FIELD ${field}"
+  for field in id summary type status confidence impact visibility; do
+    case "$field" in
+      id)         val="$VF_ID" ;;
+      summary)    val="$VF_SUMMARY" ;;
+      type)       val="$VF_TYPE" ;;
+      status)     val="$VF_STATUS" ;;
+      confidence) val="$VF_CONFIDENCE" ;;
+      impact)     val="$VF_IMPACT" ;;
+      visibility) val="$VF_VISIBILITY" ;;
+    esac
+    [[ -n "$val" ]] || _vff_report "FINDING_MISSING_FIELD" "$field"
   done
 
+  # summary 长度与占位校验（仅在 summary 非空时进一步检查）
+  if [[ -n "$VF_SUMMARY" ]]; then
+    if [[ ${#VF_SUMMARY} -gt 120 ]]; then
+      _vff_report "FINDING_SUMMARY_TOO_LONG" "${#VF_SUMMARY} chars (max 120)"
+    fi
+    if [[ "${VF_SUMMARY:0:1}" == "<" && "${VF_SUMMARY: -1}" == ">" ]]; then
+      _vff_report "FINDING_SUMMARY_PLACEHOLDER" "(starts with '<' ends with '>')"
+    fi
+  fi
+
   # 枚举校验
-  local v_type v_status v_conf v_impact v_vis
-  v_type=$(printf '%s\n' "$frontmatter" | awk '$1=="type:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
-  v_status=$(printf '%s\n' "$frontmatter" | awk '$1=="status:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
-  v_conf=$(printf '%s\n' "$frontmatter" | awk '$1=="confidence:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
-  v_impact=$(printf '%s\n' "$frontmatter" | awk '$1=="impact:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
-  v_vis=$(printf '%s\n' "$frontmatter" | awk '$1=="visibility:" { sub(/^[^:]*:[[:space:]]*/, ""); print; exit }')
+  case "$VF_TYPE" in fact|contradiction|stale-claim|risk|reuse-opportunity|pattern|"") ;; *) _vff_report "FINDING_INVALID_TYPE" "$VF_TYPE" ;; esac
+  case "$VF_STATUS" in candidate|accepted|rejected|superseded|archived|"") ;; *) _vff_report "FINDING_INVALID_STATUS" "$VF_STATUS" ;; esac
+  case "$VF_CONFIDENCE" in low|medium|high|"") ;; *) _vff_report "FINDING_INVALID_CONFIDENCE" "$VF_CONFIDENCE" ;; esac
+  case "$VF_IMPACT" in low|medium|high|"") ;; *) _vff_report "FINDING_INVALID_IMPACT" "$VF_IMPACT" ;; esac
+  case "$VF_VISIBILITY" in hidden|handoff|sediment_queue|immediate|"") ;; *) _vff_report "FINDING_INVALID_VISIBILITY" "$VF_VISIBILITY" ;; esac
 
-  case "$v_type" in fact|contradiction|stale-claim|risk|reuse-opportunity|pattern|"") ;; *) add_error "${file}: FINDING_INVALID_TYPE ${v_type}" ;; esac
-  case "$v_status" in candidate|accepted|rejected|superseded|archived|"") ;; *) add_error "${file}: FINDING_INVALID_STATUS ${v_status}" ;; esac
-  case "$v_conf" in low|medium|high|"") ;; *) add_error "${file}: FINDING_INVALID_CONFIDENCE ${v_conf}" ;; esac
-  case "$v_impact" in low|medium|high|"") ;; *) add_error "${file}: FINDING_INVALID_IMPACT ${v_impact}" ;; esac
-  case "$v_vis" in hidden|handoff|sediment_queue|immediate|"") ;; *) add_error "${file}: FINDING_INVALID_VISIBILITY ${v_vis}" ;; esac
-
-  # accepted finding 必须有 evidence_ref
-  if [[ "$v_status" == "accepted" ]]; then
-    if ! printf '%s\n' "$frontmatter" | grep -q '^evidence_ref:'; then
+  # accepted finding 必须有 evidence_ref（用 parser 数组判定，不再 grep）
+  if [[ "$VF_STATUS" == "accepted" ]]; then
+    if [[ ${#VF_EVIDENCE_REFS[@]} -eq 0 ]]; then
       add_error "${file}: FINDING_ACCEPTED_REQUIRES_EVIDENCE_REF"
     fi
   fi

@@ -15,6 +15,7 @@ SKILL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 SUBCOMMAND=""
 TOPIC=""
+SUMMARY=""
 TYPE="fact"
 CONFIDENCE="medium"
 IMPACT="medium"
@@ -33,10 +34,12 @@ usage() {
 SpecAnchor Finding v0.6
 
 Usage:
-  specanchor-finding.sh new --topic=<slug> [options]
+  specanchor-finding.sh new --topic=<slug> --summary=<text> [options]
 
 Required:
   --topic=<slug>          short-kebab description (e.g. "auth-spec-stale")
+  --summary=<text>        ≤120 字符单行：主语 + 事实 + 锚点（路径/数字/对比）。
+                          示例：'session TTL mismatch: doc=1h, code=24h (auth/session.go:42)'
 
 Options:
   --type=<enum>           fact|contradiction|stale-claim|risk|reuse-opportunity|pattern (default: fact)
@@ -92,6 +95,17 @@ cmd_new() {
   [[ -n "$TOPIC" ]] || die "--topic is required" 64
   [[ "$TOPIC" =~ ^[a-z0-9-]+$ ]] || die "--topic must be kebab-case (a-z 0-9 -)" 64
 
+  [[ -n "$SUMMARY" ]] || die "--summary is required" 64
+  if [[ ${#SUMMARY} -gt 120 ]]; then
+    die "--summary too long: ${#SUMMARY} chars (max 120)" 64
+  fi
+  if [[ "$SUMMARY" == *$'\n'* ]]; then
+    die "--summary must be a single line (no newlines)" 64
+  fi
+  if [[ "${SUMMARY:0:1}" == "<" && "${SUMMARY: -1}" == ">" ]]; then
+    die "--summary looks like a placeholder ('<...>'); write a real one-liner" 64
+  fi
+
   validate_enum "type"       "$TYPE"             "fact contradiction stale-claim risk reuse-opportunity pattern"
   validate_enum "confidence" "$CONFIDENCE"       "low medium high"
   validate_enum "impact"     "$IMPACT"           "low medium high"
@@ -115,6 +129,7 @@ cmd_new() {
   cat > "$path" <<EOF
 ---
 id: ${id}
+summary: ${SUMMARY}
 type: ${TYPE}
 status: candidate
 confidence: ${CONFIDENCE}
@@ -161,6 +176,8 @@ main() {
     case "$1" in
       --topic=*) TOPIC="${1#--topic=}" ;;
       --topic) shift; [[ $# -gt 0 ]] || die "--topic requires a value" 64; TOPIC="$1" ;;
+      --summary=*) SUMMARY="${1#--summary=}" ;;
+      --summary) shift; [[ $# -gt 0 ]] || die "--summary requires a value" 64; SUMMARY="$1" ;;
       --type=*) TYPE="${1#--type=}" ;;
       --type) shift; [[ $# -gt 0 ]] || die "--type requires a value" 64; TYPE="$1" ;;
       --confidence=*) CONFIDENCE="${1#--confidence=}" ;;

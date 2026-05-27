@@ -1,5 +1,6 @@
 ---
 id: F-YYYYMMDD-NNN
+summary: <120 字符以内单行：主语 + 事实 + 锚点（路径/数字/对比）>
 type: fact            # fact | contradiction | stale-claim | risk | reuse-opportunity | pattern
 status: candidate     # candidate | accepted | rejected | superseded | archived
 confidence: medium    # low | medium | high
@@ -44,6 +45,12 @@ source_task: null     # task spec path 或 null
 
 > **填写指引**（删除此段）：
 >
+> - **summary 写作准则**：
+>   - ≤120 字符单行；主语 + 事实 + 锚点（路径/数字/对比），让 sediment_queue / handoff 层只读 summary 也能判断是否值得展开。
+>   - ✓ `session TTL mismatch: doc=1h, code=24h (auth/session.go:42)`
+>   - ✓ `validate.sh skips evidence_ref shape check on multiline lists (lib/finding-parser.sh)`
+>   - ✗ `auth issue`（无锚点、无对比）
+>   - ✗ `发现一个 bug 需要修复`（无主语、无事实）
 > - **visibility 默认值参考**：
 >   - `confidence=low` 或 `impact=low` → `hidden`
 >   - `confidence=medium` → `handoff`
