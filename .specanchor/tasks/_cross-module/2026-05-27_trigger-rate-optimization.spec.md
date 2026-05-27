@@ -13,6 +13,11 @@ scope:
   - scripts/specanchor-boot-install.sh (增强 hook 注入)
   - references/skills/spec-anchor-prelude/SKILL.md (链式调用增强)
 specanchor:
+  level: task
+  task_name: "SpecAnchor 触发率优化：五层触发体系实现"
+  author: "@方壶"
+  created: "2026-05-27"
+  status: "done"
   writing_protocol: simple
 ---
 
