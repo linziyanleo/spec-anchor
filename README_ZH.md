@@ -137,7 +137,24 @@ Claude: [runs specanchor-check.sh alignment]
 
 ## 60 秒上手
 
-SpecAnchor 的核心理念是用自然语言和 agent 对话——安装也一样，把仓库扔给任一胜任的 AI 代码 agent（Claude Code、Codex、Cursor、Gemini 等），让它自己装。
+### 方式 A：Claude Code 插件安装（推荐）
+
+以插件形式安装可启用 **SessionStart hook 自动注入**——在含 `anchor.yaml` 或 `.specanchor/` 的项目中，agent 会在 session 启动时自动加载 spec 上下文，无需手动触发。
+
+```bash
+# 开发测试（仅当前 session，不持久化）
+claude --plugin-dir /path/to/spec-anchor
+
+# 永久安装（通过自建 marketplace）
+/plugin marketplace add <你的 git 仓库地址>
+/plugin install spec-anchor@spec-anchor
+```
+
+安装后，打开任何含 `anchor.yaml` 或 `.specanchor/` 的项目，插件会在 session 启动时注入上下文，`spec-anchor` skill 自动被发现。
+
+### 方式 B：Skill 安装（适用于所有 agent）
+
+适用于 Cursor、Codex、Gemini 或不使用插件系统的 Claude Code：
 
 **1. Clone 仓库到本机任意位置**
 
