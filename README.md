@@ -147,7 +147,7 @@ Install as a Claude Code plugin to get **SessionStart hook auto-injection** — 
 claude --plugin-dir /path/to/spec-anchor
 
 # Permanent install via self-hosted marketplace
-/plugin marketplace add <your-git-repo-url>
+/plugin marketplace add https://github.com/linziyanleo/spec-anchor
 /plugin install spec-anchor@spec-anchor
 ```
 
