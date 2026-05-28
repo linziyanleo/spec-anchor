@@ -11,6 +11,7 @@
 #   specanchor-boot.sh --no-schemas        # 关闭 Available Schemas 段（精简输出）
 #   specanchor-boot.sh --format=full      # 含 Global Spec 内容
 #   specanchor-boot.sh --format=json      # JSON 机器可读
+#   specanchor-boot.sh --format=inline-brief  # 精简内联摘要（用于 hook 注入，~600 token）
 #
 # 配置文件查找顺序（root-first，支持 local overlay）：
 #   1. 项目根目录 anchor.yaml
@@ -734,6 +735,80 @@ output_summary() {
   fi
 }
 
+output_inline_brief() {
+  local budget="${SPECANCHOR_INLINE_BUDGET:-600}"
+  if [[ -f "anchor.yaml" ]]; then
+    local cfg_budget
+    cfg_budget="$(parse_yaml_field "anchor.yaml" "inline_budget_tokens" "")"
+    if [[ -n "$cfg_budget" ]]; then
+      if [[ "$cfg_budget" -lt 200 ]] 2>/dev/null; then
+        echo "warning: hook.inline_budget_tokens=$cfg_budget below minimum 200, clamping" >&2
+        budget=200
+      elif [[ "$cfg_budget" -gt 1500 ]] 2>/dev/null; then
+        echo "warning: hook.inline_budget_tokens=$cfg_budget above maximum 1500, clamping" >&2
+        budget=1500
+      else
+        budget="$cfg_budget"
+      fi
+    fi
+  fi
+
+  SHOW_SCHEMAS=false
+  collect_all
+
+  if [[ "$B_CONFIG_STATUS" == "missing" ]]; then
+    echo "spec-anchor: no anchor.yaml found"
+    return 0
+  fi
+
+  local output=""
+  output+="Project: ${B_PROJECT_NAME} (v${B_VERSION}, mode=${B_MODE})"$'\n'
+
+  if [[ "$B_MODE" == "full" ]] && [[ "$B_GLOBAL_STATUS" == "ok" ]] && [[ $B_GLOBAL_COUNT -gt 0 ]]; then
+    output+="Coding Standards:"$'\n'
+    for f in .specanchor/global/*.spec.md; do
+      [[ -f "$f" ]] || continue
+      local fname
+      fname="$(basename "$f" .spec.md)"
+      local sections
+      sections="$(grep -E '^## ' "$f" 2>/dev/null | head -5 | sed 's/^## /    /')"
+      if [[ -n "$sections" ]]; then
+        output+="  [${fname}]: sections:"$'\n'
+        output+="${sections}"$'\n'
+      fi
+    done
+  fi
+
+  if [[ "$B_MODE" == "full" ]] && [[ ${#B_MOD_SPECS[@]} -gt 0 ]]; then
+    output+="Module Contracts: ${B_MODULE_COUNT} modules"$'\n'
+    local shown=0
+    for i in "${!B_MOD_SPECS[@]}"; do
+      [[ $shown -ge 5 ]] && break
+      output+="  - ${B_MOD_SPECS[$i]}"
+      [[ -n "${B_MOD_SUMMARIES[$i]:-}" ]] && output+=" — ${B_MOD_SUMMARIES[$i]}"
+      output+=$'\n'
+      ((shown++))
+    done
+  fi
+
+  if [[ ${#B_TASK_NAMES[@]} -gt 0 ]]; then
+    output+="Active Tasks:"$'\n'
+    for i in "${!B_TASK_NAMES[@]}"; do
+      output+="  - ${B_TASK_NAMES[$i]} [${B_TASK_STATUSES[$i]}]"
+      [[ -n "${B_TASK_PHASES[$i]:-}" ]] && output+=" phase=${B_TASK_PHASES[$i]}"
+      output+=$'\n'
+    done
+  fi
+
+  local char_budget=$((budget * 4))
+  if [[ ${#output} -gt $char_budget ]]; then
+    output="${output:0:$char_budget}"
+    output+=$'\n'"(truncated to ~${budget} tokens)"
+  fi
+
+  printf '%s' "$output"
+}
+
 output_full() {
   output_summary "full"
 
@@ -955,10 +1030,11 @@ main() {
   fi
 
   case "$format" in
-    summary) output_summary ;;
-    full)    output_full ;;
-    json)    output_json ;;
-    *)       die "未知格式: $format (可选: summary | full | json)" ;;
+    summary)      output_summary ;;
+    full)         output_full ;;
+    json)         output_json ;;
+    inline-brief) output_inline_brief ;;
+    *)            die "未知格式: $format (可选: summary | full | json | inline-brief)" ;;
   esac
 }
 

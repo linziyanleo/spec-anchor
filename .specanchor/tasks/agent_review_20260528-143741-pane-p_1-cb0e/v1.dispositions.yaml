@@ -1,0 +1,22 @@
+plan_version_reviewed: v1
+total_review_comments: 5
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: "Remove Layer 3 as a new command. Instead, enhance the existing `specanchor-boot-install.sh` to inject the strengthened trigger rule into CLAUDE.md/.cursorrules/AGENTS.md. The `sa init` alias is dropped; users continue using `specanchor-init.sh --install-boot=<targets>` which already exists."
+
+  - finding_id: F-2
+    disposition: incorporated
+    plan_change_summary: "Replace `|| true` silent fallback with explicit error capture. On boot failure, emit `<spec-anchor-context status=\"error\">Boot failed: <stderr excerpt></spec-anchor-context>` so the agent is aware context is missing. Add a test fixture for malformed anchor.yaml asserting the error tag is present in hook output."
+
+  - finding_id: F-3
+    disposition: incorporated
+    plan_change_summary: "Revert 'before any response' to the bounded scope: 'before code changes, spec/context work, reviews, or process skills'. Keep `<IMPORTANT>` wrapper (not escalate to `<EXTREMELY_IMPORTANT>`). The inline spec summary provides passive baseline without requiring skill invocation for non-coding prompts."
+
+  - finding_id: F-4
+    disposition: incorporated
+    plan_change_summary: "Extend affected files to include: `references/script-contract.md` (add `--format=inline-brief` entry), `.specanchor/modules/scripts.spec.md` (update boot contract), install docs (document hook_budget). Define `hook_budget` as: key path `hook.inline_budget_tokens`, default 600, bounds [200, 1500], validated at boot time with warning on out-of-bounds."
+
+  - finding_id: F-5
+    disposition: incorporated
+    plan_change_summary: "Add automated test coverage: (1) `tests/hook-inline-brief.bats` for --format=inline-brief output + budget cap, (2) `tests/hook-session-start.bats` for JSON validity across Claude/Cursor/generic env vars, (3) `tests/hook-boot-failure.bats` for malformed anchor.yaml error tag, (4) existing boot-install idempotency tests remain unchanged since Layer 3 is dropped."

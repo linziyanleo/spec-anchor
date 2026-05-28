@@ -1,6 +1,6 @@
 ---
 name: spec-anchor
-description: "MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes, spec/context management, alignment checks, handoff, findings, or sediment work. Loads coding standards, module contracts, and active tasks."
+description: "MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes, spec/context management, reviews, or process skills. Loads coding standards, module contracts, and active tasks. Invoke even for small edits — specs contain constraints not visible in code alone."
 ---
 
 <!-- Plugin skill entry point — delegates to the root SKILL.md -->

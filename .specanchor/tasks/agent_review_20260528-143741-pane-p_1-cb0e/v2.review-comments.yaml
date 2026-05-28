@@ -1,0 +1,17 @@
+overall_verdict: request_changes
+summary: "v2 reasonably incorporates the prior findings: it drops the duplicate init path, keeps trigger scope bounded, adds visible boot-failure output, and expands the contract/docs/test surface. Two implementation-plan details still undermine the revised guarantees: the new Bats tests as named will not run under the repo's Bats harness, and the hook failure-path snippet is not executable under the existing `set -euo pipefail` style."
+review_comments:
+  - finding_id: F-1
+    severity: medium
+    category: testing
+    location: "Verification plan: Automated tests"
+    description: "The proposed files `tests/hook-inline-brief.bats`, `tests/hook-session-start.bats`, and `tests/hook-boot-failure.bats` will not be picked up by `tests/run_all.sh`, which only runs Bats files matching `tests/test_*.bats` when `SPECANCHOR_RUN_BATS=1`. As written, the new 'automated' coverage can be added but silently omitted from the existing regression path."
+    suggested_change: "Either rename them to `tests/test_hook_inline_brief.bats`, `tests/test_hook_session_start.bats`, and `tests/test_hook_boot_failure.bats`, or add equivalent shell tests directly to `tests/run.sh`; update the verification plan to run `bash tests/run.sh` plus `SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh` if the Bats route is kept."
+    rationale: "Tests that are not wired into the repo's normal runners do not protect the hook behavior this plan depends on."
+  - finding_id: F-2
+    severity: medium
+    category: correctness
+    location: "Layer 1: Hook inlines critical spec summary"
+    description: "The revised hook snippet redirects stderr to `$boot_err_file`, but the plan never creates that file or installs cleanup. `hooks/session-start` uses `set -euo pipefail`, so copying this structure as-is would fail with an unbound variable before it can emit the promised JSON or `<spec-anchor-context status=\"error\">`."
+    suggested_change: "Make the Layer 1 implementation step explicit: create `boot_err_file=\"$(mktemp -t sa-hook-boot.XXXXXX)\"`, add cleanup for it, and include a test that the malformed-anchor path exits 0 with valid hook JSON and the error tag present."
+    rationale: "The error-visible fallback must itself be fail-fast-safe; otherwise the hook can break session start instead of surfacing missing context."

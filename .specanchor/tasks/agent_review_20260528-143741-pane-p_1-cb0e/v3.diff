@@ -1,0 +1,82 @@
+--- /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260528-143741-pane-p_1-cb0e/v2.md	2026-05-28 14:50:30
++++ /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260528-143741-pane-p_1-cb0e/v3.md	2026-05-28 15:04:39
+@@ -1,4 +1,4 @@
+-# Plan v2: Guarantee spec-anchor activation at conversation start
++# Plan v3: Guarantee spec-anchor activation at conversation start
+ 
+ ## Context / Goals
+ 
+@@ -29,9 +29,12 @@
+ - Active task list (what's in progress)
+ - Module contracts summary (key interfaces)
+ 
+-Implementation:
++Implementation (complete error-safe pattern):
+ ```bash
+-# In hooks/session-start:
++# In hooks/session-start, after the existing IMPORTANT block:
++boot_err_file="$(mktemp -t sa-hook-boot.XXXXXX)"
++trap 'rm -f "$boot_err_file"' EXIT
++
+ spec_summary=""
+ spec_status="ok"
+ if boot_output="$("$PLUGIN_ROOT/scripts/specanchor-boot.sh" --format=inline-brief 2>"$boot_err_file")"; then
+@@ -48,7 +51,11 @@
+ fi
+ ```
+ 
+-On boot failure: emit `<spec-anchor-context status="error">` with stderr excerpt so the agent knows context is missing — never silently degrade.
++Key properties:
++- `mktemp` creates the temp file; `trap EXIT` ensures cleanup
++- Boot failure is captured in `$boot_err_file`, hook always exits 0 with valid JSON
++- Agent sees `status="error"` and knows context is missing — never silently degrades
++- Under `set -euo pipefail`: the `if` construct handles the non-zero exit from boot without triggering errexit
+ 
+ Budget: Configurable via `anchor.yaml` field `hook.inline_budget_tokens`, default 600, bounds [200, 1500], validated at boot time (warning on out-of-bounds, clamp to nearest bound).
+ 
+@@ -83,7 +90,7 @@
+ 
+ | File | Change |
+ |------|--------|
+-| `hooks/session-start` | Add inline spec summary with error-aware output |
++| `hooks/session-start` | Add inline spec summary with error-aware output (mktemp + trap pattern) |
+ | `skills/spec-anchor/SKILL.md` | Update description field (bounded scope) |
+ | `scripts/specanchor-boot.sh` | Add `--format=inline-brief` output mode |
+ | `references/script-contract.md` | Document `--format=inline-brief` entry |
+@@ -98,21 +105,28 @@
+ 
+ 2. **Stale inline context**: If specs change mid-session, the inlined summary from session start becomes stale. Mitigation: The skill invocation still provides fresh context when invoked; the inline is a baseline, not a replacement.
+ 
+-3. **Boot failure visibility**: On failure, `<spec-anchor-context status="error">` makes the gap visible to the agent. The hook itself always succeeds (exit 0) to avoid breaking session start.
++3. **Boot failure visibility**: On failure, `<spec-anchor-context status="error">` makes the gap visible. The hook itself always exits 0 (valid JSON) to avoid breaking session start. The `if` construct ensures `set -e` doesn't kill the hook.
+ 
+ 4. **Superpowers interaction**: When both superpowers and spec-anchor are installed, `using-superpowers` scans skills and may invoke spec-anchor. The bounded description (Layer 2) reduces unnecessary activation on non-coding prompts while maintaining reliable activation for code work.
+ 
+ ## Verification plan
+ 
+-### Automated tests (new)
+-1. `tests/hook-inline-brief.bats` — verifies `--format=inline-brief` output content and budget cap enforcement
+-2. `tests/hook-session-start.bats` — validates JSON output across Claude Code (`CLAUDE_PLUGIN_ROOT`), Cursor (`CURSOR_PLUGIN_ROOT`), and generic environments
+-3. `tests/hook-boot-failure.bats` — malformed `anchor.yaml` fixture → asserts `status="error"` tag present in hook output
+-4. Existing boot-install idempotency tests remain unchanged (Layer 3 uses existing path)
++### Automated tests (wired into repo runner)
++1. `tests/test_hook_inline_brief.bats` — verifies `--format=inline-brief` output content and budget cap enforcement
++2. `tests/test_hook_session_start.bats` — validates JSON output across Claude Code (`CLAUDE_PLUGIN_ROOT`), Cursor (`CURSOR_PLUGIN_ROOT`), and generic environments
++3. `tests/test_hook_boot_failure.bats` — malformed `anchor.yaml` fixture → asserts exit 0, valid JSON, `status="error"` tag present
+ 
++All test files use `test_` prefix convention to be picked up by `tests/run_all.sh` under `SPECANCHOR_RUN_BATS=1`.
++
++### Run command
++```bash
++bash tests/run.sh
++SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh
++```
++
+ ### Manual verification
+-5. Start a new Claude Code session in a project with `anchor.yaml` — verify `<spec-anchor-context>` appears in session context
+-6. Token budget check: measure actual inline summary for spec-anchor project itself (dogfood), confirm < 600 tokens default
++4. Start a new Claude Code session in a project with `anchor.yaml` — verify `<spec-anchor-context>` appears in session context
++5. Token budget check: measure actual inline summary for spec-anchor project itself (dogfood), confirm < 600 tokens default
+ 
+ ## Rejected suggestions (from review)
+ 

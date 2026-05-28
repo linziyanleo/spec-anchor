@@ -58,6 +58,33 @@ Post-Coding Chain (after completing a coding task):
 3. Evaluate sediment: if findings reveal spec drift, draft a Sediment Proposal
 </IMPORTANT>"
 
+# Layer 1: Inline spec summary for guaranteed baseline context
+boot_err_file="$(mktemp -t sa-hook-boot.XXXXXX)"
+trap 'rm -f "$boot_err_file"' EXIT
+
+spec_summary=""
+spec_status="ok"
+if boot_output="$("$PLUGIN_ROOT/scripts/specanchor-boot.sh" --format=inline-brief 2>"$boot_err_file")"; then
+  spec_summary="$boot_output"
+else
+  spec_status="error"
+  spec_summary="Boot failed: $(head -c 200 "$boot_err_file")"
+fi
+
+if [ "$spec_status" = "ok" ] && [ -n "$spec_summary" ]; then
+  session_context="${session_context}
+
+<spec-anchor-context>
+${spec_summary}
+</spec-anchor-context>"
+elif [ "$spec_status" = "error" ]; then
+  session_context="${session_context}
+
+<spec-anchor-context status=\"error\">
+${spec_summary}
+</spec-anchor-context>"
+fi
+
 session_context_escaped="$(escape_for_json "$session_context")"
 
 if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then

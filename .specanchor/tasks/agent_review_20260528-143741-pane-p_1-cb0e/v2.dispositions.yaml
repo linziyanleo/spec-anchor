@@ -1,0 +1,10 @@
+plan_version_reviewed: v2
+total_review_comments: 2
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: "Rename test files to match repo convention: `tests/test_hook_inline_brief.bats`, `tests/test_hook_session_start.bats`, `tests/test_hook_boot_failure.bats`. Update verification plan to explicitly run `bash tests/run.sh` + `SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh`."
+
+  - finding_id: F-2
+    disposition: incorporated
+    plan_change_summary: "Make Layer 1 implementation explicit: create temp file via `mktemp -t sa-hook-boot.XXXXXX`, add trap-based cleanup, and include a test that validates malformed-anchor path exits 0 with valid JSON + error tag. The hook snippet now shows the complete error-safe pattern."

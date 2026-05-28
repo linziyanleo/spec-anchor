@@ -55,15 +55,14 @@ detect_targets() {
 render_block() {
   cat <<EOF
 ${BLOCK_START}
-## SpecAnchor
+## SpecAnchor (mandatory)
 
 This project uses SpecAnchor (see \`anchor.yaml\`).
-Before writing or editing code, you MUST:
-1. Invoke the \`spec-anchor\` skill to load it
-2. Run the boot script the skill prints
-3. Follow the Spec Landscape it returns
+Invoke the \`spec-anchor\` skill before code changes, spec/context management, reviews, or process skills.
 
-Triggers: any mention of spec, 规范, 对齐, alignment, checkpoint, handoff, coverage, or any edit in this repo.
+Do NOT skip because "it's a small change" — specs contain constraints not visible in code alone.
+
+Triggers: code edits, reviews, spec/context queries, 规范, 对齐, alignment, checkpoint, handoff, coverage, finding, sediment.
 ${BLOCK_END}
 EOF
 }

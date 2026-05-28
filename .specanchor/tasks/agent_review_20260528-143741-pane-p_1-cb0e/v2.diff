@@ -1,0 +1,168 @@
+--- /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260528-143741-pane-p_1-cb0e/v1.md	2026-05-28 14:39:42
++++ /Users/fanghu/Documents/Work/spec-anchor/.specanchor/tasks/agent_review_20260528-143741-pane-p_1-cb0e/v2.md	2026-05-28 14:50:30
+@@ -1,8 +1,8 @@
+-# Plan v1: Guarantee spec-anchor activation at conversation start
++# Plan v2: Guarantee spec-anchor activation at conversation start
+ 
+ ## Context / Goals
+ 
+-**Problem**: spec-anchor's SessionStart hook already fires and injects an `<IMPORTANT>` block telling agents to invoke the spec-anchor skill. However, in practice the trigger rate is ~70-80% — agents often skip it for "simple" questions or when no obvious coding task is detected in the first user message.
++**Problem**: spec-anchor's SessionStart hook fires and injects an `<IMPORTANT>` block telling agents to invoke the spec-anchor skill. However, in practice the trigger rate is ~70-80% — agents often skip it for "simple" questions or when no obvious coding task is detected in the first user message.
+ 
+ **Root cause**: The hook only injects *advice* ("please invoke spec-anchor"), not *substance*. Whether the agent actually calls the Skill tool depends on its own judgment. Different agents (Claude Code, Cursor, Copilot) have different compliance rates with advisory instructions.
+ 
+@@ -18,12 +18,13 @@
+ - Forcing spec-anchor on projects that don't have `anchor.yaml` / `.specanchor/` (current gate is correct).
+ - Replacing the skill invocation entirely (the skill provides interactive capabilities beyond just context loading).
+ - Supporting agents that don't support any form of session hooks or system prompts.
++- Changing the trigger scope beyond code edits, reviews, and spec/context work.
+ 
+ ## Proposed approach
+ 
+ ### Layer 1: Hook inlines critical spec summary (guarantees baseline)
+ 
+-Change the `session-start` hook to **inline** a compact project context summary directly in the hook output, rather than just advising "invoke the skill". This ensures even if the agent never calls the Skill tool, it already has:
++Change the `session-start` hook to **inline** a compact project context summary directly in the hook output. This ensures even if the agent never calls the Skill tool, it already has:
+ - Global coding standards (top constraints)
+ - Active task list (what's in progress)
+ - Module contracts summary (key interfaces)
+@@ -31,90 +32,92 @@
+ Implementation:
+ ```bash
+ # In hooks/session-start:
+-# After the existing IMPORTANT block, append a condensed spec summary
+-spec_summary="$("$PLUGIN_ROOT/scripts/specanchor-boot.sh" --format=inline-brief 2>/dev/null || true)"
+-if [ -n "$spec_summary" ]; then
++spec_summary=""
++spec_status="ok"
++if boot_output="$("$PLUGIN_ROOT/scripts/specanchor-boot.sh" --format=inline-brief 2>"$boot_err_file")"; then
++  spec_summary="$boot_output"
++else
++  spec_status="error"
++  spec_summary="Boot failed: $(head -c 200 "$boot_err_file")"
++fi
++
++if [ "$spec_status" = "ok" ] && [ -n "$spec_summary" ]; then
+   session_context="${session_context}\n\n<spec-anchor-context>\n${spec_summary}\n</spec-anchor-context>"
++elif [ "$spec_status" = "error" ]; then
++  session_context="${session_context}\n\n<spec-anchor-context status=\"error\">\n${spec_summary}\n</spec-anchor-context>"
+ fi
+ ```
+ 
+-Budget: ~500-800 tokens for the inline summary (configurable via `anchor.yaml` field `hook_budget`).
++On boot failure: emit `<spec-anchor-context status="error">` with stderr excerpt so the agent knows context is missing — never silently degrade.
+ 
+-### Layer 2: Strengthen skill description for "session start" semantics
++Budget: Configurable via `anchor.yaml` field `hook.inline_budget_tokens`, default 600, bounds [200, 1500], validated at boot time (warning on out-of-bounds, clamp to nearest bound).
+ 
++### Layer 2: Strengthen skill description (bounded scope)
++
+ Change the skill description from current:
+ ```
+ "MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes..."
+ ```
+ To:
+ ```
+-"MUST invoke at the START of every conversation in projects with anchor.yaml or .specanchor/ — loads project constraints, coding standards, and active tasks before any response or code change"
++"MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes, spec/context management, reviews, or process skills. Loads coding standards, module contracts, and active tasks."
+ ```
+ 
+-Key change: adding "at the START of every conversation" and "before any response" — this matches the trigger pattern of `using-superpowers` which achieves near-100% trigger rate.
++Key change: explicit enumeration of trigger scenarios. Keep `<IMPORTANT>` wrapper (not escalate to `<EXTREMELY_IMPORTANT>`). The inline spec summary (Layer 1) provides passive baseline for non-coding prompts without requiring skill invocation.
+ 
+-### Layer 3: Provide `sa init` command that writes to project CLAUDE.md
++### Layer 3: Enhance existing `specanchor-boot-install.sh` with strengthened trigger rule
+ 
+-Add a one-time setup command that appends a hard rule to the project's `.claude/CLAUDE.md` (or equivalent for other agents):
++**No new command or script.** Enhance the existing `specanchor-boot-install.sh` / `specanchor-init.sh --install-boot=<targets>` to inject a strengthened trigger rule into the target agent config files:
+ 
++For CLAUDE.md:
+ ```markdown
+ ## Spec Anchor (mandatory)
+-Always invoke the spec-anchor skill at conversation start. Do not skip for any reason.
++Invoke the spec-anchor skill before code changes, spec/context management, reviews, or process skills.
+ ```
+ 
+-This is the **highest priority** instruction layer for Claude Code. For Cursor it goes in `.cursorrules`, for Copilot in `AGENTS.md`.
++For .cursorrules / AGENTS.md: equivalent format per platform.
+ 
+-The `sa init` command detects which agent config files exist and writes to all of them.
++This uses the existing command routing and installation flow — no new `sa init` command, no new script.
+ 
+-### Layer 4 (belt-and-suspenders): Hook output includes skill-invoke instruction in `<EXTREMELY_IMPORTANT>` wrapper
+-
+-Superpowers uses `<EXTREMELY_IMPORTANT>` tags. Adopt the same pattern:
+-
+-```bash
+-session_context="<EXTREMELY_IMPORTANT>
+-This project uses spec-anchor. You MUST invoke the spec-anchor skill before any response.
+-The following project constraints are already loaded for reference, but invoke the skill for full interactive capabilities.
+-</EXTREMELY_IMPORTANT>
+-
+-<spec-anchor-context>
+-${spec_summary}
+-</spec-anchor-context>"
+-```
+-
+ ## Affected files
+ 
+ | File | Change |
+ |------|--------|
+-| `hooks/session-start` | Add inline spec summary + strengthen wrapper tags |
+-| `skills/spec-anchor/SKILL.md` | Update description field |
+-| `scripts/specanchor-boot.sh` | Add `--format=inline-brief` output mode (~500 token budget) |
+-| `anchor.yaml` (schema) | Optional `hook_budget` field |
+-| New: `scripts/specanchor-init-agent-config.sh` | Write rules to CLAUDE.md/.cursorrules/AGENTS.md |
+-| `SKILL.md` (root) | Document the `sa init` command |
++| `hooks/session-start` | Add inline spec summary with error-aware output |
++| `skills/spec-anchor/SKILL.md` | Update description field (bounded scope) |
++| `scripts/specanchor-boot.sh` | Add `--format=inline-brief` output mode |
++| `references/script-contract.md` | Document `--format=inline-brief` entry |
++| `.specanchor/modules/scripts.spec.md` | Update boot contract with new format |
++| `anchor.yaml` (schema) | Add `hook.inline_budget_tokens` field definition |
++| `scripts/specanchor-boot-install.sh` | Strengthen injected trigger rule text |
++| Install docs (README, references) | Document hook_budget configuration |
+ 
+ ## Risks & open questions
+ 
+-1. **Token budget**: Inlining spec summary in every session start adds ~500-800 tokens to every conversation. For large projects with many specs, this could bloat. Mitigation: strict budget cap + priority-based inclusion.
++1. **Token budget**: Inlining spec summary in every session start adds ~600 tokens (configurable). For large projects, priority-based inclusion prevents bloat. The budget is hard-capped at 1500 tokens.
+ 
+-2. **Stale inline context**: If specs change mid-session, the inlined summary from session start becomes stale. Mitigation: The skill invocation (Layer 2) still provides fresh context when invoked; the inline is a baseline, not a replacement.
++2. **Stale inline context**: If specs change mid-session, the inlined summary from session start becomes stale. Mitigation: The skill invocation still provides fresh context when invoked; the inline is a baseline, not a replacement.
+ 
+-3. **`specanchor-boot.sh --format=inline-brief` failure**: If the boot script fails (e.g., malformed anchor.yaml), the hook should still succeed with the advisory-only fallback. Current design has `|| true` but we should ensure graceful degradation.
++3. **Boot failure visibility**: On failure, `<spec-anchor-context status="error">` makes the gap visible to the agent. The hook itself always succeeds (exit 0) to avoid breaking session start.
+ 
+-4. **Multi-agent config fragmentation**: `sa init` writing to CLAUDE.md + .cursorrules + AGENTS.md means maintaining 3 formats. Risk of drift. Mitigation: generate from single template, version-stamp the output.
++4. **Superpowers interaction**: When both superpowers and spec-anchor are installed, `using-superpowers` scans skills and may invoke spec-anchor. The bounded description (Layer 2) reduces unnecessary activation on non-coding prompts while maintaining reliable activation for code work.
+ 
+-5. **Superpowers interaction**: When both superpowers and spec-anchor are installed, `using-superpowers` already scans skills and may invoke spec-anchor. The strengthened description (Layer 2) should make this more reliable, but we need to avoid duplicate context injection.
+-
+ ## Verification plan
+ 
+-1. **Manual test (Claude Code)**: Start a new session in a project with `anchor.yaml`. Verify that:
+-   - The hook output contains `<spec-anchor-context>` with actual spec content
+-   - The agent invokes spec-anchor skill before responding to the first message
+-   - Even with message "what time is it?" (non-coding), baseline context is present
++### Automated tests (new)
++1. `tests/hook-inline-brief.bats` — verifies `--format=inline-brief` output content and budget cap enforcement
++2. `tests/hook-session-start.bats` — validates JSON output across Claude Code (`CLAUDE_PLUGIN_ROOT`), Cursor (`CURSOR_PLUGIN_ROOT`), and generic environments
++3. `tests/hook-boot-failure.bats` — malformed `anchor.yaml` fixture → asserts `status="error"` tag present in hook output
++4. Existing boot-install idempotency tests remain unchanged (Layer 3 uses existing path)
+ 
+-2. **Manual test (Cursor)**: Same project, verify `.cursorrules` injection + hook output works
++### Manual verification
++5. Start a new Claude Code session in a project with `anchor.yaml` — verify `<spec-anchor-context>` appears in session context
++6. Token budget check: measure actual inline summary for spec-anchor project itself (dogfood), confirm < 600 tokens default
+ 
+-3. **Token budget check**: Measure actual token count of inline summary for the spec-anchor project itself (dogfood). Should be < 800 tokens.
++## Rejected suggestions (from review)
+ 
+-4. **Failure mode test**: Corrupt `anchor.yaml`, verify hook still outputs advisory-only fallback without crashing.
++No rejected suggestions across all review rounds.
+ 
+-5. **Idempotency test**: Run `sa init` twice, verify no duplicate rules in CLAUDE.md.
++## Deferred suggestions (from review)
++
++No deferred suggestions across all review rounds.

@@ -1,0 +1,38 @@
+overall_verdict: request_changes
+summary: The plan targets a real trigger-rate problem, but it duplicates an already implemented boot-install path and changes public hook/script/config behavior without the project-spec synchronization this repo requires. It also relies on silent fallback and manual verification for the very path that is supposed to guarantee baseline context.
+review_comments:
+  - finding_id: F-1
+    severity: high
+    category: maintainability
+    location: "Layer 3: Provide `sa init` command / Affected files"
+    description: "Layer 3 proposes a new `sa init` command and `scripts/specanchor-init-agent-config.sh`, but this repo already has `scripts/specanchor-boot-install.sh` plus `specanchor-init.sh --install-boot=<targets>` for the same CLAUDE.md/AGENTS.md/GEMINI.md/Cursor injection flow. `sa init` is also not an exposed command in the Spec Context's Available Commands, which route through `specanchor_init` and command definition files."
+    suggested_change: "Replace Layer 3 with a change to the existing `specanchor-boot-install.sh` and `specanchor-init.sh --install-boot=<targets>` path, or explicitly add `sa init` to command routing, command docs, script contract, module specs, and tests as a first-class public interface."
+    rationale: "Adding a parallel installer and unregistered command will create two drift-prone activation paths for the same behavior."
+  - finding_id: F-2
+    severity: high
+    category: correctness
+    location: "Layer 1: Hook inlines critical spec summary"
+    description: "The proposed hook command suppresses boot stderr and uses `|| true`, so malformed `anchor.yaml`, a broken boot script, or an unsupported `--format=inline-brief` would silently degrade to advisory-only output. That violates the repo's shell standard that silent swallowing is only for non-critical checks, and this path is the core guarantee of the plan."
+    suggested_change: "Capture boot stdout, stderr, and exit status; keep the hook JSON valid, but emit a visible `<spec-anchor-context status=\"error\">...</spec-anchor-context>` warning when boot fails instead of silently dropping the context. Add a focused malformed-anchor fixture that asserts the warning is present."
+    rationale: "A context-loading guarantee is not credible if the failure mode hides the missing context from the agent."
+  - finding_id: F-3
+    severity: medium
+    category: scope
+    location: "Layer 2 and Layer 4"
+    description: "The plan escalates from 'before code changes' to 'before any response' and adopts `<EXTREMELY_IMPORTANT>`, while the current trigger-rate task and boot-install implementation deliberately use a bounded `<IMPORTANT>` trigger block. The plan does not justify reversing that settled project decision or define how non-coding prompts should avoid unnecessary skill activation."
+    suggested_change: "Keep the mandatory wording scoped to code edits, reviews, spec/context work, and pre-superpowers process skills; if `<EXTREMELY_IMPORTANT>` is still required, add an explicit decision to reverse the existing `<IMPORTANT>` convention and update the boot-install templates and agent docs consistently."
+    rationale: "Over-broad instruction layers burn tokens and create inconsistent activation semantics across hook, skill, and project instruction files."
+  - finding_id: F-4
+    severity: medium
+    category: maintainability
+    location: "Affected files"
+    description: "Adding `specanchor-boot.sh --format=inline-brief` and an `anchor.yaml` `hook_budget` field changes public script and config contracts, but the affected-file list omits the protocol/spec surfaces that are expected to stay aligned: `references/script-contract.md`, agent boot docs, `references/commands/init.md` if init behavior changes, `.specanchor/modules/scripts.spec.md`, `.specanchor/modules/references.spec.md`, and user-facing install docs."
+    suggested_change: "Extend the plan's file list to include those protocol, module-spec, and install-doc updates; define the exact `hook_budget` key path, default, bounds, and validation behavior, or remove the configurable field from this iteration."
+    rationale: "SpecAnchor treats script contracts and module specs as part of the public interface, so code-only changes leave the landscape stale."
+  - finding_id: F-5
+    severity: medium
+    category: testing
+    location: "Verification plan"
+    description: "The verification plan is mostly manual and does not cover the new public behavior. It also does not verify the stated 95%+ reliability goal, valid JSON hook output across Claude/Cursor/generic environments, inline summary budget enforcement, boot failure visibility, or the existing boot-install idempotency path if Layer 3 is retained."
+    suggested_change: "Add focused automated tests for `--format=inline-brief`, SessionStart hook JSON for each supported environment, malformed `anchor.yaml` warning output, budget cap behavior, and boot-install/init idempotency; run `bash tests/run.sh`, plus `SPECANCHOR_RUN_BATS=1 bash tests/run_all.sh` if boot parsing or legacy Bats-covered script behavior changes."
+    rationale: "Manual startup checks are insufficient for a plugin hook that runs before every anchored session."

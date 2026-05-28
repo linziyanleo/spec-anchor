@@ -43,6 +43,10 @@ specanchor:
     ignore_paths:
       - "references/schemas/**/template.md"
 
+  # === Hook 配置 ===
+  hook:
+    inline_budget_tokens: 600  # SessionStart hook 内联摘要的 token 预算 [200, 1500]
+
   check:
     stale_days: 14
     outdated_days: 30
