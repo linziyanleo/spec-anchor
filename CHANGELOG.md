@@ -1,6 +1,37 @@
 # Changelog
 
-## v0.7.0-alpha.2 — Findings Lazy-Load + Summary Field (UNRELEASED)
+## v0.7.0 — Context Construction System + Agent Activation
+
+### Highlights
+
+- **Context Construction System**: repositions SpecAnchor around bounded, auditable, sedimentable context bundles across Spec / Decision / Evidence / Finding context.
+- **Context Bundle v1**: `specanchor-assemble.sh --format=json --bundle-schema=context_bundle.v1` emits `specanchor.context_bundle.v1` with layer metadata, freshness, confidence, and finding context.
+- **Findings + Sediment Proposals**: adds standalone `.specanchor/findings/` artifacts, human-reviewed `.specanchor/sediment/proposals/`, and helper scripts for creating both.
+- **Agent activation path**: adds `specanchor-boot.sh --agent --intent=...`, advisory stop-trigger detection, Claude Code bootloader docs, and plugin packaging with SessionStart hook support.
+- **Finding lazy-load controls**: requires concise finding `summary`, lazy-loads relevant findings by visibility, caps bundle size with `--max-findings`, and warns on backfill gaps.
+- **Public install docs**: promotes Claude Code plugin install as the recommended path while retaining skill-only installs for Cursor, Codex, Gemini, and other agents.
+
+### Validation
+
+```bash
+SPECANCHOR_SKILL_DIR="$PWD" bash scripts/specanchor-boot.sh --format=summary
+bash scripts/specanchor-doctor.sh --strict
+bash scripts/specanchor-doctor.sh --format=markdown --profile=release
+bash tests/run.sh
+bash tests/test_usage_proof.sh
+bash tests/test_agent_reliability.sh
+git diff --check
+```
+
+### Compatibility
+
+- Existing `assembly.v1` JSON output remains the default.
+- Existing `sdd-riper-one` projects continue to work; context-only mode is the new lightweight default path.
+- Plugin install is additive. Skill-only installs remain supported.
+
+---
+
+## v0.7.0-alpha.2 — Findings Lazy-Load + Summary Field (included in v0.7.0)
 
 > 在 v0.7.0-alpha.1 基础上加 finding 装载分级与 summary 必填字段，使 Context Bundle v1 在 finding 数量增长时仍保持 token 边界可控。
 
@@ -28,7 +59,7 @@
 
 ---
 
-## v0.7.0-alpha.1 — Agent Mode + Stop Triggers + Tool Bootloader (UNRELEASED)
+## v0.7.0-alpha.1 — Agent Mode + Stop Triggers + Tool Bootloader (included in v0.7.0)
 
 > 在 v0.6 基础上加 agent-facing 入口与 advisory 风险检测，并提供第一份 cross-tool bootloader（Claude Code）。同时把 README / WHY 主叙事切换为 Context Construction System。
 
@@ -45,7 +76,7 @@
 - 零破坏：所有 v0.6 行为保留（assembly.v1 默认输出 / sdd-riper-one schema / agent-contract.md deprecated alias）
 - 新参数（`--agent` / `--intent` / `--files` / `--bundle-schema`）全部 optional
 - 老 `specanchor-boot.sh --format=summary|full|json` 行为不变
-- README 版本 badge 仍标 0.5.0-beta.1（发布版本号留独立 PR 升）
+- README 版本 badge 在最终 v0.7.0 发布提交中更新。
 
 ### Not in v0.7
 
@@ -58,7 +89,7 @@
 
 ---
 
-## v0.6.0-alpha.1 — Context Construction System (UNRELEASED)
+## v0.6.0-alpha.1 — Context Construction System (included in v0.7.0)
 
 > 定位回归：从"Harness Context Control plane"改为"Context Construction System"。SpecAnchor 不拥有 agent execution loop。详见 `mydocs/idea.md` 附录 F 与 `.specanchor/tasks/_cross-module/2026-05-24_context-system-construction.spec.md`。
 

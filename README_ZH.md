@@ -17,7 +17,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.5.0--beta.1-brightgreen.svg" alt="Version 0.5.0-beta.1" />
+  <img src="https://img.shields.io/badge/version-0.7.0-brightgreen.svg" alt="Version 0.7.0" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -137,7 +137,24 @@ Claude: [runs specanchor-check.sh alignment]
 
 ## 60 秒上手
 
-SpecAnchor 的核心理念是用自然语言和 agent 对话——安装也一样，把仓库扔给任一胜任的 AI 代码 agent（Claude Code、Codex、Cursor、Gemini 等），让它自己装。
+### 方式 A：Claude Code 插件安装（推荐）
+
+以插件形式安装可启用 **SessionStart hook 自动注入**——在含 `anchor.yaml` 或 `.specanchor/` 的项目中，agent 会在 session 启动时自动加载 spec 上下文，无需手动触发。
+
+```bash
+# 开发测试（仅当前 session，不持久化）
+claude --plugin-dir /path/to/spec-anchor
+
+# 永久安装（通过自建 marketplace）
+/plugin marketplace add <你的 git 仓库地址>
+/plugin install spec-anchor@spec-anchor
+```
+
+安装后，打开任何含 `anchor.yaml` 或 `.specanchor/` 的项目，插件会在 session 启动时注入上下文，`spec-anchor` skill 自动被发现。
+
+### 方式 B：Skill 安装（适用于所有 agent）
+
+适用于 Cursor、Codex、Gemini 或不使用插件系统的 Claude Code：
 
 **1. Clone 仓库到本机任意位置**
 
@@ -236,9 +253,9 @@ git diff --check
 
 ## 当前发布状态
 
-当前已发布的预发布版本：`v0.5.0-beta.1`。
+当前已发布的正式版本：`v0.7.0`。
 
-- Release note：[`docs/release/v0.5.0-beta.1.md`](docs/release/v0.5.0-beta.1.md)
+- Release note：[`docs/release/v0.7.0.md`](docs/release/v0.7.0.md)
 - 变更记录：[`CHANGELOG.md`](CHANGELOG.md)
 
 ## 贡献

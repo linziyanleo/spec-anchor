@@ -40,6 +40,40 @@ rsync -a --exclude-from=/absolute/path/to/spec-anchor/.skillexclude \
 
 ## Claude Code
 
+### Plugin install (recommended)
+
+Installing as a plugin enables the **SessionStart hook** — the agent automatically loads spec context in projects with `anchor.yaml` or `.specanchor/`, without waiting for a skill invocation.
+
+**Dev/test (session-only, not persisted):**
+
+```bash
+claude --plugin-dir /absolute/path/to/spec-anchor
+```
+
+**Permanent install via self-hosted marketplace:**
+
+The spec-anchor repository includes `.claude-plugin/marketplace.json` and can serve as its own marketplace:
+
+```
+/plugin marketplace add <git-repo-url>
+/plugin install spec-anchor@spec-anchor
+```
+
+Team members run the same two commands to install.
+
+**Plugin vs skill-only:**
+
+| | Plugin | Skill-only |
+|---|---|---|
+| SessionStart hook (auto-inject context) | Yes | No |
+| Skill auto-discovery | Yes (`skills/spec-anchor/SKILL.md`) | Yes (`~/.claude/skills/spec-anchor/SKILL.md`) |
+| Post-coding chain prompting | Yes (via hook injection) | Via CLAUDE.md injection only |
+| Requires `claude --plugin-dir` or `/plugin` | Yes | No |
+
+Both paths can coexist — the plugin provides the hook, the skill-only path provides the fallback.
+
+### Skill-only install
+
 Project-local auto-discovery install:
 
 ```bash

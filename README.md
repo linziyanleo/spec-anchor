@@ -17,7 +17,7 @@
   <a href="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml">
     <img src="https://github.com/linziyanleo/spec-anchor/actions/workflows/ci.yml/badge.svg" alt="CI" />
   </a>
-  <img src="https://img.shields.io/badge/version-0.5.0--beta.1-brightgreen.svg" alt="Version 0.5.0-beta.1" />
+  <img src="https://img.shields.io/badge/version-0.7.0-brightgreen.svg" alt="Version 0.7.0" />
   <img src="https://img.shields.io/badge/Claude%20Code-%E2%9C%93-orange" alt="Claude Code" />
   <img src="https://img.shields.io/badge/Cursor-%E2%9C%93-1e90ff" alt="Cursor" />
   <img src="https://img.shields.io/badge/Codex-%E2%9C%93-lightgrey" alt="Codex" />
@@ -138,7 +138,24 @@ Every tool here has *some* three-part structure — project context, persistent 
 
 ## 60-Second Quick Start
 
-The point of SpecAnchor is that you talk to your agent in natural language. Installation follows the same principle — hand the folder to any capable AI coding agent (Claude Code, Codex, Cursor, Gemini, …) and let it set itself up.
+### Option A: Claude Code Plugin (recommended)
+
+Install as a Claude Code plugin to get **SessionStart hook auto-injection** — the agent loads spec context automatically in anchored projects without being asked.
+
+```bash
+# Dev/test (session-only, not persisted)
+claude --plugin-dir /path/to/spec-anchor
+
+# Permanent install via self-hosted marketplace
+/plugin marketplace add <your-git-repo-url>
+/plugin install spec-anchor@spec-anchor
+```
+
+Once installed, open any project with `anchor.yaml` or `.specanchor/` — the plugin injects context at session start and the `spec-anchor` skill is auto-discovered.
+
+### Option B: Skill-only install (any agent)
+
+For Cursor, Codex, Gemini, or Claude Code without the plugin system:
 
 **1. Clone the skill anywhere on your machine.**
 
@@ -238,9 +255,9 @@ git diff --check
 
 ## Release Status
 
-Current published prerelease: `v0.5.0-beta.1`.
+Current stable release: `v0.7.0`.
 
-- Release notes: [`docs/release/v0.5.0-beta.1.md`](docs/release/v0.5.0-beta.1.md)
+- Release notes: [`docs/release/v0.7.0.md`](docs/release/v0.7.0.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Contributing

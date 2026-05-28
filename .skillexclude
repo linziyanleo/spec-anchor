@@ -4,6 +4,7 @@
 mydocs/
 tests/
 .github/
+.git
 .git/
 .gitignore
 .skillexclude
