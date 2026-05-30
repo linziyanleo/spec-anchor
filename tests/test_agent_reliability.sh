@@ -355,6 +355,55 @@ test_golden_replay_outputs() {
   assert_json_golden "$assembly_actual" "${FIXTURE_ROOT}/replay/references-change.assembly.golden.json"
 }
 
+test_boot_tasks_filter() {
+  # F-20260530-001 C2: --tasks=open 折叠终态 done/archived，但保留 draft/review/未知非终态；
+  # summary 默认 all（向后兼容）；none 仅留计数行；json 不受 --tasks 影响（机器契约）。
+  local workdir s
+  workdir=$(make_temp_dir)
+  mkdir -p "$workdir/.specanchor/tasks/m" "$workdir/.specanchor/global"
+  printf 'project_name: tasktest\nmode: full\n' >"$workdir/anchor.yaml"
+  for s in draft review done bogusstatus; do
+    cat >"$workdir/.specanchor/tasks/m/${s}.spec.md" <<EOF
+---
+specanchor:
+  level: task
+  task_name: "Task-${s}"
+  author: "@t"
+  created: "2026-05-31"
+  status: "${s}"
+  writing_protocol: "simple"
+---
+# Task-${s}
+EOF
+  done
+
+  # all：四个都在
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-boot.sh" --format=summary --tasks=all
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" "Task-draft"
+  assert_contains "$CAPTURE_OUTPUT" "Task-done"
+
+  # open：done 折叠（名字消失 + collapse 提示），draft/review/未知保留
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-boot.sh" --format=summary --tasks=open
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" "Task-draft"
+  assert_contains "$CAPTURE_OUTPUT" "Task-review"
+  assert_contains "$CAPTURE_OUTPUT" "Task-bogusstatus"
+  assert_contains "$CAPTURE_OUTPUT" "collapsed"
+  assert_not_contains "$CAPTURE_OUTPUT" "Task-done"
+
+  # none：无任务列表，但保留 "Task Specs:" 计数行（信号不丢）
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-boot.sh" --format=summary --tasks=none
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" "Task Specs:"
+  assert_not_contains "$CAPTURE_OUTPUT" "Task-draft"
+
+  # json 不受 --tasks 影响：仍合法、status ok
+  capture_cmd "$workdir" bash "$REPO_ROOT/scripts/specanchor-boot.sh" --format=json --tasks=none
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" '"status": "ok"'
+}
+
 echo "=== SpecAnchor Agent Reliability Tests ==="
 
 run_test test_resolve_v2_root_json
@@ -368,6 +417,7 @@ run_test test_assemble_resolve_json_input
 run_test test_assemble_write_trace
 run_test test_doctor_agent_profile_json
 run_test test_doctor_release_profile_missing_note
+run_test test_boot_tasks_filter
 run_test test_validate_root_json
 run_test test_validate_invalid_resolve_json
 run_test test_validate_invalid_assembly_json

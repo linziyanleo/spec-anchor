@@ -81,6 +81,7 @@ declare -a B_TASK_STATUSES=()
 declare -a B_TASK_PHASES=()       # RIPER phase (sdd-riper-one schema only); empty for fluid schemas
 declare -a B_TASK_PROTOCOLS=()
 declare -a B_TASK_PATHS=()
+B_TASKS_MODE="all"        # all | open | none — open 折叠终态 done/archived 为计数；none 仅留计数行
 
 # Global Specs
 B_GLOBAL_STATUS=""    # ok | missing
@@ -260,17 +261,32 @@ readiness_detail() {
   fi
 }
 
+# 终态状态：在 --tasks=open 下折叠为计数。draft/review/in_progress/未知非终态一律保留可见。
+task_status_is_terminal() {
+  case "$1" in
+    done|archived) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 emit_active_tasks() {
   [[ "${#B_TASK_NAMES[@]}" -eq 0 ]] && return 0
+  [[ "$B_TASKS_MODE" == "none" ]] && return 0
 
   echo -e "  Active Tasks:"
   local i status_disp phase_disp protocol_disp name path
+  local collapsed=0
   for i in "${!B_TASK_NAMES[@]}"; do
     name="${B_TASK_NAMES[$i]}"
     status_disp="${B_TASK_STATUSES[$i]}"
     phase_disp="${B_TASK_PHASES[$i]}"
     protocol_disp="${B_TASK_PROTOCOLS[$i]}"
     path="${B_TASK_PATHS[$i]}"
+
+    if [[ "$B_TASKS_MODE" == "open" ]] && task_status_is_terminal "$status_disp"; then
+      collapsed=$((collapsed + 1))
+      continue
+    fi
 
     local status_color="$DIM"
     case "$status_disp" in
@@ -287,6 +303,9 @@ emit_active_tasks() {
     meta="${meta} ${DIM}(${protocol_disp})${RESET}"
     echo -e "    - ${name} [${meta}] ${DIM}${path}${RESET}"
   done
+  if [[ "$B_TASKS_MODE" == "open" ]] && [[ $collapsed -gt 0 ]]; then
+    echo -e "    ${DIM}(+${collapsed} done/archived collapsed; --tasks=all 展开)${RESET}"
+  fi
 }
 
 emit_next_action() {
@@ -791,13 +810,19 @@ output_inline_brief() {
     done
   fi
 
-  if [[ ${#B_TASK_NAMES[@]} -gt 0 ]]; then
+  if [[ ${#B_TASK_NAMES[@]} -gt 0 ]] && [[ "$B_TASKS_MODE" != "none" ]]; then
     output+="Active Tasks:"$'\n'
+    local tb_collapsed=0
     for i in "${!B_TASK_NAMES[@]}"; do
+      if [[ "$B_TASKS_MODE" == "open" ]] && task_status_is_terminal "${B_TASK_STATUSES[$i]}"; then
+        tb_collapsed=$((tb_collapsed + 1))
+        continue
+      fi
       output+="  - ${B_TASK_NAMES[$i]} [${B_TASK_STATUSES[$i]}]"
       [[ -n "${B_TASK_PHASES[$i]:-}" ]] && output+=" phase=${B_TASK_PHASES[$i]}"
       output+=$'\n'
     done
+    [[ "$B_TASKS_MODE" == "open" && $tb_collapsed -gt 0 ]] && output+="  (+${tb_collapsed} done/archived collapsed)"$'\n'
   fi
 
   local char_budget=$((budget * 4))
@@ -952,6 +977,8 @@ usage() {
   echo "  specanchor-boot.sh --format=summary      # 同上"
   echo "  specanchor-boot.sh --with-schemas        # 默认开启；显式声明用于向后兼容"
   echo "  specanchor-boot.sh --no-schemas          # 关闭 Available Schemas（精简输出）"
+  echo "  specanchor-boot.sh --tasks=open          # 折叠终态 done/archived 任务为计数（保留 draft/review/in_progress）"
+  echo "                                           #   默认: summary/full=all（向后兼容），inline-brief=open"
   echo "  specanchor-boot.sh --format=full         # 含 Global Spec 内容"
   echo "  specanchor-boot.sh --format=json         # JSON 机器可读"
   echo ""
@@ -975,6 +1002,7 @@ usage() {
 
 main() {
   local format="summary"
+  local tasks_mode=""   # 空 = 按 format 解析默认（inline-brief→open，其余→all）
   # v0.7 新增：agent 模式相关参数
   local agent_mode="false"
   local intent=""
@@ -991,6 +1019,7 @@ main() {
     fi
     case "$arg" in
       --format=*) format="${arg#--format=}" ;;
+      --tasks=*) tasks_mode="${arg#--tasks=}" ;;
       --with-schemas) SHOW_SCHEMAS=true ;;
       --no-schemas) SHOW_SCHEMAS=false ;;
       --agent) agent_mode="true" ;;
@@ -1016,6 +1045,16 @@ main() {
       *) die "未知参数: $arg" ;;
     esac
   done
+
+  # --tasks 默认：inline-brief（hook 注入路径，~600 token）默认 open 压缩；
+  # summary/full 默认 all 保持向后兼容、不改默认输出 shape。json 不受影响（机器契约全量）。
+  if [[ -z "$tasks_mode" ]]; then
+    if [[ "$format" == "inline-brief" ]]; then tasks_mode="open"; else tasks_mode="all"; fi
+  fi
+  case "$tasks_mode" in
+    all|open|none) B_TASKS_MODE="$tasks_mode" ;;
+    *) die "未知 --tasks 值: $tasks_mode (可选: open | all | none)" ;;
+  esac
 
   # v0.7 新增：--agent --intent 模式直接产 preflight context bundle
   # 等价于 specanchor-assemble.sh --intent=... --format=json --bundle-schema=context_bundle.v1

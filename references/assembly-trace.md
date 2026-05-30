@@ -37,3 +37,4 @@ Landscape Readiness 语义（仅 boot 产出，assemble 不产出）：
 3. 如果后续按需加载了新的 Module Spec，必须再输出一次更新后的 Trace。
 4. 不要把“读过文件名”伪装成“读过全文”；`summary` 和 `full` 必须分开写。
 5. `Landscape Readiness` 行仅由 `specanchor-boot.sh` 产出。`specanchor-assemble.sh` 的 v2 Trace 不包含此行。
+6. **Delta-only after first trace（同 session 去重账本）**：Assembly Trace 是本 session 的「已加载」账本。同一 session 内，已经以 `full` 载入的 Spec 正文不要重复打印；后续轮次只声明相对上一条 Trace 的 delta（新增 / 变化的 Spec、freshness 变动），未变化的 Spec 用一行指针带过。仅当目标文件集合或 freshness 发生变化时才重新载入对应正文。`specanchor-boot.sh` 是 session-start / preflight，原则上每 session 一次；同 session 后续刷新优先 targeted `specanchor-assemble.sh`，不重复全量 boot。脚本无持久化状态，账本只活在对话里。

@@ -23,6 +23,8 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-boot
 
 不要在 boot 有 blocking errors 时继续编辑代码。
 
+**Boot once per session**：boot 是 session-start / preflight，同一 session 原则上只运行一次。同 session 内后续上下文需求改用 §2 的 targeted assemble，不重复 boot；已 `full` 加载过的 Spec 正文不重复打印，除非目标集合或 freshness 变化（Assembly Trace 作为对话内的去重账本，脚本无持久化状态）。
+
 ## 2. Resolve Anchors（精准装配）
 
 当文件路径与任务意图已明确时，跑 assemble 拿 bounded context bundle：

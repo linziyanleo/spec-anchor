@@ -4,13 +4,13 @@ specanchor:
   module_name: "scripts"
   module_path: "scripts/"
   summary: "Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验"
-  version: "2.4.0"
+  version: "2.5.0"
   owner: "maintainers"
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-26"
   last_synced_sha: "71b2c7c"
-  last_change: "v0.6 findings lazy-load: specanchor-finding.sh new --summary 必选；specanchor-validate.sh 对称二分宽容期；specanchor-assemble.sh 加 --max-findings 与 visibility-driven discovery；specanchor-doctor.sh backfill warn；新增 lib/finding-parser.sh 共享解析器"
+  last_change: "v0.7 session-context-control: boot 加 --tasks=open|all|none（open 折叠终态 done/archived，inline-brief 默认 open）+ 文档补 inline-brief format；boot-install 注入模板加 boot-once/delta-assemble 契约文案"
   depends_on: []
 ---
 
@@ -87,7 +87,8 @@ specanchor:
 
 | 参数 | 说明 |
 |------|------|
-| `--format=summary\|full\|json` | 输出格式（默认 summary） |
+| `--format=summary\|full\|json\|inline-brief` | 输出格式（默认 summary；`inline-brief` 为 ~600 token 内联摘要，用于 hook 注入） |
+| `--tasks=open\|all\|none` | Active Tasks 渲染：`open` 折叠终态 done/archived 为计数（保留 draft/review/in_progress/未知非终态）；`none` 仅留计数行；`all` 全量。默认 summary/full=all（向后兼容、不改默认 shape），inline-brief=open。`--format=json` 不受影响 |
 | `--with-schemas` | summary/full 中显式输出 schema 摘要（默认开启；保留 flag 用于向后兼容） |
 | `--no-schemas` | 关闭 Available Schemas 段（精简输出场景） |
 

@@ -50,6 +50,8 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-boot
 
 如果 `anchor.yaml` 缺失，或 `mode=full` 但 `.specanchor/` 缺失，先修配置再继续。
 
+**Boot 是 session-start / preflight，同一 session 原则上只运行一次。** 同 session 内后续的上下文需求不要重复 boot——改用 targeted `specanchor-assemble.sh --files=...`（见 Loading Strategy）。已经以 `full` 加载过的 Spec 正文不要重复打印，除非目标文件集合或 freshness 发生变化；后续轮次只在 Assembly Trace 里声明相对上一条 Trace 的 delta（见 `references/assembly-trace.md`）。这是 advisory 约束，保留 fail-fast 与每次调用 bounded 输出；脚本本身无持久化状态，"已加载" 账本由对话内的 Assembly Trace 维护。
+
 ## Assembly Trace
 
 每轮都要显式输出一次 Assembly Trace，说明本轮到底加载了哪些 Spec、是摘要还是全文：

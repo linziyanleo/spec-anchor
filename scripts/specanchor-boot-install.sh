@@ -60,6 +60,8 @@ ${BLOCK_START}
 This project uses SpecAnchor (see \`anchor.yaml\`).
 Invoke the \`spec-anchor\` skill before code changes, spec/context management, reviews, or process skills.
 
+Boot is session-start / preflight — run it once per session. For later edits in the same session, prefer targeted assemble over re-running boot, and don't reprint already-loaded specs unless their target set or freshness changed.
+
 Do NOT skip because "it's a small change" — specs contain constraints not visible in code alone.
 
 Triggers: code edits, reviews, spec/context queries, 规范, 对齐, alignment, checkpoint, handoff, coverage, finding, sediment.
