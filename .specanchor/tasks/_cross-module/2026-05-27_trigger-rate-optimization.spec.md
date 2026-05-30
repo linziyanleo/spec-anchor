@@ -1,22 +1,18 @@
 ---
-title: "SpecAnchor 触发率优化：五层触发体系实现"
-status: done
-created: 2026-05-27
-intent: >
-  将 spec-anchor 从被动等待调用的 skill 升级为主动触发的 plugin+skill 混合体，
-  通过 SessionStart hook 注入 + 命令式短 description + 宽触发面积 + 防跳过对策 +
-  链式调用 五个层面全面提升触发率，对标 superpowers 的触发机制设计。
-scope:
-  - SKILL.md (description 重写)
-  - hooks/ (新建目录 + SessionStart 脚本)
-  - package.json (新建，插件化)
-  - scripts/specanchor-boot-install.sh (增强 hook 注入)
-  - references/skills/spec-anchor-prelude/SKILL.md (链式调用增强)
 specanchor:
-  writing_protocol: simple
+  level: task
+  task_name: "SpecAnchor 触发率优化：五层触发体系实现"
+  author: "@方壶"
+  created: "2026-05-27"
+  status: "done"
+  writing_protocol: "simple"
 ---
 
 # SpecAnchor 触发率优化：五层触发体系实现
+
+> **Intent**：将 spec-anchor 从被动等待调用的 skill 升级为主动触发的 plugin+skill 混合体，通过 SessionStart hook 注入 + 命令式短 description + 宽触发面积 + 防跳过对策 + 链式调用 五个层面全面提升触发率，对标 superpowers 的触发机制设计。
+>
+> **Scope**：SKILL.md (description 重写) / hooks/ (新建目录 + SessionStart 脚本) / package.json (新建，插件化) / scripts/specanchor-boot-install.sh (增强 hook 注入) / references/skills/spec-anchor-prelude/SKILL.md (链式调用增强)。
 
 ## 问题分析
 
