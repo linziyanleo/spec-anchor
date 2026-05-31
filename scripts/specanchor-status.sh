@@ -182,8 +182,9 @@ collect_stats() {
       [[ -z "$_tproto" ]] && _tproto="$S_DEFAULT_SCHEMA"
       _tphase=""
       if [[ "$_tproto" == "sdd-riper-one" ]]; then
+        # pipefail-safe：缺 RIPER Phase 标记时 grep 退出 1，末尾 || true 防止 set -e 中断
         _tphase=$(grep -m1 '^> Current RIPER Phase:' "$_tf" 2>/dev/null \
-          | sed -E 's/^> Current RIPER Phase:[[:space:]]*//' | tr -d '[:space:]')
+          | sed -E 's/^> Current RIPER Phase:[[:space:]]*//' | tr -d '[:space:]' || true)
       fi
       S_TASK_NAMES+=("${_tname:-(unnamed)}")
       S_TASK_STATUSES+=("${_tstatus:-unknown}")

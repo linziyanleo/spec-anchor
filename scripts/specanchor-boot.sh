@@ -480,8 +480,9 @@ collect_active_task_details() {
     [[ -z "$protocol" ]] && protocol="sdd-riper-one"
     phase=""
     if [[ "$protocol" == "sdd-riper-one" ]]; then
+      # pipefail-safe：缺 RIPER Phase 标记时 grep 退出 1，末尾 || true 防止 set -e 中断 boot
       phase=$(grep -m1 '^> Current RIPER Phase:' "$file" 2>/dev/null \
-        | sed -E 's/^> Current RIPER Phase:[[:space:]]*//' | tr -d '[:space:]')
+        | sed -E 's/^> Current RIPER Phase:[[:space:]]*//' | tr -d '[:space:]' || true)
     fi
     B_TASK_NAMES+=("${name:-(unnamed)}")
     B_TASK_STATUSES+=("${status:-unknown}")
