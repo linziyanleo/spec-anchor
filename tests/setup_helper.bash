@@ -35,7 +35,7 @@ create_sandbox() {
   cp "${SCRIPTS_DIR}/specanchor-index.sh" "${SANDBOX_SCRIPTS}/"
   cp "${SCRIPTS_DIR}/frontmatter-inject.sh" "${SANDBOX_SCRIPTS}/"
   cp "${SCRIPTS_DIR}/frontmatter-inject-and-check.sh" "${SANDBOX_SCRIPTS}/"
-  cp "${SCRIPTS_DIR}/lib/common.sh" "${SANDBOX_SCRIPTS}/lib/"
+  cp "${SCRIPTS_DIR}/lib/"*.sh "${SANDBOX_SCRIPTS}/lib/"   # 全量 copy，避免新增 lib 依赖（如 health.sh）时漏拷致 sandbox 脚本失败
 
   # 创建默认 anchor.yaml
   cat > "${SANDBOX}/anchor.yaml" <<'YAML'
