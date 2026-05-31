@@ -8,11 +8,11 @@ target:
   section: 2. 业务规则
 operation: append
 supersedes: []
-status: proposed
+status: accepted
 created: 2026-05-31
 updated: 2026-05-31
-reviewer: null
-review_decision: null
+reviewer: "@方壶"
+review_decision: accept
 ---
 
 # Sediment Proposal: session-context-control
@@ -61,9 +61,9 @@ review_decision: null
 
 > 由 batch review 时 reviewer 填写
 
-- [ ] accept：按 operation 字段 apply 到 target spec
+- [x] accept：按 operation 字段 apply 到 target spec
 - [ ] reject：拒绝并归档
 - [ ] defer：下次 review 再看
 - [ ] merge-with-edit：人改 proposal 内容后 accept
 
-Decision rationale: ...
+Decision rationale: 契约已 append 到 scripts.spec.md §2 业务规则（operation=append）；source finding F-20260530-001 标记 superseded；proposal 归档到 .specanchor/sediment/archive/。

@@ -52,6 +52,7 @@ declare -a DISCOVERED_FINDING_MATCH_PRECISIONS=()
 STATUS="ok"
 MAX_FILES=12
 MAX_LINES=1200
+FULL_LOAD_MAX_LINES=220            # C3 启发式：full-load 行数硬上限——>此值即使预算允许也降级 summary（anchor.yaml.full_load_max_lines 可覆写）
 ESTIMATED_FILES=0
 ESTIMATED_LINES=0
 TRUNCATED="false"
@@ -109,58 +110,66 @@ merge_trace_mode() {
 assembly_load_for_anchor() {
   local level="$1"
   local path="$2"
-  local line_count
+  local line_count desired
   line_count=$(sa_file_line_count "$path")
 
   case "$level" in
     global)
       case "$BUDGET_PROFILE" in
-        full) printf 'full\n' ;;
-        *) printf 'summary\n' ;;
+        full) desired="full" ;;
+        *) desired="summary" ;;
       esac
       ;;
     module)
       case "$BUDGET_PROFILE" in
-        compact) printf 'summary\n' ;;
+        compact) desired="summary" ;;
         normal)
-          if [[ "$line_count" -le 220 ]]; then
-            printf 'full\n'
+          if [[ "$line_count" -le "$FULL_LOAD_MAX_LINES" ]]; then
+            desired="full"
           else
-            printf 'summary\n'
+            desired="summary"
           fi
           ;;
-        full) printf 'full\n' ;;
+        full) desired="full" ;;
       esac
       ;;
     task)
       case "$BUDGET_PROFILE" in
-        compact) printf 'skipped\n' ;;
-        normal) printf 'summary\n' ;;
-        full) printf 'full\n' ;;
+        compact) desired="skipped" ;;
+        normal) desired="summary" ;;
+        full) desired="full" ;;
       esac
       ;;
     source)
       case "$BUDGET_PROFILE" in
         full)
-          if [[ -f "$path" ]] && [[ "$line_count" -le 220 ]]; then
-            printf 'full\n'
+          if [[ -f "$path" ]] && [[ "$line_count" -le "$FULL_LOAD_MAX_LINES" ]]; then
+            desired="full"
           else
-            printf 'summary\n'
+            desired="summary"
           fi
           ;;
-        *) printf 'summary\n' ;;
+        *) desired="summary" ;;
       esac
       ;;
     codemap)
       case "$BUDGET_PROFILE" in
-        compact) printf 'skipped\n' ;;
-        *) printf 'summary\n' ;;
+        compact) desired="skipped" ;;
+        *) desired="summary" ;;
       esac
       ;;
     *)
-      printf 'summary\n'
+      desired="summary"
       ;;
   esac
+
+  # C3 启发式：full-load 行数硬上限。即使预算（如 --budget=full）允许 full，
+  # 超过 FULL_LOAD_MAX_LINES 的文件也统一降级 summary，保证单次 bundle bounded。
+  if [[ "$desired" == "full" ]] && [[ "$line_count" -gt "$FULL_LOAD_MAX_LINES" ]]; then
+    desired="summary"
+  fi
+
+  printf '%s\n' "$desired"
 }
 
 add_file_to_read() {
@@ -252,6 +261,24 @@ write_trace_if_requested() {
       cp "$trace_tmp" "$WRITE_TRACE"
       ;;
   esac
+}
+
+# C3：从 anchor.yaml 读 full_load_max_lines 覆写 full-load 行数上限（简单单行字段，任意嵌套）
+load_anchor_full_line_cap_override() {
+  local config raw
+  config=$(sa_find_config 2>/dev/null) || return 0
+  [[ -f "$config" ]] || return 0
+  raw=$(awk '/^[[:space:]]*full_load_max_lines:[[:space:]]/ {
+    sub(/^[[:space:]]*full_load_max_lines:[[:space:]]*/, "", $0)
+    sub(/[[:space:]]*#.*$/, "", $0)
+    gsub(/[[:space:]]/, "", $0)
+    print
+    exit
+  }' "$config")
+  if [[ "$raw" =~ ^[0-9]+$ ]]; then
+    FULL_LOAD_MAX_LINES="$raw"
+  fi
+  return 0
 }
 
 # v0.6 lazy-load：从 anchor.yaml 读 context.budget.max_findings（CLI 已显式覆写时跳过）
@@ -1312,6 +1339,7 @@ main() {
   fi
 
   load_anchor_max_findings_override
+  load_anchor_full_line_cap_override
   build_requested_targets
 
   local resolve_json

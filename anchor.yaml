@@ -47,6 +47,10 @@ specanchor:
   hook:
     inline_budget_tokens: 600  # SessionStart hook 内联摘要的 token 预算 [200, 1500]
 
+  # === Context 装配 ===
+  assemble:
+    full_load_max_lines: 220   # C3：full-load 行数硬上限——超过则即使预算允许（含 --budget=full）也降级 summary
+
   check:
     stale_days: 14
     outdated_days: 30

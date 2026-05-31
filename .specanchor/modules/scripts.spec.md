@@ -4,13 +4,13 @@ specanchor:
   module_name: "scripts"
   module_path: "scripts/"
   summary: "Shell 自动化工具层：初始化、状态/诊断、索引、对齐检测、Frontmatter、解析与校验"
-  version: "2.5.0"
+  version: "2.6.0"
   owner: "maintainers"
   created: "2026-04-02"
   status: active
   last_synced: "2026-05-26"
   last_synced_sha: "71b2c7c"
-  last_change: "v0.7 session-context-control: boot 加 --tasks=open|all|none（open 折叠终态 done/archived，inline-brief 默认 open）+ 文档补 inline-brief format；boot-install 注入模板加 boot-once/delta-assemble 契约文案"
+  last_change: "v0.7 session-context-control: §2 加 Session 上下文加载契约（SP-20260531-001 accepted ← F-20260530-001）；boot 加 --tasks=open|all|none + 文档补 inline-brief；boot-install 注入模板加 boot-once/delta 契约；assemble 加超 N 行默认 summary 启发式"
   depends_on: []
 ---
 
@@ -27,6 +27,7 @@ specanchor:
 - 配置读取统一通过 `find_config()` + `parse_yaml_field()` 双路径查找
 - 输出区分 TTY（彩色）和非 TTY（纯文本），支持管道和重定向
 - 幂等安全：重复运行同一脚本不产生副作用
+- **Session 上下文加载契约（boot / assemble）**：`specanchor-boot.sh` 是 session-start / preflight，同一 session 原则上只运行一次；同 session 内后续上下文刷新优先用 targeted `specanchor-assemble.sh --files=...`，不重复全量 boot。脚本本身保持「无持久化状态」（见 §4）——"已加载" 账本由调用方 / Assembly Trace 在对话内维护、不落盘；脚本只在单次调用内对目标集合去重。已 `full` 加载过的 spec 正文不重复打印，除非目标集合或 freshness 发生变化。该契约为 advisory（不机械阻断），且必须保留 fail-fast 与每次调用 bounded 输出。（来源：SP-20260531-001 ← F-20260530-001）
 
 ## 3. 公开接口（脚本入口）
 
@@ -179,6 +180,8 @@ Layer 2 — 组合器，串联 Layer 1 注入 + specanchor-check.sh 检测：
 默认输出 bounded read plan、Assembly Trace 与 agent instructions，不直接读取或修改业务文件。`--mode=handoff` 输出 handoff packet（task name / phase / hot decisions / evidence status / next step），用于跨 session 接手。
 
 **v0.6 lazy-load findings**（仅在 `--format=json --bundle-schema=context_bundle.v1` 且 `--files=` 非空时启用）：扫描 `.specanchor/findings/*.md`，按 `affects.path` / `affects.module` 命中目标文件分级载荷——`immediate→full / sediment_queue→summary / handoff→title`，`hidden` 不进 bundle。截断时以 `finding_cap_truncated:` 前缀追加到 `warnings[]`（保持 schema 向后兼容）。
+
+**C3 full-load 行数硬上限**：`assembly_load_for_anchor` 在任何 level / 任何 `--budget` 档下，若某 anchor 本会 `full` 加载但行数 > `FULL_LOAD_MAX_LINES`（默认 220，`anchor.yaml.full_load_max_lines` 可覆写），统一降级 `summary`。这关闭了 `--budget=full` 此前完全忽略行数的缺口，保证单次 bundle bounded（对齐 §2 加载契约）。
 
 ### specanchor-finding.sh
 

@@ -404,6 +404,38 @@ EOF
   assert_contains "$CAPTURE_OUTPUT" '"status": "ok"'
 }
 
+test_assemble_full_line_cap() {
+  # C3 (F-20260530-001): 即使 --budget=full，超过 FULL_LOAD_MAX_LINES(默认 220) 的 module spec
+  # 也降级 summary。scripts.spec.md 在本 repo >220 行，是稳定样本（旧行为=full）。
+  capture_cmd "$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-assemble.sh" --files "scripts/specanchor-boot.sh" --intent "edit boot" --budget=full --format=json
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" '"path":".specanchor/modules/scripts.spec.md","load":"summary"'
+}
+
+test_boot_riper_phase_missing_no_abort() {
+  # F-20260531-002: sdd-riper-one 任务缺 '> Current RIPER Phase:' 标记时，boot 的 phase grep
+  # 在 set -o pipefail 下曾退 1 → set -e 中断 boot。回归：boot 必须 exit 0 并列出该任务。
+  local workdir
+  workdir=$(make_temp_dir)
+  mkdir -p "$workdir/.specanchor/tasks/m" "$workdir/.specanchor/global"
+  printf 'specanchor:\n  project_name: t\n  mode: full\n  writing_protocol:\n    schema: sdd-riper-one\n' >"$workdir/anchor.yaml"
+  cat >"$workdir/.specanchor/tasks/m/nophase.spec.md" <<'EOF'
+---
+specanchor:
+  level: task
+  task_name: "No phase marker"
+  author: "@t"
+  created: "2026-05-31"
+  status: "in_progress"
+  writing_protocol: "sdd-riper-one"
+---
+# task body without a RIPER phase marker
+EOF
+  capture_cmd "$workdir" env SPECANCHOR_SKILL_DIR="$REPO_ROOT" bash "$REPO_ROOT/scripts/specanchor-boot.sh" --format=summary
+  assert_eq "$CAPTURE_STATUS" "0"
+  assert_contains "$CAPTURE_OUTPUT" "No phase marker"
+}
+
 echo "=== SpecAnchor Agent Reliability Tests ==="
 
 run_test test_resolve_v2_root_json
@@ -418,6 +450,8 @@ run_test test_assemble_write_trace
 run_test test_doctor_agent_profile_json
 run_test test_doctor_release_profile_missing_note
 run_test test_boot_tasks_filter
+run_test test_assemble_full_line_cap
+run_test test_boot_riper_phase_missing_no_abort
 run_test test_validate_root_json
 run_test test_validate_invalid_resolve_json
 run_test test_validate_invalid_assembly_json

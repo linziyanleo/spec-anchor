@@ -2,7 +2,7 @@
 id: F-20260530-001
 summary: same-session boot/assemble re-emits anchors; no cross-call de-dupe in scripts
 type: risk
-status: candidate
+status: superseded
 confidence: high
 impact: medium
 visibility: sediment_queue
@@ -16,7 +16,7 @@ evidence_ref:
     ref: "specanchor-assemble.sh --files=SKILL.md,scripts/specanchor-boot.sh,scripts/specanchor-assemble.sh,references/assembly-trace.md,references/agents/context-utilities.md --format=text"
 suggested_target: module
 created: 2026-05-30
-updated: 2026-05-30
+updated: 2026-05-31
 source_task: null
 ---
 
