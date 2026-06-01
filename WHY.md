@@ -82,6 +82,7 @@ The packet is a tool-rendered hot view *of* a single task; the portfolio spec is
 | Spec and code go out of sync (decay) | Alignment detection checks Spec-code consistency |
 | Checkpoint decisions get eaten by chat decay | **Decision Context** with `status` (active / superseded / withdrawn) and lazy hot/cold lifecycle (§5.2 Decision Log) |
 | Completion reports say "passed" but no evidence chain | **Evidence Ledger** with auto-pinned acceptance criteria, command logs, and unverified-risk registry (§6.2) |
+| Same-session context grows unbounded as agents re-trigger boot | **Session loading contract** — boot is preflight (once per session), already-loaded specs aren't reprinted (delta Assembly Trace), and oversized specs auto-degrade to summary so every call stays bounded |
 
 ## Design Principles
 
@@ -93,6 +94,7 @@ The packet is a tool-rendered hot view *of* a single task; the portfolio spec is
 6. **Full rewrite + git versioning** — Module Spec updates are full rewrites, with changes managed through `git diff` and Code Review
 7. **Platform agnostic** — plain-text Skill, works with Cursor, Claude Code, Cline, and any AI tool that can read files
 8. **Single responsibility** — non-Spec governance capabilities should live in separate skills, not inside the core Skill token budget
+9. **Bounded per call; advisory, not enforced** — boot is a session-start preflight (run once); repeated same-session needs use targeted `assemble` + a delta Assembly Trace instead of reprinting loaded specs, and oversized specs degrade to summary (`full_load_max_lines`). Scripts keep no persistent state — the "loaded" ledger lives in the conversation. Hard enforcement is left to hooks / CI.
 
 ## Usage Recommendations by Role
 

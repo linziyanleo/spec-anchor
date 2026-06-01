@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.7.0-alpha.3 — Session Context Controls (UNRELEASED)
+
+> 在 alpha.2 基础上加「同一 session 上下文控制」契约与机制，并修两个 fail-fast / 测试脚手架缺陷。源头 finding F-20260530-001（session-context-bloat）。
+
+### Highlights
+
+- **Session 加载契约**（`scripts.spec.md §2` + `SKILL.md` / `references/agents/*.md` / `assembly-trace.md`）：`specanchor-boot.sh` 是 session-start / preflight，每 session 原则上一次；同 session 后续刷新优先用 targeted `specanchor-assemble.sh` + delta Assembly Trace，不重复打印已 `full` 加载的 spec 正文（除非 target 集合或 freshness 变化）。advisory（不机械阻断），脚本保持无持久化状态——"已加载"账本活在对话里。来源 F-20260530-001 → SP-20260531-001（accepted）。
+- **`specanchor-boot.sh --tasks=open|all|none`**：Active Tasks 渲染控制。`open` 把终态 done/archived 折叠为计数（保留 draft/review/in_progress/未知非终态）；`none` 仅留计数行；`all` 全量。`--format=summary`/`full` 默认 `all`（向后兼容），`inline-brief` 默认 `open`；`--format=json` 不受影响。
+- **C3 full-load 行数上限**：`specanchor-assemble.sh` 在所有 level / 所有预算档下，若某 anchor 本会 `full` 加载但行数 > `FULL_LOAD_MAX_LINES`（默认 220，`anchor.yaml.full_load_max_lines` 可覆写）统一降级 `summary`，关闭了 `--budget=full` 此前完全忽略行数的缺口。
+
+### Fixes
+
+- **boot/status RIPER Phase grep 在 pipefail 下中断脚本**（F-20260531-002，mr_pool 报告）：`sdd-riper-one` 任务缺 `> Current RIPER Phase:` 标记时 `grep` 退 1，经 `set -o pipefail` + `set -e` 中断整个 boot/status。`specanchor-boot.sh` / `specanchor-status.sh` 管道末尾加 `|| true` 修复（对齐 `frontmatter-inject.sh` 既有写法）。
+- **legacy task spec frontmatter**（F-20260531-001）：迁移 `2026-05-27_trigger-rate-optimization.spec.md` 旧顶层 frontmatter 到 `specanchor:` nested 格式，修复 `specanchor-validate.sh` 全量校验退 2。
+- **bats sandbox 漏拷 lib**（F-20260531-003）：`tests/setup_helper.bash` 改为全量 `cp lib/*.sh`——`specanchor-index.sh` 依赖的 `lib/health.sh` 未被拷入 sandbox，致 6 个 check-global bats 失败。
+
+### Compatibility
+
+- 零破坏：`--format=summary`/`full`/`json` 默认行为不变；`--budget=normal` 装载不变（golden 稳定）；新增 flag / config 均有向后兼容默认值。
+
+---
+
 ## v0.7.0-alpha.2 — Findings Lazy-Load + Summary Field (UNRELEASED)
 
 > 在 v0.7.0-alpha.1 基础上加 finding 装载分级与 summary 必填字段，使 Context Bundle v1 在 finding 数量增长时仍保持 token 边界可控。

@@ -39,7 +39,7 @@
 
 **SpecAnchor 是一套 Agent 在 boot 时加载的三层 Spec 系统**。它把团队的编码规则、模块契约、任务意图都放在 `.specanchor/` 下，Agent 在写代码之前把相关的那些加载进上下文；等代码写完，再回头检查代码是否还跟 Spec 对得上。
 
-它更像是面向 AI coding agent 的 **Context Construction System**（上下文构建系统）：把工程上下文显式分为四类——**Spec / Decision / Evidence / Finding**——编译成有边界、可审计、可沉淀的 *Context Bundle*，每个 Agent 在写代码前装载；用 *Alignment Surface*（对齐面）检测 Spec 与代码的漂移；通过 *Sediment Proposal*（沉淀提案）把高价值 finding 在人 review 后沉淀回长期 Spec（**永不自动 apply**）；并通过 *handoff packet* 支持跨 session 接手。**SpecAnchor 不拥有 agent 执行循环**——`sdd-riper-one` 等 workflow schema 是 opt-in integration，不是默认骨架。
+它更像是面向 AI coding agent 的 **Context Construction System**（上下文构建系统）：把工程上下文显式分为四类——**Spec / Decision / Evidence / Finding**——编译成有边界、可审计、可沉淀的 *Context Bundle*，每个 Agent 在写代码前装载；用 *Alignment Surface*（对齐面）检测 Spec 与代码的漂移；通过 *Sediment Proposal*（沉淀提案）把高价值 finding 在人 review 后沉淀回长期 Spec（**永不自动 apply**）；并通过 *handoff packet* 支持跨 session 接手。即使同 session 内反复激活，上下文也保持 bounded：boot 是每 session 一次的 preflight、已加载的 spec 不重复打印、超大 spec 降级 summary。**SpecAnchor 不拥有 agent 执行循环**——`sdd-riper-one` 等 workflow schema 是 opt-in integration，不是默认骨架。
 
 它**自带一套 SDD（Spec-Driven Development，规范驱动开发）工作流作为 opt-in 集成**——`sdd-riper-one` schema 提供 Research → Plan → Execute → Review 四段门禁，需要严格 workflow 时启用——**所以你不需要先装 Spec-Kit 或 OpenSpec 才能用 SpecAnchor**。如果你的项目里已经有 OpenSpec 或自建的 spec 目录，`parasitic` 模式可以直接套上去不用迁移，让已有的写作流程保持原样，SpecAnchor 只补加载器和防腐层。
 
