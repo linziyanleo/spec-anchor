@@ -48,6 +48,7 @@ evidence_ref:                                         # 证据引用（可空）
   - type: diff | command | test | file-snapshot
     ref: <git-sha-or-file-or-command>
 suggested_target: none | task | module | global | codemap
+failure_class: null                                   # null | bug | spec_gap | noise | contract_ambiguity（可选，v0.7）
 created: 2026-05-24
 updated: 2026-05-24
 source_task: <task-spec-path-or-null>                 # 哪个任务过程中发现
@@ -79,6 +80,26 @@ source_task: <task-spec-path-or-null>                 # 哪个任务过程中发
 | `risk` | 风险点 | "retry 无 backoff，雪崩风险" |
 | `reuse-opportunity` | 可复用机会 | "已有 RetryQueue 类，新代码不必新建" |
 | `pattern` | 反复出现的模式 | "三个模块都自实现 idempotency key，应抽公共组件" |
+
+### Failure Class 字段（v0.7 新增，可选）
+
+描述**失败的来源和处置路径**，与 `type`（描述发现形态）正交。不是所有 finding 都有 failure_class——纯 fact / reuse-opportunity 类 finding 通常为 null。
+
+| failure_class | 含义 | 推荐动作 |
+|---|---|---|
+| `bug` | 实现违反了明确的 spec/contract 条款 | 修 implementation；promote regression test |
+| `spec_gap` | spec/contract 遗漏了必要行为 | sediment proposal → 补 contract/template |
+| `noise` | 环境 / CI / 工具链无关失败 | 校准 verifier/CI 配置；可标 visibility=hidden |
+| `contract_ambiguity` | spec/contract 允许多种有效解释 | refine contract；不要重试 implementation |
+| `null` | 不适用或未分类 | 兼容旧 finding（默认值） |
+
+**路由影响**（advisory，不自动执行）：
+- `spec_gap` → sediment pipeline 优先候选
+- `bug` → 不走 sediment，留在 task scope
+- `noise` → 建议 visibility=hidden
+- `contract_ambiguity` → 先 refine contract 再重跑
+
+**宽容期**：`failure_class` 为可选字段，缺失或 null 均合法，`specanchor-validate.sh` 不报错。
 
 ### Visibility 字段（v0.6 关键设计）
 

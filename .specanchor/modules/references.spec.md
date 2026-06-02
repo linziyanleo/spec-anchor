@@ -10,9 +10,9 @@ specanchor:
   reviewers: []
   created: "2026-04-02"
   updated: "2026-05-26"
-  last_synced: "2026-05-26"
-  last_synced_sha: "71b2c7c"
-  last_change: "v0.6 findings lazy-load: summary 字段成为必填 + visibility-driven 分级载荷 (immediate→full / sediment_queue→summary / handoff→title) 文档同步至 context-utilities / findings-ledger / claude-code-bootloader / commands-quickref / workflow-gates / script-contract"
+  last_synced: "2026-06-02"
+  last_synced_sha: "HEAD"
+  last_change: "v0.7 meta-harness protocol uplift: failure_class 字段 (findings-ledger + finding-template + context-utilities)、§4.0 Contract Compilation Checklist + §6.4 Verification Mode Record (sdd-riper-one template + schema.yaml)"
   status: active
   depends_on: []
 ---
@@ -82,13 +82,13 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | `workflow-gates.md` | `⚡/📋` 选择与严格门禁规则 |
 | `integrations/*.md` | 与 SDD-RIPER-ONE / superpowers 的集成说明 |
 | `agents/agent-contract.md` | Agent 标准工作循环（7 步：boot → resolve → workflow → execute → check → sediment → archive） |
-| `agents/context-utilities.md` | v0.6 主入口：context 装配 / 记录 / 沉淀 utility 集（含 lazy-load findings 协议） |
+| `agents/context-utilities.md` | v0.6 主入口：context 装配 / 记录 / 沉淀 utility 集（含 lazy-load findings 协议 + v0.7 failure_class 指引） |
 | `agents/{claude-code,codex,cursor,gemini}.md` | 各 Agent 工具的入口适配说明 + Boot Activation 模板 |
 | `adapters/claude-code-bootloader.md` | Claude Code CLAUDE.md 引导片段（v0.7） |
-| `concepts/findings-ledger.md` | v0.6 findings 独立 artifact 协议（含 summary 必填 + visibility tier） |
+| `concepts/findings-ledger.md` | v0.6 findings 独立 artifact 协议（含 summary 必填 + visibility tier + v0.7 failure_class） |
 | `concepts/sediment-proposal.md` | v0.6 hot→cold 安全回流协议 |
 | `concepts/*.md` | 其他可被 schema / template 引用的稳定概念说明 |
-| `templates/finding-template.md` | v0.6 finding 模板（含 summary 字段填写指引） |
+| `templates/finding-template.md` | v0.6 finding 模板（含 summary 字段填写指引 + v0.7 failure_class） |
 | `templates/sediment-proposal-template.md` | v0.6 sediment proposal 模板 |
 | `skills/*.md` | 可外置安装或桥接其他 workflow 的 skill 草稿 |
 
@@ -113,7 +113,7 @@ SpecAnchor 的协议声明层，定义所有命令的语义、Spec 模板、Sche
 | 路径 | 文件数 | 职责 |
 |------|--------|------|
 | `commands/` | 12 个 .md | 各命令的详细定义（含 `handoff.md`；`codemap.md` 为 draft/deferred） |
-| `schemas/` | 7 个子目录（各含 2 文件） | Schema 系统（含 `handoff` schema；sdd-riper-one v2 起含 `context_control` 节，声明 6 区段协议事实） |
+| `schemas/` | 7 个子目录（各含 2 文件） | Schema 系统（含 `handoff` schema；sdd-riper-one v2 起含 `context_control` 节 + v0.7 §4.0 Contract Compilation Checklist + §6.4 Verification Mode Record） |
 | 根级 .md | 10 个 | 协议、模板、快速参考 |
 | `integrations/` | 3 个 .md | 外部工作流集成说明 |
 | `agents/` | 5 个 .md | Agent 工作循环契约 + 各 Agent 入口适配 + Boot Activation 模板 |

@@ -14,6 +14,7 @@ evidence_ref:
   - type: diff        # diff | command | test | file-snapshot
     ref: <git-sha-or-file-or-command>
 suggested_target: none  # none | task | module | global | codemap
+failure_class: null     # null | bug | spec_gap | noise | contract_ambiguity（可选）
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 source_task: null     # task spec path 或 null
@@ -58,4 +59,7 @@ source_task: null     # task spec path 或 null
 >   - 触发 stop trigger 的 finding → `immediate`
 > - **status=candidate** 是新建默认。`accepted` 必须有 evidence_ref。`rejected` 保留文件做证据。
 > - **suggested_target** 是建议沉淀位置，不是承诺——最终由 Sediment Proposal 阶段人审决定。
+> - **failure_class**（可选）：描述失败来源和处置路径，与 `type`（描述形态）正交。
+>   - `bug` → 修 implementation；`spec_gap` → sediment proposal；`noise` → 校准 verifier；`contract_ambiguity` → refine contract
+>   - 纯 fact / reuse-opportunity 类 finding 通常留 `null`
 > - 提交前删除本"填写指引"段。

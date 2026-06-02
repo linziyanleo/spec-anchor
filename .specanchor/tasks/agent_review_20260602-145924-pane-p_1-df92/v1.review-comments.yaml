@@ -1,0 +1,80 @@
+overall_verdict: request_changes
+summary: >-
+  The protocol direction is plausible, but the plan is not yet tight enough to
+  execute as a SpecAnchor task. It leaves core schema/module surfaces stale and
+  includes a home-directory prompt edit that is not reviewable as part of this
+  repository.
+review_comments:
+  - finding_id: F-1
+    severity: medium
+    category: scope
+    location: "Step 4 / Affected files"
+    description: >-
+      The plan edits ~/.claude/skills/dual-agent-review/prompts/codex-review-v1.md,
+      which is outside this repository, outside the booted SpecAnchor modules,
+      and outside any declared source. Executing this as written creates
+      local-machine state that cannot be committed, reviewed, validated, or kept
+      fresh by the spec-anchor task.
+    suggested_change: >-
+      Remove Step 4 from this task and create a separate dual-agent-review task
+      against that skill's source-of-truth repository, or replace the path with a
+      repo-controlled source path and add verification that the runtime prompt
+      resolves to that file and the review-output validator still passes.
+    rationale: >-
+      A task-scoped protocol update should not silently depend on untracked
+      operator-local files.
+  - finding_id: F-2
+    severity: medium
+    category: correctness
+    location: "Affected files / Verification plan"
+    description: >-
+      The verification plan says "Module Spec sync" and the task spec completion
+      checks require references.spec.md to be updated, but the affected-files
+      table omits .specanchor/modules/references.spec.md. Execution can therefore
+      change references/ protocol files while leaving the module contract and
+      freshness metadata stale.
+    suggested_change: >-
+      Add .specanchor/modules/references.spec.md to the affected files with the
+      exact minimal updates needed for the new protocol surfaces, then add a
+      verification command such as bash scripts/specanchor-check.sh module
+      .specanchor/modules/references.spec.md.
+    rationale: >-
+      SpecAnchor's module spec is the contract for references/, so protocol
+      edits need an explicit module alignment step.
+  - finding_id: F-3
+    severity: medium
+    category: maintainability
+    location: "Steps 2-3"
+    description: >-
+      The plan adds new sdd-riper-one template sections for the Plan and Review
+      phases but does not update references/schemas/sdd-riper-one/schema.yaml,
+      even though that schema file is the declarative source for artifacts,
+      phase descriptions, gates, and boot-time schema summaries. This leaves the
+      schema metadata behind the template.
+    suggested_change: >-
+      Add a focused schema.yaml update: mention the Contract Compilation
+      Checklist in the plan artifact description and the Verification Mode
+      Record in the review artifact description, or explicitly document why
+      these are template-only notes that should not appear in schema metadata.
+    rationale: >-
+      Template/schema drift makes agents and validators reason from different
+      descriptions of the same workflow.
+  - finding_id: F-4
+    severity: medium
+    category: maintainability
+    location: "Step 1"
+    description: >-
+      failure_class is added to the ledger and template, but the plan does not
+      update the main agent-facing finding guidance in references/agents/context-utilities.md,
+      which currently lists the finding frontmatter fields and is identified by
+      SKILL.md as the v0.6 context utility entrypoint. Agents following the main
+      workflow will not see the new classification/action mapping.
+    suggested_change: >-
+      Add a compact note to references/agents/context-utilities.md explaining
+      that failure_class is optional, listing the allowed values, and mapping the
+      values to the same advisory actions as findings-ledger.md; add a grep/manual
+      verification step that agent-facing finding field lists do not contradict
+      the new optional field.
+    rationale: >-
+      A protocol field that is only in the deep reference page will be skipped by
+      the normal finding creation workflow.

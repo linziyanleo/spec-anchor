@@ -1,0 +1,28 @@
+plan_version_reviewed: v1
+total_review_comments: 4
+dispositions:
+  - finding_id: F-1
+    disposition: incorporated
+    plan_change_summary: >-
+      Step 4 (dual-agent-review prompt edit) removed from this task's scope.
+      Added to TODO.md as a separate dual-agent-review task against that skill's
+      own repository. Affected files table updated accordingly.
+  - finding_id: F-2
+    disposition: incorporated
+    plan_change_summary: >-
+      Added .specanchor/modules/references.spec.md to affected files with
+      explicit minimal update scope. Added specanchor-check.sh module verification
+      step to verification plan.
+  - finding_id: F-3
+    disposition: incorporated
+    plan_change_summary: >-
+      Added references/schemas/sdd-riper-one/schema.yaml to affected files.
+      Plan now includes updating the plan-phase and review-phase artifact
+      descriptions in schema.yaml to mention the new checklist and verification
+      mode record.
+  - finding_id: F-4
+    disposition: incorporated
+    plan_change_summary: >-
+      Added references/agents/context-utilities.md to affected files. Plan now
+      includes a compact failure_class note in the agent-facing finding guidance
+      section, with allowed values and advisory action mapping.

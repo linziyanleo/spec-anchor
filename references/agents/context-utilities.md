@@ -74,6 +74,13 @@ cp references/templates/finding-template.md .specanchor/findings/F-$(date +%Y%m%
 
 Finding frontmatter 必须含 `id` / `summary` / `type` / `status` / `confidence` / `impact` / `visibility` / `affects` / `evidence_ref`。`summary` 是 v0.6 新增必需字段（≤120 字符单行；主语 + 事实 + 锚点；`<...>` 占位串会被拒绝）；driven the lazy-load tier in §2 above。具体见 `references/concepts/findings-ledger.md`。
 
+**`failure_class`**（v0.7 新增，可选）：描述失败来源和处置路径，与 `type`（描述形态）正交。允许值及 advisory 动作：
+- `bug` → 修 implementation；promote regression test
+- `spec_gap` → sediment proposal → 补 contract/template
+- `noise` → 校准 verifier/CI；可标 visibility=hidden
+- `contract_ambiguity` → refine contract；不要重试 implementation
+- `null`（默认） → 不适用或未分类
+
 **关键原则**：
 - `candidate finding ≠ spec fact`
 - `accepted finding ≠ 自动 update global/module spec`

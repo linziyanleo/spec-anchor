@@ -103,6 +103,25 @@ specanchor:
 - Reason: ...
 
 ## 4. Plan (Contract)
+
+### 4.0 Contract Compilation Checklist
+
+> 两遍 contract 编译意识。仅在 Plan 阶段填写；不需要全部满足，但空项需标注"N/A + 原因"。
+
+#### Pass 1: Completeness（是否遗漏了关键约束？）
+- [ ] API/UI surface 已列出
+- [ ] 状态转移已定义（如有状态机）
+- [ ] Invariants 已列出
+- [ ] Business rules 已编码（不只是"正确实现"）
+- [ ] Auth/data dependencies 已声明
+- [ ] Error taxonomy 已列出（不只是 try/catch）
+- [ ] Acceptance criteria 可验证
+
+#### Pass 2: Scope & Ambiguity（是否过度指定或歧义？）
+- [ ] Out-of-scope 已显式标注
+- [ ] 不存在"可被多种方式解读"的条款（或已消歧）
+- [ ] 不存在 unsupported requirements（标了但实际无法实现的）
+
 ### 4.1 File Changes
 - `path/to/file`: 变更说明
 
@@ -195,6 +214,16 @@ specanchor:
 - [ ] 本 spec 中描述的「现状 / 缺口 / 已知约束」是否仍然准确？
 - [ ] 是否有「X 不感知 Y」/「需要 Step A/B/C」/「audit finding」类陈述已被后续代码超越？
 - 发现 stale claim：在被超越段落原文后追加 `[stale: superseded by <commit-sha / spec-path>]`，并在 §6 Spec Sediment 的「值得记录的反模式」记录漂移轨迹。
+
+## 6.4 Verification Mode Record
+
+> 记录本次验证的模式，使证据质量可审计。
+
+- Verification regime: independence | attention | mixed | self
+- Verifier saw implementation reasoning: yes | no | partial
+- Review lenses applied: <列出，如 product, architecture, security, QA, spec-completeness>
+- Cross-model verification: yes | no
+- Notes: <可选>
 
 ## 7. Plan-Execution Diff
 - Any deviation from plan: ...
