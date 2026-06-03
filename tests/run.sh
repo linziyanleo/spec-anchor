@@ -358,7 +358,8 @@ test_skill_entrypoint_checks() {
   grep -q "specanchor-assemble.sh" "${REPO_ROOT}/SKILL.md"
   grep -q "references/commands-quickref.md" "${REPO_ROOT}/SKILL.md"
   grep -q "Assembly Trace" "${REPO_ROOT}/SKILL.md"
-  grep -q "references/agents/agent-contract.md" "${REPO_ROOT}/SKILL.md"
+  grep -q "references/agents/agent-contract.md" "${REPO_ROOT}/references/reference-index.md"
+  grep -q "reference-index.md" "${REPO_ROOT}/SKILL.md"
   if [[ "$skill_lines" -gt 140 ]]; then
     echo "note: SKILL.md is ${skill_lines} lines; above target but allowed if behavior is preserved"
   fi

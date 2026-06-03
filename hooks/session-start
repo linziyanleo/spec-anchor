@@ -38,24 +38,16 @@ This project (${project_name}) uses spec-anchor for engineering context manageme
 MANDATORY: Before writing or modifying code, invoke the spec-anchor skill to load coding standards, module contracts, and active tasks.
 
 You MUST use the spec-anchor skill when:
-1. Starting any coding task — spec-anchor loads the project's coding standards and constraints
-2. The user mentions spec, context, module, task, finding, alignment, or asks about project conventions
-3. You are about to create, modify, or refactor code files
-4. The user asks you to check alignment, manage specs, handoff, or review findings
-5. After completing a coding task — evaluate whether alignment check and findings apply
+1. Starting a coding task that creates, modifies, or refactors code files
+2. Reviewing code, diffs, plans, specs, or findings that require loaded project context to evaluate correctness or compliance
+3. The user explicitly mentions spec, context, module, task, finding, alignment, or project conventions
+4. The user asks to check alignment, manage specs, handoff, or review findings
 
-Do NOT skip spec-anchor because:
-- \"This is just a simple change\" — even small changes must respect project contracts
-- \"I already know the codebase\" — spec-anchor loads active tasks and recent findings you don't have
-- \"I'll check later\" — context BEFORE coding prevents misalignment
-- \"The user didn't ask for it\" — spec-anchor is a project requirement, not optional
-- \"I can infer conventions from code\" — specs contain constraints not visible in code alone
-
-Post-Coding Chain (after completing a coding task):
-1. Run alignment check: compare changes against loaded specs (always)
-2. Record findings (only if new facts, contradictions, risks, or drift discovered):
-   use the spec-anchor finding command (specanchor-finding.sh) via the skill scripts
-3. Evaluate sediment: if findings reveal spec drift, draft a Sediment Proposal
+You do NOT need spec-anchor for:
+- Purely mechanical read-only operations: grep, find, git log, viewing file contents
+- Running tests or build commands
+- Git operations: commit, push, branch management
+- Answering factual questions that don't require evaluating project correctness
 </IMPORTANT>"
 
 # Layer 1: Inline spec summary for guaranteed baseline context

@@ -283,8 +283,13 @@ emit_active_tasks() {
     protocol_disp="${B_TASK_PROTOCOLS[$i]}"
     path="${B_TASK_PATHS[$i]}"
 
-    if [[ "$B_TASKS_MODE" == "open" ]] && task_status_is_terminal "$status_disp"; then
+    if [[ "$B_TASKS_MODE" == "open" || "$B_TASKS_MODE" == "compact" ]] && task_status_is_terminal "$status_disp"; then
       collapsed=$((collapsed + 1))
+      continue
+    fi
+
+    if [[ "$B_TASKS_MODE" == "compact" ]]; then
+      echo "    - ${name} [${status_disp}]"
       continue
     fi
 
@@ -303,7 +308,7 @@ emit_active_tasks() {
     meta="${meta} ${DIM}(${protocol_disp})${RESET}"
     echo -e "    - ${name} [${meta}] ${DIM}${path}${RESET}"
   done
-  if [[ "$B_TASKS_MODE" == "open" ]] && [[ $collapsed -gt 0 ]]; then
+  if [[ "$B_TASKS_MODE" == "open" || "$B_TASKS_MODE" == "compact" ]] && [[ $collapsed -gt 0 ]]; then
     echo -e "    ${DIM}(+${collapsed} done/archived collapsed; --tasks=all 展开)${RESET}"
   fi
 }
@@ -819,9 +824,7 @@ output_inline_brief() {
         tb_collapsed=$((tb_collapsed + 1))
         continue
       fi
-      output+="  - ${B_TASK_NAMES[$i]} [${B_TASK_STATUSES[$i]}]"
-      [[ -n "${B_TASK_PHASES[$i]:-}" ]] && output+=" phase=${B_TASK_PHASES[$i]}"
-      output+=$'\n'
+      output+="  - ${B_TASK_NAMES[$i]} [${B_TASK_STATUSES[$i]}]"$'\n'
     done
     [[ "$B_TASKS_MODE" == "open" && $tb_collapsed -gt 0 ]] && output+="  (+${tb_collapsed} done/archived collapsed)"$'\n'
   fi
@@ -1053,8 +1056,8 @@ main() {
     if [[ "$format" == "inline-brief" ]]; then tasks_mode="open"; else tasks_mode="all"; fi
   fi
   case "$tasks_mode" in
-    all|open|none) B_TASKS_MODE="$tasks_mode" ;;
-    *) die "未知 --tasks 值: $tasks_mode (可选: open | all | none)" ;;
+    all|open|none|compact) B_TASKS_MODE="$tasks_mode" ;;
+    *) die "未知 --tasks 值: $tasks_mode (可选: open | all | none | compact)" ;;
   esac
 
   # v0.7 新增：--agent --intent 模式直接产 preflight context bundle
