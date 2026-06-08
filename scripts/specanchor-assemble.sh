@@ -873,7 +873,7 @@ infer_freshness() {
     :
   fi
   if [[ -z "$mtime" ]]; then
-    mtime=$(stat -f %m "$path" 2>/dev/null || stat -c %Y "$path" 2>/dev/null || echo "")
+    mtime=$(stat -f %m "$path" 2>/dev/null) || mtime=$(stat -c %Y "$path" 2>/dev/null) || mtime=""
   fi
   if [[ -z "$mtime" ]]; then
     printf 'unknown'
@@ -893,7 +893,7 @@ infer_freshness_reason() {
   [[ -e "$path" ]] || { printf 'file not found'; return; }
   if mtime=$(git -C "$(dirname "$path")" log -1 --format=%ct -- "$(basename "$path")" 2>/dev/null); then :; fi
   if [[ -z "$mtime" ]]; then
-    mtime=$(stat -f %m "$path" 2>/dev/null || stat -c %Y "$path" 2>/dev/null || echo "")
+    mtime=$(stat -f %m "$path" 2>/dev/null) || mtime=$(stat -c %Y "$path" 2>/dev/null) || mtime=""
   fi
   [[ -n "$mtime" ]] || { printf 'no mtime available'; return; }
   age_days=$(( ($(date +%s) - mtime) / 86400 ))

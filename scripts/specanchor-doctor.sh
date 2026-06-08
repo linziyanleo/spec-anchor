@@ -324,7 +324,7 @@ check_findings_health() {
     local status="${DH_STATUS:-}"
     local summary="${DH_SUMMARY:-}"
 
-    mtime=$(git log -1 --format=%ct -- "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo "")
+    mtime=$(git log -1 --format=%ct -- "$file" 2>/dev/null) || mtime=$(stat -f %m "$file" 2>/dev/null) || mtime=$(stat -c %Y "$file" 2>/dev/null) || mtime=""
     [[ -n "$mtime" ]] || continue
     age_days=$(( (now - mtime) / 86400 ))
 
@@ -372,7 +372,7 @@ check_sediment_proposals_health() {
     case "$(basename "$file")" in sediment-proposal-template.md|.gitkeep) continue ;; esac
 
     status=$(awk -F'[[:space:]]*:[[:space:]]*' '/^---$/{c++; next} c==1 && $1=="status"{print $2; exit}' "$file" | tr -d '"' | tr -d "'")
-    mtime=$(git log -1 --format=%ct -- "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null || stat -c %Y "$file" 2>/dev/null || echo "")
+    mtime=$(git log -1 --format=%ct -- "$file" 2>/dev/null) || mtime=$(stat -f %m "$file" 2>/dev/null) || mtime=$(stat -c %Y "$file" 2>/dev/null) || mtime=""
     [[ -n "$mtime" ]] || continue
     age_days=$(( (now - mtime) / 86400 ))
 
