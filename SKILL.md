@@ -1,12 +1,16 @@
 ---
 name: spec-anchor
-description: "MUST invoke in projects with anchor.yaml or .specanchor/ — before code changes, reviews, spec/context management, alignment checks, handoff, findings, or sediment work. Loads coding standards, module contracts, and active tasks."
+description: "工程上下文管理技能——在含有 anchor.yaml 或 .specanchor/ 的项目中必须调用。适用于代码修改、代码审查、Spec/上下文管理、对齐检查、交接、发现记录或沉淀工作之前。加载编码标准、模块合约和活跃任务。当用户提到 spec-anchor、specanchor 脚本、Spec 管理、上下文装配、对齐检查、boot 流程、Assembly Trace 等概念时也应调用本技能。即使是小改动也要先加载，因为 Spec 中包含代码本身看不到的约束。"
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 <HARD-GATE>
 If this project has `anchor.yaml` or `.specanchor/`, load SpecAnchor context before code changes or reviews.
 Specs contain constraints not visible in code alone — even for small edits, assemble context first.
 Read-only mechanical operations (grep, find, git log, running tests) do not require SpecAnchor boot.
+If the user explicitly mentions spec-anchor or specanchor scripts but the CWD lacks `anchor.yaml`/`.specanchor/`, skip boot but still use this skill's knowledge to assist — read script files via `$SA_SKILL_DIR/scripts/` or locate them with `find`.
 </HARD-GATE>
 
 # SpecAnchor
@@ -35,9 +39,21 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/<script-name>.s
 
 Keep long options as a single shell argument: use `--format=summary`, never `-- format=summary`.
 
+## 工作流程
+
+1. **Boot** — 运行 `specanchor-boot.sh` 加载项目配置、模块结构和活跃任务（详见 Boot Requirement）
+2. **输出 Assembly Trace** — Boot 完成后立即输出 Global/Module 加载状态（详见 Assembly Trace）
+3. **按需装配** — 深入特定模块时运行 `specanchor-assemble.sh --files=... --intent=...`（详见 Loading Strategy）
+4. **执行编码任务** — 基于已加载的 Spec 约束进行代码分析或修改
+5. **对齐检查** — 编码完成后对比变更与 Module Spec 契约（详见 Post-Coding Chain）
+6. **记录发现** — 若发现新事实、矛盾或漂移，通过 `specanchor-finding.sh` 记录
+7. **评估沉淀** — 若发现 Spec 漂移，起草 Sediment Proposal 将热上下文回流为冷 Spec
+
+步骤 1-2 在 session 开始时执行一次；步骤 3-7 在每个编码任务中按需循环。
+
 ## Boot Requirement
 
-激活后先运行：
+**Boot 是进入项目后的第一步，不可跳过。** 激活后先运行：
 
 ```bash
 SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-boot.sh"
@@ -47,19 +63,21 @@ SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-boot
 - `--format=full`：额外附带 Global Spec 正文
 - `--format=json`：机器可读 JSON
 
+Boot 完成后立即输出 Assembly Trace（见下节），然后再进入任何代码分析或修改。
+
 **Boot 是 session-start / preflight，同一 session 原则上只运行一次。** 同 session 内后续的上下文需求不要重复 boot——改用 targeted `specanchor-assemble.sh --files=...`（见 Loading Strategy）。
 
 ## Assembly Trace
 
-每轮都要显式输出一次 Assembly Trace：
+**Boot 完成后必须立即输出 Assembly Trace，格式如下：**
 
 ```text
 Assembly Trace:
   - Global: summary|full|none|skipped -> <files or reason>
-  - Module: full|deferred|sources-only|none -> <files or reason>
+  - Module: full|summary|deferred|sources-only|none -> <files or reason>
 ```
 
-完整规则见 `references/assembly-trace.md`。
+Assembly Trace 是 boot 的可视确认——没有它，用户无法验证上下文已正确加载。完整规则见 `references/assembly-trace.md`。
 
 ## Loading Strategy
 
@@ -68,12 +86,24 @@ Assembly Trace:
 - 需要判断该读哪些模块时，优先看 boot 输出的 `Available Commands:` / `Available Modules:` 段；boot 不可用时 fallback 到 `references/commands-quickref.md`。
 - 复杂编码任务应在 boot 之后运行 `specanchor-assemble.sh --files=... --intent=...`，先拿到 bounded read plan，再进入编辑。
 
-## Post-Coding Chain
+## Post-Coding Chain（编码后必检）
 
-After completing a coding task, run through this chain:
+**每次完成代码修改后，必须依次执行以下检查链：**
 
-1. **Alignment Check** — compare changes against loaded specs. Run `specanchor_check` or manually verify that modified files still conform to their Module Spec contracts.
-2. **Record Findings** — if new facts, contradictions, risks, or drift were discovered, record via: `SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-finding.sh" new --topic=<slug> --summary=<single-line summary>`.
-3. **Evaluate Sediment** — if findings reveal spec drift or missing constraints, draft a Sediment Proposal (`references/concepts/sediment-proposal.md`) to flow hot context back into cold specs.
+1. **对齐检查（Alignment Check）** — 将变更与已加载的 Spec 对比。运行 `specanchor_check` 或手动验证修改的文件仍符合对应 Module Spec 的契约。**此步骤不可跳过。**
+2. **记录发现（Record Findings）** — 若发现新事实、矛盾、风险或 Spec 漂移，通过以下命令记录：`SPECANCHOR_SKILL_DIR="$SA_SKILL_DIR" bash "$SA_SKILL_DIR/scripts/specanchor-finding.sh" new --topic=<slug> --summary=<单行摘要>`。无新发现则跳过。
+3. **评估沉淀（Evaluate Sediment）** — 若发现揭示了 Spec 漂移或缺失约束，起草 Sediment Proposal（`references/concepts/sediment-proposal.md`）将热上下文回流为冷 Spec。无漂移则跳过。
 
-Always run Alignment Check. Record Findings and Evaluate Sediment can be skipped when no new facts, risks, or drift were discovered.
+## Error Handling & Exit Conditions
+
+**脚本失败时：**
+- Boot 脚本失败（exit ≠ 0）：报告错误信息给用户，不重试超过 2 次。若连续 2 次失败，fallback 到手动读取 `anchor.yaml` + `.specanchor/spec-index.md` 获取最小上下文。
+- Assemble 脚本失败：向用户说明失败原因，回退到 boot 输出的 Available Modules 信息，不做超过 3 次重试。
+
+**迭代上限：**
+- Post-Coding Chain 的 Alignment Check 若发现不一致，修复后最多再检查 2 轮（共 3 轮）。超过 3 轮仍不通过，停止并报告剩余问题给用户决策。
+- Finding 记录和 Sediment Proposal 不做循环——每个发现记录一次即可。
+
+**降级策略：**
+- 若 skill 脚本路径不可达（$SA_SKILL_DIR 无效），跳过脚本依赖的步骤，直接读 `.specanchor/` 下的文件作为上下文。
+- 若项目无 `anchor.yaml` 且无 `.specanchor/`，skill 不激活——这是预期行为，不视为错误。
